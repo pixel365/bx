@@ -9,5 +9,10 @@ func NewAccountCommand() *cobra.Command {
 		Short:   "Manage accounts",
 	}
 
+	cmd.AddCommand(addCmd())
+	cmd.AddCommand(lsCmd())
+	cmd.AddCommand(authCmd())
+	cmd.AddCommand(rmCmd())
+
 	return cmd
 }
