@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -38,7 +39,7 @@ func (o *Config) Save() error {
 		return err
 	}
 
-	return os.WriteFile(filePath, data, 0644)
+	return os.WriteFile(filePath, data, 0600)
 }
 
 func GetConfig() (*Config, error) {
@@ -49,8 +50,15 @@ func GetConfig() (*Config, error) {
 		return nil, err
 	}
 
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	cleanPath := filepath.Clean(absPath)
+
 	config := &Config{}
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(cleanPath)
 	if err == nil {
 		err = json.Unmarshal(content, config)
 	} else {
@@ -83,7 +91,7 @@ func dirPath() (string, error) {
 	dirFullPath := dir + configDirName
 	if _, err = os.Stat(dirFullPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.Mkdir(dirFullPath, os.ModePerm)
+			err = os.Mkdir(dirFullPath, 0750)
 			if err != nil {
 				return "", err
 			}

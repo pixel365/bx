@@ -1,0 +1,38 @@
+linters-settings:
+  govet:
+    shadow: true
+  dupl:
+    threshold: 200
+  goconst:
+    min-len: 3
+    min-occurrences: 2
+  gocognit:
+    min-complexity: 65
+
+linters:
+  enable:
+    - gosec
+    - nolintlint
+    - gofmt
+    - errcheck
+    - staticcheck
+    - unused
+    - goconst
+    - gocyclo
+    - govet
+    - bodyclose
+    - ineffassign
+    - gosimple
+    - goimports
+  disable:
+    - typecheck
+    - err113
+
+run:
+  tests: true
+  timeout: 5m
+
+issues:
+  exclude-use-default: false
+  exclude:
+    - "error return value not checked"
