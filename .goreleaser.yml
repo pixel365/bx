@@ -1,0 +1,42 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - riscv64
+    ldflags: "-s -w"
+    binary: bx
+    no_unique_dist_dir: true
+
+archives:
+  - format: binary
+    id: binaries
+    name_template: >-
+      {{ .Binary }}
+  - format: tar.gz
+    name_template: >-
+      {{ .Binary }}
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+checksum:
+  ids:
+    - binaries
+  split: true
+
+sboms:
+  - artifacts: binary
+    documents:
+      - "{{ .Binary }}.sbom"
