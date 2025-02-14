@@ -25,3 +25,7 @@ func (a *Account) PrintSummary(verbose bool) {
 		fmt.Printf("%s\n", a.Login)
 	}
 }
+
+func (a *Account) IsAuthenticated() bool {
+	return len(a.Cookies) > 0
+}

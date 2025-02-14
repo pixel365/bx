@@ -23,3 +23,16 @@ func ValidateAccountLogin(login string, conf *config.Config) error {
 
 	return nil
 }
+
+func ValidatePassword(password string) error {
+	value := strings.TrimSpace(password)
+	if value == "" {
+		return errors.New("password is empty")
+	}
+
+	if len(value) < 6 {
+		return errors.New("password is too short")
+	}
+
+	return nil
+}
