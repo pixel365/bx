@@ -8,11 +8,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
-	"github.com/fatih/color"
-
 	"github.com/charmbracelet/huh"
+
+	"github.com/fatih/color"
 
 	"github.com/pixel365/bx/internal"
 	"github.com/pixel365/bx/internal/config"
@@ -24,16 +25,19 @@ func authCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Authenticate with an account",
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			conf, err := config.GetConfig()
 			if err != nil {
 				return err
 			}
 
-			login := ""
-			if err = internal.ChooseAccount(&conf.Accounts, &login,
-				"Select the account you want to log in with:"); err != nil {
-				return err
+			login, _ := c.Flags().GetString("login")
+			login = strings.TrimSpace(login)
+			if login == "" {
+				if err = internal.ChooseAccount(&conf.Accounts, &login,
+					"Select the account you want to log in with:"); err != nil {
+					return err
+				}
 			}
 
 			password := ""
@@ -69,12 +73,12 @@ func authCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			var c []http.Cookie
+			var newCookies []http.Cookie
 			for _, cookie := range cookies {
-				c = append(c, *cookie)
+				newCookies = append(newCookies, *cookie)
 			}
 
-			conf.Accounts[index].Cookies = c
+			conf.Accounts[index].Cookies = newCookies
 
 			if err := conf.Save(); err != nil {
 				return err
@@ -85,6 +89,8 @@ func authCmd(ctx context.Context) *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringP("login", "l", "", "Login")
 
 	return cmd
 }

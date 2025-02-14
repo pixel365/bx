@@ -17,7 +17,7 @@ func addCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add a new account",
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			conf, err := config.GetConfig()
 			if err != nil {
 				return err
@@ -49,6 +49,17 @@ func addCmd() *cobra.Command {
 			}
 
 			color.Green("Account created")
+
+			confirm := false
+			if err = internal.Confirmation(&confirm,
+				"Do you want to log into this account right away?"); err != nil {
+				return err
+			}
+
+			if confirm {
+				c.Root().SetArgs([]string{c.Parent().Use, "auth", "--login", login})
+				return c.Root().Execute()
+			}
 
 			return nil
 		},
