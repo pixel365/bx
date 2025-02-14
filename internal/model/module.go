@@ -3,8 +3,6 @@ package model
 import (
 	"fmt"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 type Module struct {
@@ -18,9 +16,9 @@ type Module struct {
 
 func (m *Module) PrintSummary(verbose bool) {
 	if verbose {
-		color.Green("Name: %s", m.Name)
-		fmt.Printf("Created At: %s\n", m.CreatedAt)
-		fmt.Printf("Updated At: %s\n", m.UpdatedAt)
+		fmt.Printf("Name: %s", m.Name)
+		fmt.Printf("Created At: %s\n", m.CreatedAt.Format(time.RFC822))
+		fmt.Printf("Updated At: %s\n", m.UpdatedAt.Format(time.RFC822))
 		fmt.Printf("Path: %s\n", m.Path)
 		fmt.Printf("Description: %s\n", m.Description)
 	} else {

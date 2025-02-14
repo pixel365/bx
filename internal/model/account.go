@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 type Account struct {
@@ -17,15 +15,19 @@ type Account struct {
 
 func (a *Account) PrintSummary(verbose bool) {
 	if verbose {
-		color.Green("Login: %s", a.Login)
-		fmt.Printf("Created At: %s\n", a.CreatedAt)
-		fmt.Printf("Updated At: %s\n", a.UpdatedAt)
-		fmt.Printf("Is Authenticated: %t\n", len(a.Cookies) > 0)
+		fmt.Printf("Login: %s", a.Login)
+		fmt.Printf("Created At: %s\n", a.CreatedAt.Format(time.RFC822))
+		fmt.Printf("Updated At: %s\n", a.UpdatedAt.Format(time.RFC822))
+		fmt.Printf("Logged in: %t\n", a.IsLoggedIn())
 	} else {
-		fmt.Printf("%s\n", a.Login)
+		if a.IsLoggedIn() {
+			fmt.Printf("%s (logged in)\n", a.Login)
+		} else {
+			fmt.Printf("%s\n", a.Login)
+		}
 	}
 }
 
-func (a *Account) IsAuthenticated() bool {
+func (a *Account) IsLoggedIn() bool {
 	return len(a.Cookies) > 0
 }

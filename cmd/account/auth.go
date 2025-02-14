@@ -52,7 +52,7 @@ func authCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			if conf.Accounts[index].IsAuthenticated() {
+			if conf.Accounts[index].IsLoggedIn() {
 				confirm := false
 				if err = internal.Confirmation(&confirm,
 					fmt.Sprintf("Are you sure you want to re-login to %s?", login)); err != nil {
