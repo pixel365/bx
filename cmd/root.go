@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/pixel365/bx/cmd/config"
+
 	"github.com/pixel365/bx/cmd/module"
 
 	"github.com/pixel365/bx/cmd/account"
@@ -22,6 +24,7 @@ func rootCmd(_ context.Context) *cobra.Command {
 
 	cmd.AddCommand(account.NewAccountCommand())
 	cmd.AddCommand(module.NewModuleCommand())
+	cmd.AddCommand(config.NewConfigCmd())
 
 	return cmd
 }
