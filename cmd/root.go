@@ -17,12 +17,12 @@ func Execute(ctx context.Context) error {
 	return cmd.ExecuteContext(ctx)
 }
 
-func rootCmd(_ context.Context) *cobra.Command {
+func rootCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "bx",
 	}
 
-	cmd.AddCommand(account.NewAccountCommand())
+	cmd.AddCommand(account.NewAccountCommand(ctx))
 	cmd.AddCommand(module.NewModuleCommand())
 	cmd.AddCommand(config.NewConfigCmd())
 

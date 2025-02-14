@@ -1,10 +1,14 @@
 package account
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/fatih/color"
 
@@ -16,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func authCmd() *cobra.Command {
+func authCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Authenticate with an account",
@@ -60,7 +64,7 @@ func authCmd() *cobra.Command {
 				}
 			}
 
-			cookies, err := postForm(login, password)
+			cookies, err := postForm(ctx, login, password)
 			if err != nil {
 				return err
 			}
@@ -85,7 +89,10 @@ func authCmd() *cobra.Command {
 	return cmd
 }
 
-func postForm(login, password string) ([]*http.Cookie, error) {
+func postForm(ctx context.Context, login, password string) ([]*http.Cookie, error) {
+	ttlCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	body := url.Values{
 		"AUTH_FORM":     {"Y"},
 		"TYPE":          {"AUTH"},
@@ -94,25 +101,35 @@ func postForm(login, password string) ([]*http.Cookie, error) {
 		"USER_REMEMBER": {"Y"},
 	}
 
-	r, err := http.PostForm("https://partners.1c-bitrix.ru/personal/", body)
+	encodedBody := []byte(body.Encode())
+	req, err := http.NewRequestWithContext(ttlCtx, http.MethodPost,
+		"https://partners.1c-bitrix.ru/personal/", bytes.NewReader(encodedBody))
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		if err := r.Body.Close(); err != nil {
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(Body io.ReadCloser) {
+		if err = resp.Body.Close(); err != nil {
 			return
 		}
-	}()
+	}(resp.Body)
 
-	if r.StatusCode != http.StatusOK {
-		return nil, errors.New(r.Status)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(resp.Status)
 	}
 
 	var cookies []*http.Cookie
-	for _, c := range r.Cookies() {
+	for _, c := range resp.Cookies() {
 		if c.Name == "BITRIX_SM_LOGIN" {
-			cookies = r.Cookies()
+			cookies = resp.Cookies()
 			break
 		}
 	}

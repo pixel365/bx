@@ -1,8 +1,12 @@
 package account
 
-import "github.com/spf13/cobra"
+import (
+	"context"
 
-func NewAccountCommand() *cobra.Command {
+	"github.com/spf13/cobra"
+)
+
+func NewAccountCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "account",
 		Aliases: []string{"acc"},
@@ -11,7 +15,7 @@ func NewAccountCommand() *cobra.Command {
 
 	cmd.AddCommand(addCmd())
 	cmd.AddCommand(lsCmd())
-	cmd.AddCommand(authCmd())
+	cmd.AddCommand(authCmd(ctx))
 	cmd.AddCommand(rmCmd())
 	cmd.AddCommand(moduleCmd())
 
