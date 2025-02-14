@@ -3,7 +3,8 @@ package account
 import (
 	"fmt"
 
-	"github.com/charmbracelet/huh"
+	"github.com/pixel365/bx/internal"
+
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/config"
@@ -28,25 +29,13 @@ func rmCmd() *cobra.Command {
 			login := ""
 			confirm := false
 
-			var options []huh.Option[string]
-			for _, a := range conf.Accounts {
-				options = append(options, huh.NewOption(a.Login, a.Login))
-			}
-
-			if err = huh.NewSelect[string]().
-				Title("Select the account you want to delete:").
-				Options(options...).
-				Value(&login).
-				Run(); err != nil {
+			if err = internal.ChooseAccount(&conf.Accounts, &login,
+				"Select the account you want to delete:"); err != nil {
 				return err
 			}
 
-			if err = huh.NewConfirm().
-				Title(fmt.Sprintf("Are you sure you want to delete %s?", login)).
-				Affirmative("Yes").
-				Negative("No").
-				Value(&confirm).
-				Run(); err != nil {
+			if err = internal.Confirmation(&confirm,
+				fmt.Sprintf("Are you sure you want to delete %s?", login)); err != nil {
 				return err
 			}
 

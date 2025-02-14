@@ -29,16 +29,8 @@ func authCmd() *cobra.Command {
 			login := ""
 			password := ""
 
-			var options []huh.Option[string]
-			for _, a := range conf.Accounts {
-				options = append(options, huh.NewOption(a.Login, a.Login))
-			}
-
-			if err = huh.NewSelect[string]().
-				Title("Select the account you want to log in with:").
-				Options(options...).
-				Value(&login).
-				Run(); err != nil {
+			if err := internal.ChooseAccount(&conf.Accounts, &login,
+				"Select the account you want to log in with:"); err != nil {
 				return err
 			}
 
@@ -59,12 +51,8 @@ func authCmd() *cobra.Command {
 
 			if conf.Accounts[index].IsAuthenticated() {
 				confirm := false
-				if err = huh.NewConfirm().
-					Title(fmt.Sprintf("Are you sure you want to re-login to %s?", login)).
-					Affirmative("Yes").
-					Negative("No").
-					Value(&confirm).
-					Run(); err != nil {
+				if err = internal.Confirmation(&confirm,
+					fmt.Sprintf("Are you sure you want to re-login to %s?", login)); err != nil {
 					return err
 				}
 
