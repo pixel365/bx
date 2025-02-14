@@ -55,6 +55,20 @@ func (o *Config) Save() error {
 	return os.WriteFile(filePath, data, 0600)
 }
 
+func (o *Config) Reset() error {
+	o.mu.Lock()
+
+	now := time.Now().UTC()
+	o.CreatedAt = now
+	o.UpdatedAt = now
+	o.Accounts = nil
+	o.Modules = nil
+
+	o.mu.Unlock()
+
+	return o.Save()
+}
+
 func GetConfig() (*Config, error) {
 	var err error
 
@@ -70,20 +84,20 @@ func GetConfig() (*Config, error) {
 
 	cleanPath := filepath.Clean(absPath)
 
-	config := &Config{}
+	cfg := &Config{}
 	content, err := os.ReadFile(cleanPath)
 	if err == nil {
-		err = json.Unmarshal(content, config)
+		err = json.Unmarshal(content, cfg)
 	} else {
 		if os.IsNotExist(err) {
 			now := time.Now().UTC()
-			config.CreatedAt = now
-			config.UpdatedAt = now
-			err = config.Save()
+			cfg.CreatedAt = now
+			cfg.UpdatedAt = now
+			err = cfg.Save()
 		}
 	}
 
-	return config, err
+	return cfg, err
 }
 
 func path() (string, error) {
