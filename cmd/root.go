@@ -19,7 +19,8 @@ func Execute(ctx context.Context) error {
 
 func rootCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "bx",
+		Use:   "bx",
+		Short: "Command-line tool for developers of 1C-Bitrix platform modules.",
 	}
 
 	cmd.AddCommand(account.NewAccountCommand(ctx))
