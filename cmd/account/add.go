@@ -1,11 +1,13 @@
 package account
 
 import (
+	"strings"
 	"time"
+
+	"github.com/charmbracelet/huh"
 
 	"github.com/fatih/color"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal"
@@ -23,16 +25,19 @@ func addCmd() *cobra.Command {
 				return err
 			}
 
-			login := ""
-			if err = huh.NewInput().
-				Title("Enter Login:").
-				Prompt("> ").
-				Value(&login).
-				Validate(func(input string) error {
-					return internal.ValidateAccountLogin(input, conf)
-				}).
-				Run(); err != nil {
-				return err
+			login, _ := c.Flags().GetString("login")
+			login = strings.TrimSpace(login)
+			if login == "" {
+				if err = huh.NewInput().
+					Title("Enter Login:").
+					Prompt("> ").
+					Value(&login).
+					Validate(func(input string) error {
+						return internal.ValidateAccountLogin(input, conf)
+					}).
+					Run(); err != nil {
+					return err
+				}
 			}
 
 			now := time.Now().UTC()
@@ -64,6 +69,8 @@ func addCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringP("login", "l", "", "Login")
 
 	return cmd
 }
