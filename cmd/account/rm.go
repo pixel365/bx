@@ -2,6 +2,7 @@ package account
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pixel365/bx/internal"
 
@@ -15,16 +16,19 @@ func rmCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rm",
 		Short: "Remove an account",
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			conf, err := config.GetConfig()
 			if err != nil {
 				return err
 			}
 
-			login := ""
-			if err = internal.ChooseAccount(&conf.Accounts, &login,
-				"Select the account you want to delete:"); err != nil {
-				return err
+			login, _ := c.Flags().GetString("login")
+			login = strings.TrimSpace(login)
+			if login == "" {
+				if err = internal.ChooseAccount(&conf.Accounts, &login,
+					"Select the account you want to delete:"); err != nil {
+					return err
+				}
 			}
 
 			confirm := false
@@ -34,11 +38,19 @@ func rmCmd() *cobra.Command {
 			}
 
 			if confirm {
+				deleted := false
 				var accounts []model.Account
 				for _, a := range conf.Accounts {
-					if a.Login != login {
-						accounts = append(accounts, a)
+					if a.Login == login {
+						deleted = true
+						continue
 					}
+
+					accounts = append(accounts, a)
+				}
+
+				if !deleted {
+					return fmt.Errorf("account %s not found", login)
 				}
 
 				conf.Accounts = accounts
@@ -53,6 +65,8 @@ func rmCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringP("login", "l", "", "Login")
 
 	return cmd
 }
