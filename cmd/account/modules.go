@@ -11,9 +11,9 @@ import (
 
 func moduleCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "module",
+		Use:     "modules",
 		Short:   "List available modules",
-		Aliases: []string{"mod"},
+		Aliases: []string{"mods"},
 		RunE: func(c *cobra.Command, _ []string) error {
 			conf, err := config.GetConfig()
 			if err != nil {
