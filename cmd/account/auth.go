@@ -45,6 +45,7 @@ func authCmd() *cobra.Command {
 			if err = huh.NewInput().
 				Title("Enter password:").
 				Prompt("> ").
+				EchoMode(1).
 				Value(&password).
 				Validate(internal.ValidatePassword).
 				Run(); err != nil {
