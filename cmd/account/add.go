@@ -3,6 +3,8 @@ package account
 import (
 	"time"
 
+	"github.com/fatih/color"
+
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
@@ -42,7 +44,13 @@ func addCmd() *cobra.Command {
 
 			conf.Accounts = append(conf.Accounts, account)
 
-			return conf.Save()
+			if err = conf.Save(); err != nil {
+				return err
+			}
+
+			color.Green("Account created")
+
+			return nil
 		},
 	}
 
