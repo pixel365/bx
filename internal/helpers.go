@@ -23,6 +23,10 @@ func AccountIndexByLogin(accounts *[]model.Account, login string) (int, error) {
 }
 
 func ChooseAccount(accounts *[]model.Account, login *string, title string) error {
+	if len(*accounts) == 0 {
+		return errors.New("no accounts found")
+	}
+
 	var options []huh.Option[string]
 	for _, a := range *accounts {
 		options = append(options, huh.NewOption(a.Login, a.Login))

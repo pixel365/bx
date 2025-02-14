@@ -20,11 +20,6 @@ func moduleCmd() *cobra.Command {
 				return err
 			}
 
-			if len(conf.Accounts) == 0 {
-				fmt.Println("No accounts found")
-				return nil
-			}
-
 			login := ""
 			if err = internal.ChooseAccount(&conf.Accounts, &login,
 				"Select the account whose modules you want to show:"); err != nil {

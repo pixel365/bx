@@ -27,13 +27,12 @@ func authCmd() *cobra.Command {
 			}
 
 			login := ""
-			password := ""
-
-			if err := internal.ChooseAccount(&conf.Accounts, &login,
+			if err = internal.ChooseAccount(&conf.Accounts, &login,
 				"Select the account you want to log in with:"); err != nil {
 				return err
 			}
 
+			password := ""
 			if err = huh.NewInput().
 				Title("Enter password:").
 				Prompt("> ").

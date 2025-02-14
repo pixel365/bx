@@ -21,19 +21,13 @@ func rmCmd() *cobra.Command {
 				return err
 			}
 
-			if len(conf.Accounts) == 0 {
-				fmt.Println("No accounts found")
-				return nil
-			}
-
 			login := ""
-			confirm := false
-
 			if err = internal.ChooseAccount(&conf.Accounts, &login,
 				"Select the account you want to delete:"); err != nil {
 				return err
 			}
 
+			confirm := false
 			if err = internal.Confirmation(&confirm,
 				fmt.Sprintf("Are you sure you want to delete %s?", login)); err != nil {
 				return err
