@@ -2,8 +2,10 @@ package account
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pixel365/bx/internal"
+
 	"github.com/pixel365/bx/internal/config"
 
 	"github.com/spf13/cobra"
@@ -20,10 +22,13 @@ func moduleCmd() *cobra.Command {
 				return err
 			}
 
-			login := ""
-			if err = internal.ChooseAccount(&conf.Accounts, &login,
-				"Select the account whose modules you want to show:"); err != nil {
-				return err
+			login, _ := c.Flags().GetString("login")
+			login = strings.TrimSpace(login)
+			if login == "" {
+				if err = internal.ChooseAccount(&conf.Accounts, &login,
+					"Select the account whose modules you want to show:"); err != nil {
+					return err
+				}
 			}
 
 			j := 0
@@ -45,6 +50,7 @@ func moduleCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolP("verbose", "v", false, "Show extended information")
+	cmd.Flags().StringP("login", "l", "", "Login")
 
 	return cmd
 }
