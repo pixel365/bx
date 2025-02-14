@@ -1,6 +1,11 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/fatih/color"
+)
 
 type Module struct {
 	CreatedAt   time.Time `json:"created_at"`
@@ -9,4 +14,16 @@ type Module struct {
 	Path        string    `json:"path"`
 	Description string    `json:"description"`
 	Login       string    `json:"login"`
+}
+
+func (m *Module) PrintSummary(verbose bool) {
+	if verbose {
+		color.Green("Name: %s", m.Name)
+		fmt.Printf("Created At: %s\n", m.CreatedAt)
+		fmt.Printf("Updated At: %s\n", m.UpdatedAt)
+		fmt.Printf("Path: %s\n", m.Path)
+		fmt.Printf("Description: %s\n", m.Description)
+	} else {
+		fmt.Printf("%s\n", m.Name)
+	}
 }

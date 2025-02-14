@@ -13,6 +13,7 @@ func NewAccountCommand() *cobra.Command {
 	cmd.AddCommand(lsCmd())
 	cmd.AddCommand(authCmd())
 	cmd.AddCommand(rmCmd())
+	cmd.AddCommand(moduleCmd())
 
 	return cmd
 }
