@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -22,6 +23,18 @@ type Config struct {
 	Accounts  []model.Account `json:"accounts,omitempty"`
 	Modules   []model.Module  `json:"modules,omitempty"`
 	mu        sync.RWMutex
+}
+
+func (o *Config) PrintSummary(verbose bool) {
+	if verbose {
+		fmt.Printf("Created At: %s\n", o.CreatedAt)
+		fmt.Printf("Updated At: %s\n", o.UpdatedAt)
+		fmt.Printf("Accounts: %d\n", len(o.Accounts))
+		fmt.Printf("Modules: %d\n", len(o.Modules))
+	} else {
+		fmt.Printf("Created At: %s\n", o.CreatedAt)
+		fmt.Printf("Updated At: %s\n", o.UpdatedAt)
+	}
 }
 
 func (o *Config) Save() error {
