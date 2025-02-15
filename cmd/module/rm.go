@@ -25,7 +25,7 @@ func rmCmd() *cobra.Command {
 			name = strings.TrimSpace(name)
 			if name == "" {
 				if err = internal.Choose(&conf.Modules, &name,
-					"OptionProvider the module you want to delete:"); err != nil {
+					"Select the module you want to delete:"); err != nil {
 					return err
 				}
 			}

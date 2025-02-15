@@ -26,7 +26,7 @@ func moduleCmd() *cobra.Command {
 			login = strings.TrimSpace(login)
 			if login == "" {
 				if err = internal.Choose(&conf.Accounts, &login,
-					"OptionProvider the account whose modules you want to show:"); err != nil {
+					"Select the account whose modules you want to show:"); err != nil {
 					return err
 				}
 			}
