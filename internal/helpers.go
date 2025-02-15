@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"errors"
-
 	"github.com/charmbracelet/huh"
 
 	"github.com/pixel365/bx/internal/model"
@@ -10,10 +8,11 @@ import (
 
 type Cfg string
 
-var NoConfigError = errors.New("no config found in context")
-
 const (
 	CfgContextKey Cfg = "config"
+
+	Yes = "Yes"
+	No  = "No"
 )
 
 type Printer interface {
@@ -37,7 +36,7 @@ type ConfigManager interface {
 
 func AccountIndexByLogin(accounts []model.Account, login string) (int, error) {
 	if len(accounts) == 0 {
-		return 0, errors.New("no accounts found")
+		return 0, NoAccountsFound
 	}
 
 	for i, account := range accounts {
@@ -46,14 +45,14 @@ func AccountIndexByLogin(accounts []model.Account, login string) (int, error) {
 		}
 	}
 
-	return 0, errors.New("account not found")
+	return 0, NoAccountFound
 }
 
 func Confirmation(flag *bool, title string) error {
 	if err := huh.NewConfirm().
 		Title(title).
-		Affirmative("Yes").
-		Negative("No").
+		Affirmative(Yes).
+		Negative(No).
 		Value(flag).
 		Run(); err != nil {
 		return err
@@ -64,7 +63,14 @@ func Confirmation(flag *bool, title string) error {
 
 func Choose[T OptionProvider](items []T, value *string, title string) error {
 	if len(items) == 0 {
-		return errors.New("no items found")
+		switch any(items).(type) {
+		case []model.Account:
+			return NoAccountsFound
+		case []model.Module:
+			return NoModulesFound
+		default:
+			return NoItemsFound
+		}
 	}
 
 	var options []huh.Option[string]

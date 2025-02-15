@@ -20,7 +20,7 @@ func lsCmd() *cobra.Command {
 			}
 
 			if len(conf.GetModules()) == 0 {
-				fmt.Println("No modules found")
+				fmt.Println(internal.NoModulesFound.Error())
 				return nil
 			}
 
@@ -56,7 +56,7 @@ func lsCmd() *cobra.Command {
 				}
 
 				if j == 0 {
-					fmt.Println("No modules found")
+					fmt.Println(internal.NoModulesFound.Error())
 				}
 			}
 
