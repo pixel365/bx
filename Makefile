@@ -1,4 +1,4 @@
-.PHONY: fa fmt lint
+.PHONY: fa fmt lint test
 
 fa:
 	@fieldalignment -fix ./...
@@ -10,3 +10,6 @@ fmt:
 
 lint:
 	@golangci-lint run
+
+test:
+	@go $@ ./...

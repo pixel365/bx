@@ -96,7 +96,7 @@ func (o *Config) AddModules(modules ...model.Module) {
 	o.Modules = append(o.Modules, modules...)
 }
 
-func Load() (*Config, error) {
+func NewConfig() (*Config, error) {
 	var err error
 
 	filePath, err := path()
