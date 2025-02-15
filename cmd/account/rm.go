@@ -25,8 +25,8 @@ func rmCmd() *cobra.Command {
 			login, _ := c.Flags().GetString("login")
 			login = strings.TrimSpace(login)
 			if login == "" {
-				if err = internal.ChooseAccount(&conf.Accounts, &login,
-					"Select the account you want to delete:"); err != nil {
+				if err = internal.Choose(&conf.Accounts, &login,
+					"OptionProvider the account you want to delete:"); err != nil {
 					return err
 				}
 			}

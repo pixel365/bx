@@ -25,3 +25,7 @@ func (m *Module) PrintSummary(verbose bool) {
 		fmt.Printf("%s\n", m.Name)
 	}
 }
+
+func (m Module) Option() string {
+	return m.Name
+}

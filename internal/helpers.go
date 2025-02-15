@@ -8,6 +8,14 @@ import (
 	"github.com/pixel365/bx/internal/model"
 )
 
+type Printer interface {
+	PrintSummary(verbose bool)
+}
+
+type OptionProvider interface {
+	Option() string
+}
+
 func AccountIndexByLogin(accounts *[]model.Account, login string) (int, error) {
 	if len(*accounts) == 0 {
 		return 0, errors.New("no accounts found")
@@ -22,20 +30,12 @@ func AccountIndexByLogin(accounts *[]model.Account, login string) (int, error) {
 	return 0, errors.New("account not found")
 }
 
-func ChooseAccount(accounts *[]model.Account, login *string, title string) error {
-	if len(*accounts) == 0 {
-		return errors.New("no accounts found")
-	}
-
-	var options []huh.Option[string]
-	for _, a := range *accounts {
-		options = append(options, huh.NewOption(a.Login, a.Login))
-	}
-
-	if err := huh.NewSelect[string]().
+func Confirmation(flag *bool, title string) error {
+	if err := huh.NewConfirm().
 		Title(title).
-		Options(options...).
-		Value(login).
+		Affirmative("Yes").
+		Negative("No").
+		Value(flag).
 		Run(); err != nil {
 		return err
 	}
@@ -43,12 +43,20 @@ func ChooseAccount(accounts *[]model.Account, login *string, title string) error
 	return nil
 }
 
-func Confirmation(flag *bool, title string) error {
-	if err := huh.NewConfirm().
+func Choose[T OptionProvider](items *[]T, value *string, title string) error {
+	if len(*items) == 0 {
+		return errors.New("no items found")
+	}
+
+	var options []huh.Option[string]
+	for _, item := range *items {
+		options = append(options, huh.NewOption(item.Option(), item.Option()))
+	}
+
+	if err := huh.NewSelect[string]().
 		Title(title).
-		Affirmative("Yes").
-		Negative("No").
-		Value(flag).
+		Options(options...).
+		Value(value).
 		Run(); err != nil {
 		return err
 	}
