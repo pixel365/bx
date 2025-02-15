@@ -35,7 +35,7 @@ func authCmd(ctx context.Context) *cobra.Command {
 			login = strings.TrimSpace(login)
 			if login == "" {
 				if err = internal.Choose(&conf.Accounts, &login,
-					"OptionProvider the account you want to log in with:"); err != nil {
+					"Select the account you want to log in with:"); err != nil {
 					return err
 				}
 			}

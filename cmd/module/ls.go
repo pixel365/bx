@@ -36,7 +36,7 @@ func lsCmd() *cobra.Command {
 			} else {
 				if login == "" {
 					if err = internal.Choose(&conf.Accounts, &login,
-						"OptionProvider the account whose modules you want to see:"); err != nil {
+						"Select the account whose modules you want to see:"); err != nil {
 						return err
 					}
 				}
