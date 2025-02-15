@@ -15,10 +15,9 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/pixel365/bx/internal"
-	"github.com/pixel365/bx/internal/config"
-
 	"github.com/spf13/cobra"
+
+	"github.com/pixel365/bx/internal"
 )
 
 func authCmd(ctx context.Context) *cobra.Command {
@@ -26,22 +25,22 @@ func authCmd(ctx context.Context) *cobra.Command {
 		Use:   "auth",
 		Short: "Authenticate with an account",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := config.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.ConfigManager)
+			if !ok {
+				return internal.NoConfigError
 			}
 
 			login, _ := c.Flags().GetString("login")
 			login = strings.TrimSpace(login)
 			if login == "" {
-				if err = internal.Choose(&conf.Accounts, &login,
+				if err := internal.Choose(conf.GetAccounts(), &login,
 					"Select the account you want to log in with:"); err != nil {
 					return err
 				}
 			}
 
 			password := ""
-			if err = huh.NewInput().
+			if err := huh.NewInput().
 				Title("Enter password:").
 				Prompt("> ").
 				EchoMode(1).
@@ -51,12 +50,12 @@ func authCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			index, err := internal.AccountIndexByLogin(&conf.Accounts, login)
+			index, err := internal.AccountIndexByLogin(conf.GetAccounts(), login)
 			if err != nil {
 				return err
 			}
 
-			if conf.Accounts[index].IsLoggedIn() {
+			if conf.GetAccounts()[index].IsLoggedIn() {
 				confirm := false
 				if err = internal.Confirmation(&confirm,
 					fmt.Sprintf("Are you sure you want to re-login to %s?", login)); err != nil {
@@ -78,7 +77,7 @@ func authCmd(ctx context.Context) *cobra.Command {
 				newCookies = append(newCookies, *cookie)
 			}
 
-			conf.Accounts[index].Cookies = newCookies
+			conf.GetAccounts()[index].Cookies = newCookies
 
 			if err := conf.Save(); err != nil {
 				return err

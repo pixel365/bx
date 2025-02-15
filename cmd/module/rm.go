@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/pixel365/bx/internal"
-	"github.com/pixel365/bx/internal/config"
 	"github.com/pixel365/bx/internal/model"
 
 	"github.com/spf13/cobra"
@@ -16,15 +15,15 @@ func rmCmd() *cobra.Command {
 		Use:   "rm",
 		Short: "Remove a module",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := config.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.ConfigManager)
+			if !ok {
+				return internal.NoConfigError
 			}
 
 			name, _ := c.Flags().GetString("name")
 			name = strings.TrimSpace(name)
 			if name == "" {
-				if err = internal.Choose(&conf.Modules, &name,
+				if err := internal.Choose(conf.GetModules(), &name,
 					"Select the module you want to delete:"); err != nil {
 					return err
 				}
@@ -32,7 +31,7 @@ func rmCmd() *cobra.Command {
 
 			confirm, _ := c.Flags().GetBool("yes")
 			if !confirm {
-				if err = internal.Confirmation(&confirm,
+				if err := internal.Confirmation(&confirm,
 					fmt.Sprintf("Are you sure you want to delete module %s?", name)); err != nil {
 					return err
 				}
@@ -41,7 +40,7 @@ func rmCmd() *cobra.Command {
 			if confirm {
 				deleted := false
 				var modules []model.Module
-				for _, m := range conf.Modules {
+				for _, m := range conf.GetModules() {
 					if m.Name == name {
 						deleted = true
 						continue
@@ -54,7 +53,7 @@ func rmCmd() *cobra.Command {
 					return fmt.Errorf("module %s not found", name)
 				}
 
-				conf.Modules = modules
+				conf.SetModules(modules...)
 
 				if err := conf.Save(); err != nil {
 					return err

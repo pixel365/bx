@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal"
-	"github.com/pixel365/bx/internal/config"
 	"github.com/pixel365/bx/internal/model"
 )
 
@@ -20,15 +19,15 @@ func addCmd() *cobra.Command {
 		Use:   "add",
 		Short: "Add a new account",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := config.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.ConfigManager)
+			if !ok {
+				return internal.NoConfigError
 			}
 
 			login, _ := c.Flags().GetString("login")
 			login = strings.TrimSpace(login)
 			if login == "" {
-				if err = huh.NewInput().
+				if err := huh.NewInput().
 					Title("Enter Login:").
 					Prompt("> ").
 					Value(&login).
@@ -47,16 +46,16 @@ func addCmd() *cobra.Command {
 				Login:     login,
 			}
 
-			conf.Accounts = append(conf.Accounts, account)
+			conf.AddAccounts(account)
 
-			if err = conf.Save(); err != nil {
+			if err := conf.Save(); err != nil {
 				return err
 			}
 
 			color.Green("Account created")
 
 			confirm := false
-			if err = internal.Confirmation(&confirm,
+			if err := internal.Confirmation(&confirm,
 				"Do you want to log into this account right away?"); err != nil {
 				return err
 			}
