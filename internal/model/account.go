@@ -31,3 +31,7 @@ func (a *Account) PrintSummary(verbose bool) {
 func (a *Account) IsLoggedIn() bool {
 	return len(a.Cookies) > 0
 }
+
+func (a Account) Option() string {
+	return a.Login
+}
