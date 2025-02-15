@@ -8,6 +8,14 @@ import (
 	"github.com/pixel365/bx/internal/model"
 )
 
+type Cfg string
+
+var NoConfigError = errors.New("no config found in context")
+
+const (
+	CfgContextKey Cfg = "config"
+)
+
 type Printer interface {
 	PrintSummary(verbose bool)
 }
@@ -16,12 +24,23 @@ type OptionProvider interface {
 	Option() string
 }
 
-func AccountIndexByLogin(accounts *[]model.Account, login string) (int, error) {
-	if len(*accounts) == 0 {
+type ConfigManager interface {
+	Save() error
+	Reset() error
+	GetAccounts() []model.Account
+	GetModules() []model.Module
+	SetAccounts(...model.Account)
+	SetModules(...model.Module)
+	AddAccounts(...model.Account)
+	AddModules(...model.Module)
+}
+
+func AccountIndexByLogin(accounts []model.Account, login string) (int, error) {
+	if len(accounts) == 0 {
 		return 0, errors.New("no accounts found")
 	}
 
-	for i, account := range *accounts {
+	for i, account := range accounts {
 		if account.Login == login {
 			return i, nil
 		}
@@ -43,13 +62,13 @@ func Confirmation(flag *bool, title string) error {
 	return nil
 }
 
-func Choose[T OptionProvider](items *[]T, value *string, title string) error {
-	if len(*items) == 0 {
+func Choose[T OptionProvider](items []T, value *string, title string) error {
+	if len(items) == 0 {
 		return errors.New("no items found")
 	}
 
 	var options []huh.Option[string]
-	for _, item := range *items {
+	for _, item := range items {
 		options = append(options, huh.NewOption(item.Option(), item.Option()))
 	}
 

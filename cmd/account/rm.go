@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/pixel365/bx/internal/config"
 	"github.com/pixel365/bx/internal/model"
 )
 
@@ -17,15 +16,15 @@ func rmCmd() *cobra.Command {
 		Use:   "rm",
 		Short: "Remove an account",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := config.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.ConfigManager)
+			if !ok {
+				return internal.NoConfigError
 			}
 
 			login, _ := c.Flags().GetString("login")
 			login = strings.TrimSpace(login)
 			if login == "" {
-				if err = internal.Choose(&conf.Accounts, &login,
+				if err := internal.Choose(conf.GetAccounts(), &login,
 					"Select the account you want to delete:"); err != nil {
 					return err
 				}
@@ -33,7 +32,7 @@ func rmCmd() *cobra.Command {
 
 			confirm, _ := c.Flags().GetBool("yes")
 			if !confirm {
-				if err = internal.Confirmation(&confirm,
+				if err := internal.Confirmation(&confirm,
 					fmt.Sprintf("Are you sure you want to delete %s?", login)); err != nil {
 					return err
 				}
@@ -42,7 +41,7 @@ func rmCmd() *cobra.Command {
 			if confirm {
 				deleted := false
 				var accounts []model.Account
-				for _, a := range conf.Accounts {
+				for _, a := range conf.GetAccounts() {
 					if a.Login == login {
 						deleted = true
 						continue
@@ -55,7 +54,7 @@ func rmCmd() *cobra.Command {
 					return fmt.Errorf("account %s not found", login)
 				}
 
-				conf.Accounts = accounts
+				conf.SetAccounts(accounts...)
 
 				if err := conf.Save(); err != nil {
 					return err

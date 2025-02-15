@@ -1,9 +1,11 @@
 package config
 
 import (
-	cfg "github.com/pixel365/bx/internal/config"
+	"errors"
 
 	"github.com/spf13/cobra"
+
+	"github.com/pixel365/bx/internal"
 )
 
 func infoCmd() *cobra.Command {
@@ -12,9 +14,9 @@ func infoCmd() *cobra.Command {
 		Aliases: []string{"i"},
 		Short:   "Get configuration information",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := cfg.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.Printer)
+			if !ok {
+				return errors.New("no config found in context")
 			}
 
 			verbose, _ := c.Flags().GetBool("verbose")

@@ -3,9 +3,9 @@ package account
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/pixel365/bx/internal"
 
-	"github.com/pixel365/bx/internal/config"
+	"github.com/spf13/cobra"
 )
 
 func lsCmd() *cobra.Command {
@@ -13,18 +13,18 @@ func lsCmd() *cobra.Command {
 		Use:   "ls",
 		Short: "List accounts",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := config.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.ConfigManager)
+			if !ok {
+				return internal.NoConfigError
 			}
 
-			if len(conf.Accounts) == 0 {
+			if len(conf.GetAccounts()) == 0 {
 				fmt.Println("No accounts found")
 				return nil
 			}
 
 			verbose, _ := c.Flags().GetBool("verbose")
-			for _, acc := range conf.Accounts {
+			for _, acc := range conf.GetAccounts() {
 				acc.PrintSummary(verbose)
 			}
 

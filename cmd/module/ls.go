@@ -6,8 +6,6 @@ import (
 
 	"github.com/pixel365/bx/internal"
 
-	"github.com/pixel365/bx/internal/config"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,12 +14,12 @@ func lsCmd() *cobra.Command {
 		Use:   "ls",
 		Short: "List available modules",
 		RunE: func(c *cobra.Command, _ []string) error {
-			conf, err := config.GetConfig()
-			if err != nil {
-				return err
+			conf, ok := c.Context().Value(internal.CfgContextKey).(internal.ConfigManager)
+			if !ok {
+				return internal.NoConfigError
 			}
 
-			if len(conf.Modules) == 0 {
+			if len(conf.GetModules()) == 0 {
 				fmt.Println("No modules found")
 				return nil
 			}
@@ -35,7 +33,7 @@ func lsCmd() *cobra.Command {
 				login = ""
 			} else {
 				if login == "" {
-					if err = internal.Choose(&conf.Accounts, &login,
+					if err := internal.Choose(conf.GetAccounts(), &login,
 						"Select the account whose modules you want to see:"); err != nil {
 						return err
 					}
@@ -43,12 +41,12 @@ func lsCmd() *cobra.Command {
 			}
 
 			if login != "" {
-				for _, mod := range conf.Modules {
+				for _, mod := range conf.GetModules() {
 					mod.PrintSummary(verbose)
 				}
 			} else {
 				j := 0
-				for _, mod := range conf.Modules {
+				for _, mod := range conf.GetModules() {
 					if mod.Login != login {
 						continue
 					}
