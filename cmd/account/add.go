@@ -37,6 +37,10 @@ func addCmd() *cobra.Command {
 					Run(); err != nil {
 					return err
 				}
+			} else {
+				if err := internal.ValidateAccountLogin(login, conf); err != nil {
+					return err
+				}
 			}
 
 			now := time.Now().UTC()
@@ -54,6 +58,11 @@ func addCmd() *cobra.Command {
 
 			color.Green("Account created")
 
+			skipAuth, _ := c.Flags().GetBool("skip-auth")
+			if skipAuth {
+				return nil
+			}
+
 			confirm := false
 			if err := internal.Confirmation(&confirm,
 				"Do you want to log into this account right away?"); err != nil {
@@ -70,6 +79,7 @@ func addCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("login", "l", "", "Login")
+	cmd.Flags().BoolP("skip-auth", "s", false, "Skip auth")
 
 	return cmd
 }
