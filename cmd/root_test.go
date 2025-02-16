@@ -22,7 +22,7 @@ func TestNewRootCmd(t *testing.T) {
 				t.Error("subcommands is not set")
 			}
 
-			if root.Use == "bx" {
+			if root.Use != "bx" {
 				t.Error("invalid use")
 			}
 
