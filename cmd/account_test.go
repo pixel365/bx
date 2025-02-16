@@ -14,7 +14,7 @@ func TestAccountAdd(t *testing.T) {
 	cfg, _ := config.NewMockConfig()
 	var manager internal.ConfigManager = cfg
 
-	t.Run("", func(t *testing.T) {
+	t.Run("add", func(t *testing.T) {
 		rootCmd := NewRootCmd(ctx, manager)
 		rootCmd.SetArgs([]string{"account", "add", "--login", "test", "--skip-auth", "true"})
 		err := rootCmd.ExecuteContext(ctx)
