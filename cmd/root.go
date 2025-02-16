@@ -14,12 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Execute(ctx context.Context, conf internal.ConfigManager) error {
-	cmd := rootCmd(ctx, conf)
-	return cmd.ExecuteContext(ctx)
-}
-
-func rootCmd(ctx context.Context, conf internal.ConfigManager) *cobra.Command {
+func NewRootCmd(ctx context.Context, conf internal.ConfigManager) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bx",
 		Short: "Command-line tool for developers of 1C-Bitrix platform modules.",

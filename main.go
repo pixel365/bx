@@ -24,7 +24,8 @@ func main() {
 	}
 	var configManager internal.ConfigManager = conf
 
-	if err := cmd.Execute(ctx, configManager); err != nil {
+	root := cmd.NewRootCmd(ctx, configManager)
+	if err := root.ExecuteContext(ctx); err != nil {
 		log.Fatal(err)
 	}
 }
