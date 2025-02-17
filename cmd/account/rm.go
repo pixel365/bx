@@ -35,7 +35,7 @@ func rmCmd() *cobra.Command {
 				}
 			}
 
-			confirm, _ := c.Flags().GetBool("yes")
+			confirm, _ := c.Root().PersistentFlags().GetBool("confirm")
 			if !confirm {
 				if err := internal.Confirmation(&confirm,
 					fmt.Sprintf("Are you sure you want to delete %s?", login)); err != nil {
@@ -58,7 +58,7 @@ func rmCmd() *cobra.Command {
 					return err
 				}
 
-				fmt.Printf("Account %s was deleted.\n", login)
+				internal.ResultMessage("Account %s was deleted.\n", login)
 			}
 
 			return nil
@@ -66,7 +66,6 @@ func rmCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("login", "l", "", "Login")
-	cmd.Flags().BoolP("yes", "y", false, "Confirm deletion")
 
 	return cmd
 }

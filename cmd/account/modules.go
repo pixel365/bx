@@ -1,7 +1,6 @@
 package account
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pixel365/bx/internal"
@@ -44,7 +43,7 @@ func moduleCmd() *cobra.Command {
 			}
 
 			if j == 0 {
-				fmt.Println(internal.NoModulesFound.Error())
+				internal.ResultMessage(internal.NoModulesFound.Error())
 				return nil
 			}
 

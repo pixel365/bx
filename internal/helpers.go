@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	"github.com/charmbracelet/huh"
@@ -109,4 +110,12 @@ func CaptureOutput(f func()) string {
 	_, _ = buf.ReadFrom(r)
 
 	return buf.String()
+}
+
+func ResultMessage(format string, a ...any) {
+	if len(a) == 0 {
+		fmt.Println(format)
+	} else {
+		fmt.Printf(format, a...)
+	}
 }

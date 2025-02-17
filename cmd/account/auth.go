@@ -56,10 +56,12 @@ func authCmd(ctx context.Context) *cobra.Command {
 			}
 
 			if conf.GetAccounts()[index].IsLoggedIn() {
-				confirm := false
-				if err = internal.Confirmation(&confirm,
-					fmt.Sprintf("Are you sure you want to re-login to %s?", login)); err != nil {
-					return err
+				confirm, _ := c.Root().PersistentFlags().GetBool("confirm")
+				if !confirm {
+					if err = internal.Confirmation(&confirm,
+						fmt.Sprintf("Are you sure you want to re-login to %s?", login)); err != nil {
+						return err
+					}
 				}
 
 				if !confirm {

@@ -46,7 +46,7 @@ func TestConfigResetSuccessfully(t *testing.T) {
 	t.Run("TestConfigResetSuccessfully", func(t *testing.T) {
 		var buf bytes.Buffer
 		rootCmd := NewRootCmd(ctx, manager)
-		rootCmd.SetArgs([]string{"config", "reset", "-y"})
+		rootCmd.SetArgs([]string{"config", "reset", "--confirm"})
 		rootCmd.SetOut(&buf)
 
 		output := internal.CaptureOutput(func() {
