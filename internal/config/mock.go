@@ -16,13 +16,13 @@ type MockConfig struct {
 
 func (o *MockConfig) PrintSummary(verbose bool) {
 	if verbose {
-		fmt.Printf("Created At: %s\n", o.CreatedAt)
-		fmt.Printf("Updated At: %s\n", o.UpdatedAt)
+		fmt.Printf("Created At: %s\n", o.CreatedAt.Format(time.RFC822))
+		fmt.Printf("Updated At: %s\n", o.UpdatedAt.Format(time.RFC822))
 		fmt.Printf("Accounts: %d\n", len(o.Accounts))
 		fmt.Printf("Modules: %d\n", len(o.Modules))
 	} else {
-		fmt.Printf("Created At: %s\n", o.CreatedAt)
-		fmt.Printf("Updated At: %s\n", o.UpdatedAt)
+		fmt.Printf("Created At: %s\n", o.CreatedAt.Format(time.RFC822))
+		fmt.Printf("Updated At: %s\n", o.UpdatedAt.Format(time.RFC822))
 	}
 }
 

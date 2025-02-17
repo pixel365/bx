@@ -2,8 +2,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal"
@@ -19,10 +19,12 @@ func resetCmd() *cobra.Command {
 				return errors.New("no config found in context")
 			}
 
-			confirm := false
-			if err := internal.Confirmation(&confirm,
-				"Are you sure you want to reset all settings and clear the configuration file?"); err != nil {
-				return err
+			confirm, _ := c.Flags().GetBool("yes")
+			if !confirm {
+				if err := internal.Confirmation(&confirm,
+					"Are you sure you want to reset all settings and clear the configuration file?"); err != nil {
+					return err
+				}
 			}
 
 			if confirm {
@@ -30,12 +32,14 @@ func resetCmd() *cobra.Command {
 					return err
 				}
 
-				color.Green("Configuration file cleared")
+				fmt.Println("Configuration file cleared")
 			}
 
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolP("yes", "y", false, "Confirm reset configuration")
 
 	return cmd
 }
