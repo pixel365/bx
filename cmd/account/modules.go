@@ -27,6 +27,11 @@ func moduleCmd() *cobra.Command {
 					"Select the account whose modules you want to show:"); err != nil {
 					return err
 				}
+			} else {
+				_, err := internal.AccountIndexByLogin(conf.GetAccounts(), login)
+				if err != nil {
+					return err
+				}
 			}
 
 			j := 0
@@ -39,7 +44,7 @@ func moduleCmd() *cobra.Command {
 			}
 
 			if j == 0 {
-				fmt.Println("No modules found")
+				fmt.Println(internal.NoModulesFound.Error())
 				return nil
 			}
 

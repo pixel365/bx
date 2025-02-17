@@ -28,6 +28,11 @@ func rmCmd() *cobra.Command {
 					"Select the account you want to delete:"); err != nil {
 					return err
 				}
+			} else {
+				_, err := internal.AccountIndexByLogin(conf.GetAccounts(), login)
+				if err != nil {
+					return err
+				}
 			}
 
 			confirm, _ := c.Flags().GetBool("yes")
@@ -39,19 +44,12 @@ func rmCmd() *cobra.Command {
 			}
 
 			if confirm {
-				deleted := false
 				var accounts []model.Account
 				for _, a := range conf.GetAccounts() {
 					if a.Login == login {
-						deleted = true
 						continue
 					}
-
 					accounts = append(accounts, a)
-				}
-
-				if !deleted {
-					return fmt.Errorf("account %s not found", login)
 				}
 
 				conf.SetAccounts(accounts...)

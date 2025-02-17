@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"bytes"
+	"os"
+
 	"github.com/charmbracelet/huh"
 
 	"github.com/pixel365/bx/internal/model"
@@ -87,4 +90,23 @@ func Choose[T OptionProvider](items []T, value *string, title string) error {
 	}
 
 	return nil
+}
+
+func CaptureOutput(f func()) string {
+	r, w, _ := os.Pipe()
+	stdout := os.Stdout
+	os.Stdout = w
+
+	f()
+
+	err := w.Close()
+	if err != nil {
+		return ""
+	}
+
+	os.Stdout = stdout
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+
+	return buf.String()
 }
