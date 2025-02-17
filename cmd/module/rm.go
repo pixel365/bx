@@ -29,7 +29,7 @@ func rmCmd() *cobra.Command {
 				}
 			}
 
-			confirm, _ := c.Flags().GetBool("yes")
+			confirm, _ := c.Root().PersistentFlags().GetBool("confirm")
 			if !confirm {
 				if err := internal.Confirmation(&confirm,
 					fmt.Sprintf("Are you sure you want to delete module %s?", name)); err != nil {
@@ -65,7 +65,6 @@ func rmCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("name", "n", "", "The name of the module")
-	cmd.Flags().BoolP("yes", "y", false, "Confirm deletion")
 
 	return cmd
 }

@@ -6,8 +6,6 @@ import (
 
 	"github.com/charmbracelet/huh"
 
-	"github.com/fatih/color"
-
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal"
@@ -56,17 +54,19 @@ func addCmd() *cobra.Command {
 				return err
 			}
 
-			color.Green("Account created")
+			internal.ResultMessage("Account created")
 
 			skipAuth, _ := c.Flags().GetBool("skip-auth")
 			if skipAuth {
 				return nil
 			}
 
-			confirm := false
-			if err := internal.Confirmation(&confirm,
-				"Do you want to log into this account right away?"); err != nil {
-				return err
+			confirm, _ := c.Root().PersistentFlags().GetBool("confirm")
+			if !confirm {
+				if err := internal.Confirmation(&confirm,
+					"Do you want to log into this account right away?"); err != nil {
+					return err
+				}
 			}
 
 			if confirm {
@@ -79,7 +79,7 @@ func addCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("login", "l", "", "Login")
-	cmd.Flags().BoolP("skip-auth", "s", false, "Skip auth")
+	cmd.Flags().BoolP("skip-auth", "", false, "Skip auth")
 
 	return cmd
 }

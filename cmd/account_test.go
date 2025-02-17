@@ -122,7 +122,7 @@ func TestAccountRmSuccess(t *testing.T) {
 		}
 
 		var buf bytes.Buffer
-		rootCmd.SetArgs([]string{"account", "rm", "--login", "test", "-y"})
+		rootCmd.SetArgs([]string{"account", "rm", "--login", "test", "--confirm"})
 		rootCmd.SetOut(&buf)
 
 		output := internal.CaptureOutput(func() {
@@ -152,7 +152,7 @@ func TestAccountRmAccountNotFound(t *testing.T) {
 		}
 
 		var buf bytes.Buffer
-		rootCmd.SetArgs([]string{"account", "rm", "--login", "abc", "-y"})
+		rootCmd.SetArgs([]string{"account", "rm", "--login", "abc", "--confirm"})
 		rootCmd.SetOut(&buf)
 
 		internal.CaptureOutput(func() {

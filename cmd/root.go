@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var confirm bool
+
 func NewRootCmd(ctx context.Context, conf internal.ConfigManager) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bx",
@@ -23,6 +25,9 @@ func NewRootCmd(ctx context.Context, conf internal.ConfigManager) *cobra.Command
 			cmd.SetContext(ctx)
 		},
 	}
+
+	cmd.PersistentFlags().
+		BoolVarP(&confirm, "confirm", "", false, "Automatically confirms all yes/no prompts")
 
 	cmd.AddCommand(account.NewAccountCommand(ctx))
 	cmd.AddCommand(module.NewModuleCommand())

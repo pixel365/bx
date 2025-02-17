@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -19,7 +18,7 @@ func resetCmd() *cobra.Command {
 				return errors.New("no config found in context")
 			}
 
-			confirm, _ := c.Flags().GetBool("yes")
+			confirm, _ := c.Root().PersistentFlags().GetBool("confirm")
 			if !confirm {
 				if err := internal.Confirmation(&confirm,
 					"Are you sure you want to reset all settings and clear the configuration file?"); err != nil {
@@ -32,14 +31,12 @@ func resetCmd() *cobra.Command {
 					return err
 				}
 
-				fmt.Println("Configuration file cleared")
+				internal.ResultMessage("Configuration file cleared")
 			}
 
 			return nil
 		},
 	}
-
-	cmd.Flags().BoolP("yes", "y", false, "Confirm reset configuration")
 
 	return cmd
 }

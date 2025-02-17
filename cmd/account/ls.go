@@ -1,8 +1,6 @@
 package account
 
 import (
-	"fmt"
-
 	"github.com/pixel365/bx/internal"
 
 	"github.com/spf13/cobra"
@@ -19,7 +17,7 @@ func lsCmd() *cobra.Command {
 			}
 
 			if len(conf.GetAccounts()) == 0 {
-				fmt.Println(internal.NoAccountsFound.Error())
+				internal.ResultMessage(internal.NoAccountsFound.Error())
 				return nil
 			}
 
