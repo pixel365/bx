@@ -17,7 +17,7 @@ func lsCmd() *cobra.Command {
 			}
 
 			if len(conf.GetAccounts()) == 0 {
-				internal.ResultMessage(internal.NoAccountsFound.Error())
+				internal.ResultMessage(internal.NoAccountsFoundError.Error())
 				return nil
 			}
 

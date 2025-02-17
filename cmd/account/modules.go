@@ -43,7 +43,7 @@ func moduleCmd() *cobra.Command {
 			}
 
 			if j == 0 {
-				internal.ResultMessage(internal.NoModulesFound.Error())
+				internal.ResultMessage(internal.NoModulesFoundError.Error())
 				return nil
 			}
 

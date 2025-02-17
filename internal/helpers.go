@@ -40,7 +40,7 @@ type ConfigManager interface {
 
 func AccountIndexByLogin(accounts []model.Account, login string) (int, error) {
 	if len(accounts) == 0 {
-		return 0, NoAccountsFound
+		return 0, NoAccountsFoundError
 	}
 
 	for i, account := range accounts {
@@ -49,7 +49,7 @@ func AccountIndexByLogin(accounts []model.Account, login string) (int, error) {
 		}
 	}
 
-	return 0, NoAccountFound
+	return 0, NoAccountFoundError
 }
 
 func Confirmation(flag *bool, title string) error {
@@ -69,11 +69,11 @@ func Choose[T OptionProvider](items []T, value *string, title string) error {
 	if len(items) == 0 {
 		switch any(items).(type) {
 		case []model.Account:
-			return NoAccountsFound
+			return NoAccountsFoundError
 		case []model.Module:
-			return NoModulesFound
+			return NoModulesFoundError
 		default:
-			return NoItemsFound
+			return NoItemsFoundError
 		}
 	}
 

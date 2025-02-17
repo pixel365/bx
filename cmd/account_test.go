@@ -39,7 +39,7 @@ func TestAccountAdd(t *testing.T) {
 			t.Error("invalid result")
 		}
 
-		if !errors.Is(err, internal.AccountAlreadyExists) {
+		if !errors.Is(err, internal.AccountAlreadyExistsError) {
 			t.Errorf("invalid result: %v", err)
 		}
 	})
@@ -161,7 +161,7 @@ func TestAccountRmAccountNotFound(t *testing.T) {
 				t.Error("invalid result")
 			}
 
-			if err.Error() != internal.NoAccountFound.Error() {
+			if err.Error() != internal.NoAccountFoundError.Error() {
 				t.Error(err)
 			}
 		})
@@ -192,7 +192,7 @@ func TestAccountNoModules(t *testing.T) {
 			}
 		})
 
-		if output != fmt.Sprintf("%s\n", internal.NoModulesFound.Error()) {
+		if output != fmt.Sprintf("%s\n", internal.NoModulesFoundError.Error()) {
 			t.Error("invalid result")
 		}
 	})
@@ -221,7 +221,7 @@ func TestAccountNoModulesNoAccount(t *testing.T) {
 				t.Error("invalid result")
 			}
 
-			if err.Error() != internal.NoAccountFound.Error() {
+			if err.Error() != internal.NoAccountFoundError.Error() {
 				t.Error(err)
 			}
 		})
