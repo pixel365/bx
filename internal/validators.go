@@ -7,13 +7,13 @@ import (
 func ValidateAccountLogin(login string, conf ConfigManager) error {
 	value := strings.TrimSpace(login)
 	if value == "" {
-		return EmptyLogin
+		return EmptyLoginError
 	}
 
 	if len(conf.GetAccounts()) > 0 {
 		for _, account := range conf.GetAccounts() {
 			if account.Login == value {
-				return AccountAlreadyExists
+				return AccountAlreadyExistsError
 			}
 		}
 	}
@@ -24,11 +24,11 @@ func ValidateAccountLogin(login string, conf ConfigManager) error {
 func ValidatePassword(password string) error {
 	value := strings.TrimSpace(password)
 	if value == "" {
-		return EmptyPassword
+		return EmptyPasswordError
 	}
 
 	if len(value) < 6 {
-		return PasswordTooShort
+		return PasswordTooShortError
 	}
 
 	return nil
