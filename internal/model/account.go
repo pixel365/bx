@@ -15,7 +15,7 @@ type Account struct {
 
 func (a *Account) PrintSummary(verbose bool) {
 	if verbose {
-		fmt.Printf("Login: %s", a.Login)
+		fmt.Printf("Login: %s\n", a.Login)
 		fmt.Printf("Created At: %s\n", a.CreatedAt.Format(time.RFC822))
 		fmt.Printf("Updated At: %s\n", a.UpdatedAt.Format(time.RFC822))
 		fmt.Printf("Logged in: %t\n", a.IsLoggedIn())
