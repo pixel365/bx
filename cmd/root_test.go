@@ -41,6 +41,10 @@ func TestNewRootCmd(t *testing.T) {
 			if root.Hidden {
 				t.Error("hidden is set")
 			}
+
+			if !root.HasPersistentFlags() {
+				t.Error("persistent flags is not set")
+			}
 		}
 	})
 }
