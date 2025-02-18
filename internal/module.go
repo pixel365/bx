@@ -36,8 +36,8 @@ func (m *Module) IsValid() error {
 		return errors.New("module name is required")
 	}
 
-	if m.Version == "" {
-		return errors.New("version is not valid")
+	if err := ValidateVersion(m.Version); err != nil {
+		return err
 	}
 
 	if m.Account == "" {
