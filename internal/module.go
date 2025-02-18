@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 )
@@ -21,6 +22,7 @@ type Item struct {
 }
 
 type Module struct {
+	Ctx            context.Context
 	Name           string   `yaml:"name"`
 	Version        string   `yaml:"version"`
 	Account        string   `yaml:"account"`

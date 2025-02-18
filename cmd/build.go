@@ -81,6 +81,8 @@ func build(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	module.Ctx = cmd.Context()
+
 	if err := module.Build(); err != nil {
 		return err
 	}

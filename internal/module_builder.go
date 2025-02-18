@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,10 @@ import (
 )
 
 func (m *Module) Build() error {
+	if err := CheckContextActivity(m.Ctx); err != nil {
+		return err
+	}
+
 	logFile, err := os.OpenFile(
 		fmt.Sprintf("./%s-%s.%s.log", m.Name, m.Version, time.Now().UTC().Format(time.RFC3339)),
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
@@ -131,8 +136,12 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	errCh := make(chan error, len(m.Mapping))
 
 	for _, item := range m.Mapping {
+		if err := CheckContextActivity(m.Ctx); err != nil {
+			return err
+		}
+
 		wg.Add(1)
-		go handleItem(&wg, errCh, &m.Ignore, item, buildDirectory)
+		go handleItem(m.Ctx, &wg, errCh, &m.Ignore, item, buildDirectory)
 	}
 
 	wg.Wait()
@@ -152,6 +161,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 }
 
 func handleItem(
+	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	ignore *[]string,
@@ -160,6 +170,11 @@ func handleItem(
 ) {
 	defer wg.Done()
 
+	if err := CheckContextActivity(ctx); err != nil {
+		errCh <- err
+		return
+	}
+
 	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, item.RelativePath))
 	if err != nil {
 		errCh <- err
@@ -167,7 +182,12 @@ func handleItem(
 	}
 
 	for _, from := range item.Paths {
+		if err := CheckContextActivity(ctx); err != nil {
+			errCh <- err
+			return
+		}
+
 		wg.Add(1)
-		go copyFromPath(wg, errCh, ignore, from, to, item.IfFileExists)
+		go copyFromPath(ctx, wg, errCh, ignore, from, to, item.IfFileExists)
 	}
 }
