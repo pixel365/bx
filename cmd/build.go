@@ -77,7 +77,7 @@ func build(cmd *cobra.Command, _ []string) error {
 		module.Version = version
 	}
 
-	if err := internal.ValidateVersion(module.Version); err != nil {
+	if err := module.IsValid(); err != nil {
 		return err
 	}
 

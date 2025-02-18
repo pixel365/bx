@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
+
+var re = regexp.MustCompile(`(?m)^(\d\.\d\.\d)$`)
 
 func ValidateModuleName(name, directory string) error {
 	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
@@ -29,5 +32,9 @@ func ValidateVersion(version string) error {
 		return errors.New("module version is required")
 	}
 
-	return nil
+	for range re.FindAllString(version, -1) {
+		return nil
+	}
+
+	return fmt.Errorf("invalid module version %s", version)
 }
