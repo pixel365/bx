@@ -16,8 +16,13 @@
 
 *.json
 
+*.log
+
 .env
 
 vendor/
 bin/
 build/
+.bx/
+dist/
+logs/
