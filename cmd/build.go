@@ -14,6 +14,16 @@ func newBuildCommand() *cobra.Command {
 		Use:     "build",
 		Aliases: []string{"b"},
 		Short:   "Build a module",
+		Example: `
+# Build a module by name
+bx build --name my_module
+
+# Build a module by file path
+bx build -f config.yaml
+
+# Override version
+bx build --name my_module --version 1.2.3
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return build(cmd, args)
 		},

@@ -17,6 +17,10 @@ func newCreateCommand() *cobra.Command {
 		Use:     "create",
 		Aliases: []string{"c"},
 		Short:   "Create a new module",
+		Example: `
+# Create a new module
+bx create --name my_module
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return create(cmd, args)
 		},
