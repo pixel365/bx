@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 )
 
 func copyFromPath(
+	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	ignore *[]string,
@@ -21,7 +23,12 @@ func copyFromPath(
 ) {
 	defer wg.Done()
 
-	if err := walk(wg, errCh, from, to, ignore, existsMode); err != nil {
+	if err := CheckContextActivity(ctx); err != nil {
+		errCh <- err
+		return
+	}
+
+	if err := walk(ctx, wg, errCh, from, to, ignore, existsMode); err != nil {
 		if !errors.Is(err, doublestar.SkipDir) {
 			errCh <- err
 		}
@@ -29,6 +36,7 @@ func copyFromPath(
 }
 
 func walk(
+	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	from, to string,
@@ -42,6 +50,11 @@ func walk(
 	jobs := make(chan struct{}, 10)
 
 	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
+		if ctxErr := CheckContextActivity(ctx); ctxErr != nil {
+			errCh <- ctxErr
+			return ctxErr
+		}
+
 		if err != nil {
 			return err
 		}
@@ -82,7 +95,7 @@ func walk(
 			}
 
 			wg2.Add(1)
-			go copyFile(&wg2, errCh, absFrom, absTo, jobs, existsMode)
+			go copyFile(ctx, &wg2, errCh, absFrom, absTo, jobs, existsMode)
 		}
 
 		return nil
@@ -94,6 +107,7 @@ func walk(
 }
 
 func copyFile(
+	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	src, dst string,
@@ -101,6 +115,11 @@ func copyFile(
 	existsMode FileExistsMode,
 ) {
 	defer wg.Done()
+
+	if err := CheckContextActivity(ctx); err != nil {
+		errCh <- err
+		return
+	}
 
 	fileName := strings.LastIndex(src, "/")
 	if !strings.HasSuffix(dst, src[fileName:]) {
@@ -133,6 +152,11 @@ func copyFile(
 		}
 	}(in)
 
+	if err := CheckContextActivity(ctx); err != nil {
+		errCh <- err
+		return
+	}
+
 	info, err := in.Stat()
 	if err != nil {
 		errCh <- err
@@ -160,8 +184,18 @@ func copyFile(
 			}
 		}(out)
 
+		if err := CheckContextActivity(ctx); err != nil {
+			errCh <- err
+			return
+		}
+
 		_, err = io.Copy(out, in)
 		if err != nil {
+			errCh <- err
+			return
+		}
+
+		if err := CheckContextActivity(ctx); err != nil {
 			errCh <- err
 			return
 		}
