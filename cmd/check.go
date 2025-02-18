@@ -12,7 +12,15 @@ import (
 func newCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",
-		Short: "Check a module",
+		Short: "Check the configuration of a module",
+		Example: `
+# Check the configuration of a module by name
+bx check --name my_module
+
+
+# Check the configuration of a module by file path
+bx check -f module-path/config.yaml
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return check(cmd, args)
 		},
