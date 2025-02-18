@@ -3,9 +3,11 @@ module github.com/pixel365/bx
 go 1.23
 
 require (
+	github.com/bmatcuk/doublestar/v4 v4.8.1
 	github.com/charmbracelet/huh v0.6.0
-	github.com/fatih/color v1.18.0
+	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

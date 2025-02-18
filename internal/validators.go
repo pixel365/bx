@@ -1,34 +1,32 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
-func ValidateAccountLogin(login string, conf ConfigManager) error {
-	value := strings.TrimSpace(login)
-	if value == "" {
-		return EmptyLoginError
+func ValidateModuleName(name, directory string) error {
+	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
+	if err != nil {
+		return err
 	}
 
-	if len(conf.GetAccounts()) > 0 {
-		for _, account := range conf.GetAccounts() {
-			if account.Login == value {
-				return AccountAlreadyExistsError
-			}
+	if _, err := os.Stat(filePath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
 		}
 	}
 
-	return nil
+	return fmt.Errorf("module name %s exists", name)
 }
 
-func ValidatePassword(password string) error {
-	value := strings.TrimSpace(password)
-	if value == "" {
-		return EmptyPasswordError
-	}
-
-	if len(value) < 6 {
-		return PasswordTooShortError
+func ValidateVersion(version string) error {
+	version = strings.TrimSpace(version)
+	if version == "" {
+		return errors.New("module version is required")
 	}
 
 	return nil
