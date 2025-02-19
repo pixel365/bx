@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -38,13 +37,4 @@ func ValidateVersion(version string) error {
 	}
 
 	return fmt.Errorf("invalid module version %s", version)
-}
-
-func CheckContextActivity(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("context canceled: %w", ctx.Err())
-	default:
-		return nil
-	}
 }

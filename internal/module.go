@@ -14,7 +14,7 @@ const (
 	ReplaceIfNewer FileExistsAction = "replace_if_newer"
 )
 
-type Item struct {
+type Stage struct {
 	Name               string           `yaml:"name"`
 	To                 string           `yaml:"to"`
 	ActionIfFileExists FileExistsAction `yaml:"actionIfFileExists"`
@@ -29,7 +29,7 @@ type Module struct {
 	Repository     string   `yaml:"repository,omitempty"`
 	BuildDirectory string   `yaml:"buildDirectory,omitempty"`
 	LogDirectory   string   `yaml:"logDirectory,omitempty"`
-	Stages         []Item   `yaml:"stages"`
+	Stages         []Stage  `yaml:"stages"`
 	Ignore         []string `yaml:"ignore"`
 }
 
