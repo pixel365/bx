@@ -159,7 +159,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 		}
 
 		wg.Add(1)
-		go handleItem(m.Ctx, &wg, errCh, &m.Ignore, item, buildDirectory)
+		go handleStage(m.Ctx, &wg, errCh, log, &m.Ignore, item, buildDirectory)
 	}
 
 	wg.Wait()
@@ -188,30 +188,39 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	return nil
 }
 
-func handleItem(
+func handleStage(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
+	log *zerolog.Logger,
 	ignore *[]string,
 	item Stage,
 	buildDirectory string,
 ) {
 	defer wg.Done()
 
+	var err error
+	log.Info().Msg(fmt.Sprintf("Handling stage %s", item.Name))
+	defer func() {
+		if err != nil {
+			log.Error().Err(err).Msg(fmt.Sprintf("Failed to handle stage %s: %s", item.Name, err))
+			errCh <- err
+		} else {
+			log.Info().Msg(fmt.Sprintf("Finished stage %s", item.Name))
+		}
+	}()
+
 	if err := CheckContext(ctx); err != nil {
-		errCh <- err
 		return
 	}
 
 	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, item.To))
 	if err != nil {
-		errCh <- err
 		return
 	}
 
 	for _, from := range item.From {
 		if err := CheckContext(ctx); err != nil {
-			errCh <- err
 			return
 		}
 
