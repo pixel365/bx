@@ -39,41 +39,53 @@ func (m *Module) Build() error {
 	}(logFile)
 
 	log := zerolog.New(logFile).With().Timestamp().Logger()
-	log.Info().Msg("building module")
+	log.Info().Msg("Building module")
 
 	if err := m.Prepare(&log); err != nil {
-		log.Error().Err(err).Msg("failed to prepare build")
+		log.Error().Err(err).Msg("Failed to prepare build")
 		return m.Rollback(&log)
 	}
+
+	log.Info().Msg("Prepare complete")
 
 	if err := m.Collect(&log); err != nil {
-		log.Error().Err(err).Msg("failed to collect build")
+		log.Error().Err(err).Msg("Failed to collect build")
 		return m.Rollback(&log)
 	}
 
+	log.Info().Msg("Build complete")
+
 	if err := m.Cleanup(&log); err != nil {
-		log.Error().Err(err).Msg("failed to cleanup build")
+		log.Error().Err(err).Msg("Failed to cleanup build")
 		return err
 	}
 
+	log.Info().Msg("Cleanup complete")
+
 	if err := m.Push(&log); err != nil {
-		log.Error().Err(err).Msg("failed to push build")
+		log.Error().Err(err).Msg("Failed to push build")
 		return err
 	}
+
+	log.Info().Msg("Push complete")
 
 	return nil
 }
 
 func (m *Module) Prepare(log *zerolog.Logger) error {
 	if err := m.IsValid(); err != nil {
-		log.Error().Err(err).Msg("prepare: module is invalid")
+		log.Error().Err(err).Msg("Prepare: module is invalid")
 		return err
 	}
 
+	log.Info().Msg("Validation complete")
+
 	if err := CheckStages(m); err != nil {
-		log.Error().Err(err).Msg("prepare: check stages failed")
+		log.Error().Err(err).Msg("Prepare: check stages failed")
 		return err
 	}
+
+	log.Info().Msg("Check stages complete")
 
 	if m.BuildDirectory == "" {
 		m.BuildDirectory = "./build"
@@ -85,25 +97,31 @@ func (m *Module) Prepare(log *zerolog.Logger) error {
 
 	path, err := mkdir(m.BuildDirectory)
 	if err != nil {
-		log.Error().Err(err).Msg("prepare: failed to make build directory")
+		log.Error().Err(err).Msg("Prepare: failed to make build directory")
 		return err
 	}
+
+	log.Info().Msgf("Build directory complete: %s", path)
 
 	m.BuildDirectory = path
 
 	path, err = mkdir(m.LogDirectory)
 	if err != nil {
-		log.Error().Err(err).Msg("prepare: failed to make log directory")
+		log.Error().Err(err).Msg("Prepare: failed to make log directory")
 		return err
 	}
+
+	log.Info().Msgf("Log directory complete: %s", path)
 
 	m.LogDirectory = path
 
-	_, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.Version))
+	path, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.Version))
 	if err != nil {
-		log.Error().Err(err).Msg("prepare: failed to make build version directory")
+		log.Error().Err(err).Msg("Prepare: failed to make build version directory")
 		return err
 	}
+
+	log.Info().Msgf("Build version directory complete: %s", path)
 
 	return nil
 }
@@ -126,7 +144,7 @@ func (m *Module) Push(log *zerolog.Logger) error {
 func (m *Module) Collect(log *zerolog.Logger) error {
 	buildDirectory, err := filepath.Abs(fmt.Sprintf("%s/%s", m.BuildDirectory, m.Version))
 	if err != nil {
-		log.Error().Err(err).Msg("failed to make build directory")
+		log.Error().Err(err).Msg("Failed to make build directory")
 		return err
 	}
 
@@ -153,15 +171,19 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	}
 
 	if len(errs) > 0 {
-		log.Error().Int("errors", len(errs)).Msg("failed to collect build")
+		log.Error().Int("errors", len(errs)).Msg("Failed to collect build")
 		return fmt.Errorf("errors: %v", errs)
 	}
 
+	log.Info().Msg("Collect complete")
+
 	zipPath := filepath.Join(m.BuildDirectory, fmt.Sprintf("%s.zip", m.Version))
 	if err := zipIt(buildDirectory, zipPath); err != nil {
-		log.Error().Err(err).Msg("failed to zip build")
+		log.Error().Err(err).Msg("Failed to zip build")
 		return err
 	}
+
+	log.Info().Msg("Zip complete")
 
 	return nil
 }
