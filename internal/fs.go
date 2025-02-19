@@ -24,7 +24,7 @@ func copyFromPath(
 ) {
 	defer wg.Done()
 
-	if err := CheckContextActivity(ctx); err != nil {
+	if err := CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
@@ -51,7 +51,7 @@ func walk(
 	jobs := make(chan struct{}, 10)
 
 	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
-		if ctxErr := CheckContextActivity(ctx); ctxErr != nil {
+		if ctxErr := CheckContext(ctx); ctxErr != nil {
 			errCh <- ctxErr
 			return ctxErr
 		}
@@ -117,7 +117,7 @@ func copyFile(
 ) {
 	defer wg.Done()
 
-	if err := CheckContextActivity(ctx); err != nil {
+	if err := CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
@@ -153,7 +153,7 @@ func copyFile(
 		}
 	}(in)
 
-	if err := CheckContextActivity(ctx); err != nil {
+	if err := CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
@@ -185,7 +185,7 @@ func copyFile(
 			}
 		}(out)
 
-		if err := CheckContextActivity(ctx); err != nil {
+		if err := CheckContext(ctx); err != nil {
 			errCh <- err
 			return
 		}
@@ -196,7 +196,7 @@ func copyFile(
 			return
 		}
 
-		if err := CheckContextActivity(ctx); err != nil {
+		if err := CheckContext(ctx); err != nil {
 			errCh <- err
 			return
 		}

@@ -12,7 +12,7 @@ import (
 )
 
 func (m *Module) Build() error {
-	if err := CheckContextActivity(m.Ctx); err != nil {
+	if err := CheckContext(m.Ctx); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	errCh := make(chan error, len(m.Stages))
 
 	for _, item := range m.Stages {
-		if err := CheckContextActivity(m.Ctx); err != nil {
+		if err := CheckContext(m.Ctx); err != nil {
 			return err
 		}
 
@@ -193,12 +193,12 @@ func handleItem(
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	ignore *[]string,
-	item Item,
+	item Stage,
 	buildDirectory string,
 ) {
 	defer wg.Done()
 
-	if err := CheckContextActivity(ctx); err != nil {
+	if err := CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
@@ -210,7 +210,7 @@ func handleItem(
 	}
 
 	for _, from := range item.From {
-		if err := CheckContextActivity(ctx); err != nil {
+		if err := CheckContext(ctx); err != nil {
 			errCh <- err
 			return
 		}

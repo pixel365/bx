@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -237,7 +238,7 @@ func CheckStages(module *Module) error {
 
 	for _, item := range module.Stages {
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, item Item) {
+		go func(wg *sync.WaitGroup, item Stage) {
 			defer wg.Done()
 			checkPaths(item, errCh)
 		}(&wg, item)
@@ -258,7 +259,16 @@ func CheckStages(module *Module) error {
 	return nil
 }
 
-func checkPaths(item Item, ch chan<- error) {
+func CheckContext(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("context canceled: %w", ctx.Err())
+	default:
+		return nil
+	}
+}
+
+func checkPaths(item Stage, ch chan<- error) {
 	for _, path := range item.From {
 		err := CheckPath(path)
 		if err != nil {
