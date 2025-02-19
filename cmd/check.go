@@ -67,7 +67,7 @@ func check(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err := internal.CheckMapping(module); err != nil {
+	if err := internal.CheckStages(module); err != nil {
 		return err
 	}
 

@@ -6,19 +6,19 @@ import (
 	"fmt"
 )
 
-type FileExistsMode string
+type FileExistsAction string
 
 const (
-	Replace FileExistsMode = "replace"
-	Skip    FileExistsMode = "skip"
-	CopyNew FileExistsMode = "copy-new"
+	Replace        FileExistsAction = "replace"
+	Skip           FileExistsAction = "skip"
+	ReplaceIfNewer FileExistsAction = "replace_if_newer"
 )
 
 type Item struct {
-	Name         string         `yaml:"name"`
-	RelativePath string         `yaml:"relativePath"`
-	IfFileExists FileExistsMode `yaml:"ifFileExists"`
-	Paths        []string       `yaml:"paths"`
+	Name               string           `yaml:"name"`
+	To                 string           `yaml:"to"`
+	ActionIfFileExists FileExistsAction `yaml:"actionIfFileExists"`
+	From               []string         `yaml:"from"`
 }
 
 type Module struct {
@@ -29,7 +29,7 @@ type Module struct {
 	Repository     string   `yaml:"repository,omitempty"`
 	BuildDirectory string   `yaml:"buildDirectory,omitempty"`
 	LogDirectory   string   `yaml:"logDirectory,omitempty"`
-	Mapping        []Item   `yaml:"mapping"`
+	Stages         []Item   `yaml:"stages"`
 	Ignore         []string `yaml:"ignore"`
 }
 
@@ -50,26 +50,26 @@ func (m *Module) IsValid() error {
 	//	//TODO: check repository
 	//}
 
-	if len(m.Mapping) == 0 {
-		return errors.New("mapping is not valid")
+	if len(m.Stages) == 0 {
+		return errors.New("stages is not valid")
 	}
 
-	for index, item := range m.Mapping {
+	for index, item := range m.Stages {
 		if item.Name == "" {
-			return fmt.Errorf("mapping [%d]: name is required", index)
+			return fmt.Errorf("stages [%d]: name is required", index)
 		}
 
-		if item.RelativePath == "" {
-			return fmt.Errorf("mapping [%d]: relativePath is required", index)
+		if item.To == "" {
+			return fmt.Errorf("stages [%d]: to is required", index)
 		}
 
-		if item.IfFileExists == "" {
-			return fmt.Errorf("mapping [%d]: ifFileExists is required", index)
+		if item.ActionIfFileExists == "" {
+			return fmt.Errorf("stages [%d]: actionIfFileExists is required", index)
 		}
 
-		for pathIndex, path := range item.Paths {
+		for pathIndex, path := range item.From {
 			if path == "" {
-				return fmt.Errorf("mapping [%s]: path [%d] is required", item.Name, pathIndex)
+				return fmt.Errorf("stages [%s]: path [%d] is required", item.Name, pathIndex)
 			}
 		}
 	}

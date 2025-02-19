@@ -70,8 +70,8 @@ func (m *Module) Prepare(log *zerolog.Logger) error {
 		return err
 	}
 
-	if err := CheckMapping(m); err != nil {
-		log.Error().Err(err).Msg("prepare: check mapping failed")
+	if err := CheckStages(m); err != nil {
+		log.Error().Err(err).Msg("prepare: check stages failed")
 		return err
 	}
 
@@ -133,9 +133,9 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	buildDirectory = filepath.Clean(buildDirectory)
 
 	var wg sync.WaitGroup
-	errCh := make(chan error, len(m.Mapping))
+	errCh := make(chan error, len(m.Stages))
 
-	for _, item := range m.Mapping {
+	for _, item := range m.Stages {
 		if err := CheckContextActivity(m.Ctx); err != nil {
 			return err
 		}
@@ -175,19 +175,19 @@ func handleItem(
 		return
 	}
 
-	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, item.RelativePath))
+	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, item.To))
 	if err != nil {
 		errCh <- err
 		return
 	}
 
-	for _, from := range item.Paths {
+	for _, from := range item.From {
 		if err := CheckContextActivity(ctx); err != nil {
 			errCh <- err
 			return
 		}
 
 		wg.Add(1)
-		go copyFromPath(ctx, wg, errCh, ignore, from, to, item.IfFileExists)
+		go copyFromPath(ctx, wg, errCh, ignore, from, to, item.ActionIfFileExists)
 	}
 }
