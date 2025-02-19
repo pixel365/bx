@@ -19,7 +19,7 @@ func copyFromPath(
 	errCh chan<- error,
 	ignore *[]string,
 	from, to string,
-	existsMode FileExistsMode,
+	existsMode FileExistsAction,
 ) {
 	defer wg.Done()
 
@@ -41,7 +41,7 @@ func walk(
 	errCh chan<- error,
 	from, to string,
 	patterns *[]string,
-	existsMode FileExistsMode,
+	existsMode FileExistsAction,
 ) error {
 	wg.Add(1)
 	defer wg.Done()
@@ -112,7 +112,7 @@ func copyFile(
 	errCh chan<- error,
 	src, dst string,
 	jobs chan struct{},
-	existsMode FileExistsMode,
+	existsMode FileExistsAction,
 ) {
 	defer wg.Done()
 
@@ -165,7 +165,7 @@ func copyFile(
 
 	allowWrite := true
 	if existingFile != nil {
-		if existsMode == CopyNew {
+		if existsMode == ReplaceIfNewer {
 			allowWrite = info.ModTime().After(existingFile.ModTime())
 		}
 	}

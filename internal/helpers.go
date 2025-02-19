@@ -110,43 +110,41 @@ func GetModulesDir(path string) (string, error) {
 }
 
 func DefaultYAML() string {
-	return `name: test  # The name of the project or build.
-version: 1.0.0  # The version of the project or build.
-account: test  # The account associated with the project.
-repository: ""  # The repository URL where the project is stored (can be empty if not specified).
-buildDirectory: "./dist"  # Directory where the build artifacts will be output.
-logDirectory: "./logs"  # Directory where log files will be stored.
-
-mapping:
-  - name: "components"  # Name of the mapping, describing what the mapping represents (e.g., components).
-    # This can be any name that makes sense for your project, used for your own convenience.
-    relativePath: "install/components"  # Relative path in the project to map files to.
-    ifFileExists: "replace"  # Action to take if the file already exists (options: replace, skip, copy-new).
-    paths:
-      - ./examples/structure/bitrix/components  # List of paths to files that will be mapped.
+	return `name: test
+version: 1.0.0
+account: test
+repository: ""
+buildDirectory: "./dist"
+logDirectory: "./logs"
+stages:
+  - name: "components"
+    to: "install/components"
+    actionIfFileExists: "replace"
+    from:
+      - ./examples/structure/bitrix/components
       - ./examples/structure/local/components
 
   - name: "templates"
-    relativePath: "install/templates"
-    ifFileExists: "replace"
-    paths:
+    to: "install/templates"
+    actionIfFileExists: "replace"
+    from:
       - ./examples/structure/bitrix/templates
       - ./examples/structure/local/templates
 
   - name: "rootFiles"
-    relativePath: "."
-    ifFileExists: "replace"
-    paths:
+    to: "."
+    actionIfFileExists: "replace"
+    from:
       - ./examples/structure/simple-file.php
 
   - name: "testFiles"
-    relativePath: "test"
-    ifFileExists: "replace"
-    paths:
+    to: "test"
+    actionIfFileExists: "replace"
+    from:
       - ./examples/structure/simple-file.php
 
 ignore:
-  - "**/*.log"  # List of files or patterns to ignore during the build or processing (e.g., log files).
+  - "**/*.log"
 `
 }
 
@@ -233,11 +231,11 @@ func IsDir(path string) (bool, error) {
 	return fi.Mode().IsDir(), nil
 }
 
-func CheckMapping(module *Module) error {
+func CheckStages(module *Module) error {
 	var wg sync.WaitGroup
-	errCh := make(chan error, len(module.Mapping)*5)
+	errCh := make(chan error, len(module.Stages)*5)
 
-	for _, item := range module.Mapping {
+	for _, item := range module.Stages {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, item Item) {
 			defer wg.Done()
@@ -261,7 +259,7 @@ func CheckMapping(module *Module) error {
 }
 
 func checkPaths(item Item, ch chan<- error) {
-	for _, path := range item.Paths {
+	for _, path := range item.From {
 		err := CheckPath(path)
 		if err != nil {
 			ch <- err
