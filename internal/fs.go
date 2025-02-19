@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
@@ -237,4 +238,71 @@ func mkdir(path string) (string, error) {
 	}
 
 	return path, nil
+}
+
+func zipIt(dirPath, archivePath string) error {
+	archivePath, err := filepath.Abs(archivePath)
+	if err != nil {
+		return err
+	}
+
+	archivePath = filepath.Clean(archivePath)
+	zipFile, err := os.Create(archivePath)
+	if err != nil {
+		return err
+	}
+
+	defer func(zipFile *os.File) {
+		if err := zipFile.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}(zipFile)
+
+	zipWriter := zip.NewWriter(zipFile)
+	defer func(zipWriter *zip.Writer) {
+		if err := zipWriter.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}(zipWriter)
+
+	err = filepath.Walk(dirPath, func(filePath string, info os.FileInfo, err error) error {
+		filePath = filepath.Clean(filePath)
+		if err != nil {
+			return err
+		}
+
+		if filePath == dirPath {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(dirPath, filePath)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			_, err := zipWriter.Create(relPath + "/")
+			return err
+		}
+
+		fileInArchive, err := zipWriter.Create(relPath)
+		if err != nil {
+			return err
+		}
+
+		srcFile, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+
+		defer func(srcFile *os.File) {
+			if err := srcFile.Close(); err != nil {
+				fmt.Println(err)
+			}
+		}(srcFile)
+
+		_, err = io.Copy(fileInArchive, srcFile)
+		return err
+	})
+	return err
 }

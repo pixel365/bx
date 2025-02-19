@@ -157,6 +157,12 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 		return fmt.Errorf("errors: %v", errs)
 	}
 
+	zipPath := filepath.Join(m.BuildDirectory, fmt.Sprintf("%s.zip", m.Version))
+	if err := zipIt(buildDirectory, zipPath); err != nil {
+		log.Error().Err(err).Msg("failed to zip build")
+		return err
+	}
+
 	return nil
 }
 
