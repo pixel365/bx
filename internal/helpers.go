@@ -115,8 +115,8 @@ func DefaultYAML() string {
 version: 1.0.0
 account: test
 repository: ""
-buildDirectory: "./dist"
-logDirectory: "./logs"
+buildDirectory: "./dist/test"
+logDirectory: "./logs/test"
 stages:
   - name: "components"
     to: "install/components"
