@@ -210,6 +210,10 @@ func copyFile(
 }
 
 func shouldSkip(path string, patterns *[]string) bool {
+	if patterns == nil || len(*patterns) == 0 {
+		return false
+	}
+
 	for _, pattern := range *patterns {
 		if ok, err := doublestar.PathMatch(pattern, path); ok || err != nil {
 			return true
