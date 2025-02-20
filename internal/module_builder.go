@@ -132,7 +132,32 @@ func (m *Module) Cleanup(log *zerolog.Logger) error {
 }
 
 func (m *Module) Rollback(log *zerolog.Logger) error {
-	//TODO: implementation
+	zipPath, err := makeZipFilePath(m)
+	if err != nil {
+		return err
+	}
+
+	if zipStat, err := os.Stat(zipPath); err == nil && !zipStat.IsDir() {
+		err := os.Remove(zipPath)
+		if err != nil {
+			return err
+		}
+
+		log.Info().Msgf("Removed zip file: %s", zipPath)
+	}
+
+	versionDir, err := makeVersionDirectory(m)
+	if err != nil {
+		return err
+	}
+
+	if err := os.RemoveAll(versionDir); err != nil {
+		return err
+	}
+
+	log.Info().Msgf("Removed version directory: %s", versionDir)
+	log.Info().Msg("Rollback complete")
+
 	return nil
 }
 
@@ -142,13 +167,10 @@ func (m *Module) Push(log *zerolog.Logger) error {
 }
 
 func (m *Module) Collect(log *zerolog.Logger) error {
-	buildDirectory, err := filepath.Abs(fmt.Sprintf("%s/%s", m.BuildDirectory, m.Version))
+	versionDirectory, err := makeVersionDirectory(m)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to make build directory")
 		return err
 	}
-
-	buildDirectory = filepath.Clean(buildDirectory)
 
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(m.Stages))
@@ -159,7 +181,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 		}
 
 		wg.Add(1)
-		go handleStage(m.Ctx, &wg, errCh, log, &m.Ignore, item, buildDirectory)
+		go handleStage(m.Ctx, &wg, errCh, log, &m.Ignore, item, versionDirectory)
 	}
 
 	wg.Wait()
@@ -177,8 +199,12 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 
 	log.Info().Msg("Collect complete")
 
-	zipPath := filepath.Join(m.BuildDirectory, fmt.Sprintf("%s.zip", m.Version))
-	if err := zipIt(buildDirectory, zipPath); err != nil {
+	zipPath, err := makeZipFilePath(m)
+	if err != nil {
+		return err
+	}
+
+	if err := zipIt(versionDirectory, zipPath); err != nil {
 		log.Error().Err(err).Msg("Failed to zip build")
 		return err
 	}
@@ -227,4 +253,24 @@ func handleStage(
 		wg.Add(1)
 		go copyFromPath(ctx, wg, errCh, ignore, from, to, item.ActionIfFileExists)
 	}
+}
+
+func makeZipFilePath(module *Module) (string, error) {
+	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.Version))
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Clean(path)
+	return path, nil
+}
+
+func makeVersionDirectory(module *Module) (string, error) {
+	path := filepath.Join(module.BuildDirectory, module.Version)
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Clean(path)
+	return path, nil
 }
