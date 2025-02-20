@@ -127,7 +127,17 @@ func (m *Module) Prepare(log *zerolog.Logger) error {
 }
 
 func (m *Module) Cleanup(log *zerolog.Logger) error {
-	//TODO: implementation
+	versionDir, err := makeVersionDirectory(m)
+	if err != nil {
+		return err
+	}
+
+	if err := os.RemoveAll(versionDir); err != nil {
+		return err
+	}
+
+	log.Info().Msg("Cleanup complete")
+
 	return nil
 }
 
