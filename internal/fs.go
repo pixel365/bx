@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -258,14 +259,14 @@ func zipIt(dirPath, archivePath string) error {
 
 	defer func(zipFile *os.File) {
 		if err := zipFile.Close(); err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		}
 	}(zipFile)
 
 	zipWriter := zip.NewWriter(zipFile)
 	defer func(zipWriter *zip.Writer) {
 		if err := zipWriter.Close(); err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		}
 	}(zipWriter)
 
@@ -301,7 +302,7 @@ func zipIt(dirPath, archivePath string) error {
 
 		defer func(srcFile *os.File) {
 			if err := srcFile.Close(); err != nil {
-				fmt.Println(err)
+				slog.Error(err.Error())
 			}
 		}(srcFile)
 

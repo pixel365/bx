@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -27,13 +28,13 @@ func (m *Module) Build() error {
 	defer func(logFile *os.File) {
 		err := logFile.Close()
 		if err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		} else {
 			path := fmt.Sprintf("%s/%s", m.LogDirectory, logFile.Name())
 			path = filepath.Clean(path)
 			err := os.Rename(logFile.Name(), path)
 			if err != nil {
-				fmt.Println(err)
+				slog.Error(err.Error())
 			}
 		}
 	}(logFile)
