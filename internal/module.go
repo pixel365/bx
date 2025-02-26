@@ -74,5 +74,13 @@ func (m *Module) IsValid() error {
 		}
 	}
 
+	if len(m.Ignore) > 0 {
+		for index, rule := range m.Ignore {
+			if rule == "" {
+				return fmt.Errorf("ignore [%d]: rule is required", index)
+			}
+		}
+	}
+
 	return nil
 }
