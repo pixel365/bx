@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -71,7 +70,7 @@ func check(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	fmt.Println("ok")
+	internal.ResultMessage("ok")
 
 	return nil
 }

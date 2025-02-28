@@ -127,3 +127,15 @@ func TestCheckContextDone(t *testing.T) {
 		}
 	})
 }
+
+func TestCaptureOutput(t *testing.T) {
+	t.Run("TestCaptureOutput", func(t *testing.T) {
+		output := CaptureOutput(func() {
+			ResultMessage("ok")
+		})
+
+		if output != "ok\n" {
+			t.Errorf("CaptureOutput() = %v, want %v", output, "ok\n")
+		}
+	})
+}
