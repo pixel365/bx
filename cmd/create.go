@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
@@ -62,5 +64,19 @@ func create(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	var module internal.Module
+	def := []byte(internal.DefaultYAML())
+	if err = yaml.Unmarshal(def, &module); err != nil {
+		return err
+	}
+
+	module.Name = name
+	module.Account = ""
+
+	out, err := module.ToYAML()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filePath, out, 0600)
 }
