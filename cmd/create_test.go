@@ -9,7 +9,7 @@ func Test_newCreateCommand(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		if cmd == nil {
-			t.Error("nil cmd")
+			t.Error("cmd is nil")
 		}
 
 		if cmd.Use != "create" {

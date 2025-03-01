@@ -5,10 +5,11 @@ import (
 )
 
 func Test_newPushCommand(t *testing.T) {
+	cmd := newPushCommand()
+
 	t.Run("should create new push command", func(t *testing.T) {
-		cmd := newPushCommand()
 		if cmd == nil {
-			t.Error("new push command should not be nil")
+			t.Error("cmd is nil")
 		}
 
 		if cmd.Use != "push" {
