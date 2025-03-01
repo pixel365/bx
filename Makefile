@@ -1,4 +1,6 @@
-.PHONY: fa fmt lint test
+.PHONY: all fa fmt lint test
+
+all: fa fmt lint test
 
 fa:
 	@fieldalignment -fix ./...
