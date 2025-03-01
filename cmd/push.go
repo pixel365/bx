@@ -9,7 +9,7 @@ import (
 func newPushCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "push",
-		Short: "Push module to a registry",
+		Short: "Push module to a Marketplace",
 		Example: `
 # Push module to a registry
 bx push --name my_module
