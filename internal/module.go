@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"gopkg.in/yaml.v3"
 )
 
 type FileExistsAction string
@@ -22,15 +24,15 @@ type Stage struct {
 }
 
 type Module struct {
-	Ctx            context.Context
-	Name           string   `yaml:"name"`
-	Version        string   `yaml:"version"`
-	Account        string   `yaml:"account"`
-	Repository     string   `yaml:"repository,omitempty"`
-	BuildDirectory string   `yaml:"buildDirectory,omitempty"`
-	LogDirectory   string   `yaml:"logDirectory,omitempty"`
-	Stages         []Stage  `yaml:"stages"`
-	Ignore         []string `yaml:"ignore"`
+	Ctx            context.Context `yaml:"-"`
+	Name           string          `yaml:"name"`
+	Version        string          `yaml:"version"`
+	Account        string          `yaml:"account"`
+	Repository     string          `yaml:"repository,omitempty"`
+	BuildDirectory string          `yaml:"buildDirectory,omitempty"`
+	LogDirectory   string          `yaml:"logDirectory,omitempty"`
+	Stages         []Stage         `yaml:"stages"`
+	Ignore         []string        `yaml:"ignore"`
 }
 
 func (m *Module) IsValid() error {
@@ -83,4 +85,8 @@ func (m *Module) IsValid() error {
 	}
 
 	return nil
+}
+
+func (m *Module) ToYAML() ([]byte, error) {
+	return yaml.Marshal(m)
 }
