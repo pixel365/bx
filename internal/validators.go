@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var re = regexp.MustCompile(`(?m)^(\d+\.\d+\.\d+)$`)
+var versionRegex = regexp.MustCompile(`(?m)^(\d+\.\d+\.\d+)$`)
 
 func ValidateModuleName(name, directory string) error {
 	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
@@ -32,7 +32,7 @@ func ValidateVersion(version string) error {
 		return errors.New("module version is required")
 	}
 
-	for range re.FindAllString(version, -1) {
+	for range versionRegex.FindAllString(version, -1) {
 		return nil
 	}
 

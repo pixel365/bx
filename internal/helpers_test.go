@@ -139,3 +139,55 @@ func TestCaptureOutput(t *testing.T) {
 		}
 	})
 }
+
+func TestReplaceVariables(t *testing.T) {
+	vars := map[string]string{
+		"foo":        "bar",
+		"var1":       "value1",
+		"var-2":      "value2",
+		"var_3":      "value3",
+		"var--4":     "value4",
+		"var-_5":     "value5",
+		"var--__--6": "value6",
+	}
+
+	type args struct {
+		variables map[string]string
+		input     string
+		depth     int
+	}
+	tests := []struct {
+		name    string
+		want    string
+		args    args
+		wantErr bool
+	}{
+		{"Single replacement", "some bar", args{vars, "some {foo}", 0}, false},
+		{"Negative depth", "", args{vars, "some {foo}", -1}, true},
+		{
+			"Multiple same variables",
+			"some bar bar bar",
+			args{vars, "some {foo} {foo} {foo}", 0},
+			false,
+		},
+		{
+			"Multiple different variables",
+			"some value1 value2 value3 value4 value5 value6",
+			args{vars, "some {var1} {var-2} {var_3} {var--4} {var-_5} {var--__--6}", 0},
+			false,
+		},
+		{"Recursion depth limit", "", args{vars, "some {var1}", 6}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ReplaceVariables(tt.args.input, tt.args.variables, tt.args.depth)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ReplaceVariables() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ReplaceVariables() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
