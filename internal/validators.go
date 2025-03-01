@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var re = regexp.MustCompile(`(?m)^(\d\.\d\.\d)$`)
+var re = regexp.MustCompile(`(?m)^(\d+\.\d+\.\d+)$`)
 
 func ValidateModuleName(name, directory string) error {
 	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))

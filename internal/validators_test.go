@@ -41,3 +41,33 @@ func TestValidateModuleName_Existing(t *testing.T) {
 		}
 	})
 }
+
+func TestValidateVersion(t *testing.T) {
+	type args struct {
+		version string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "1", args: args{version: "1.0.0"}, wantErr: false},
+		{name: "2", args: args{version: "v1.0.0"}, wantErr: true},
+		{name: "3", args: args{version: "3.0.10"}, wantErr: false},
+		{name: "4", args: args{version: ""}, wantErr: true},
+		{name: "5", args: args{version: "some version"}, wantErr: true},
+		{name: "6", args: args{version: "111.000.123"}, wantErr: false},
+		{name: "7", args: args{version: "111.00x0.123"}, wantErr: true},
+		{name: "8", args: args{version: "111.00x0.123"}, wantErr: true},
+		{name: "9", args: args{version: "1x11.00x0.123"}, wantErr: true},
+		{name: "10", args: args{version: "1x11.00x0.123x"}, wantErr: true},
+		{name: "11", args: args{version: "1..1.1"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateVersion(tt.args.version); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
