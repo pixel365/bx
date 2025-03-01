@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -287,4 +288,30 @@ func isValidPath(filePath, basePath string) bool {
 	}
 
 	return strings.HasPrefix(absFilePath, absBasePath)
+}
+
+func ReplaceVariables(input string, variables map[string]string, depth int) (string, error) {
+	if depth < 0 {
+		return "", errors.New("depth cannot be less than 0")
+	}
+
+	if depth > 5 {
+		return "", errors.New("depth cannot be greater than 5")
+	}
+
+	variableRegex := regexp.MustCompile(`\{([a-zA-Z0-9-_]+)}`)
+	updated := variableRegex.ReplaceAllStringFunc(input, func(match string) string {
+		key := strings.Trim(match, "{}")
+		if value, ok := variables[key]; ok {
+			return value
+		}
+
+		return fmt.Sprintf("[missing %s]", key)
+	})
+
+	if updated == input {
+		return updated, nil
+	}
+
+	return ReplaceVariables(updated, variables, depth+1)
 }

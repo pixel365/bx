@@ -24,15 +24,16 @@ type Stage struct {
 }
 
 type Module struct {
-	Ctx            context.Context `yaml:"-"`
-	Name           string          `yaml:"name"`
-	Version        string          `yaml:"version"`
-	Account        string          `yaml:"account"`
-	Repository     string          `yaml:"repository,omitempty"`
-	BuildDirectory string          `yaml:"buildDirectory,omitempty"`
-	LogDirectory   string          `yaml:"logDirectory,omitempty"`
-	Stages         []Stage         `yaml:"stages"`
-	Ignore         []string        `yaml:"ignore"`
+	Ctx            context.Context   `yaml:"-"`
+	Variables      map[string]string `yaml:"variables,omitempty"`
+	Name           string            `yaml:"name"`
+	Version        string            `yaml:"version"`
+	Account        string            `yaml:"account"`
+	Repository     string            `yaml:"repository,omitempty"`
+	BuildDirectory string            `yaml:"buildDirectory,omitempty"`
+	LogDirectory   string            `yaml:"logDirectory,omitempty"`
+	Stages         []Stage           `yaml:"stages"`
+	Ignore         []string          `yaml:"ignore"`
 }
 
 func (m *Module) IsValid() error {
