@@ -112,39 +112,39 @@ func GetModulesDir(path string) (string, error) {
 }
 
 func DefaultYAML() string {
-	return `name: test
-version: 1.0.0
-account: test
-repository: ""
+	return `name: "test"
+version: "1.0.0"
+account: ""
 buildDirectory: "./dist/test"
 logDirectory: "./logs/test"
+variables:
+  structPath: "./examples/structure"
+  install: "install"
+  bitrix: "{structPath}/bitrix"
+  local: "{structPath}/local"
 stages:
   - name: "components"
-    to: "install/components"
+    to: "{install}/components"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/bitrix/components
-      - ./examples/structure/local/components
-
+      - "{bitrix}/components"
+      - "{local}/components"
   - name: "templates"
-    to: "install/templates"
+    to: "{install}/templates"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/bitrix/templates
-      - ./examples/structure/local/templates
-
+      - "{bitrix}/templates"
+      - "{local}/templates"
   - name: "rootFiles"
     to: "."
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
-
+      - "{structPath}/simple-file.php"
   - name: "testFiles"
     to: "test"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
-
+      - "{structPath}/simple-file.php"
 ignore:
   - "**/*.log"
 `
@@ -306,8 +306,12 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 			return value
 		}
 
-		return fmt.Sprintf("[missing %s]", key)
+		return ""
 	})
+
+	if updated == "" {
+		return "", fmt.Errorf("replacement variable is empty")
+	}
 
 	if updated == input {
 		return updated, nil

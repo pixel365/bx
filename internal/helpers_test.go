@@ -8,39 +8,39 @@ import (
 )
 
 func TestDefaultYAML(t *testing.T) {
-	const def = `name: test
-version: 1.0.0
-account: test
-repository: ""
+	const def = `name: "test"
+version: "1.0.0"
+account: ""
 buildDirectory: "./dist/test"
 logDirectory: "./logs/test"
+variables:
+  structPath: "./examples/structure"
+  install: "install"
+  bitrix: "{structPath}/bitrix"
+  local: "{structPath}/local"
 stages:
   - name: "components"
-    to: "install/components"
+    to: "{install}/components"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/bitrix/components
-      - ./examples/structure/local/components
-
+      - "{bitrix}/components"
+      - "{local}/components"
   - name: "templates"
-    to: "install/templates"
+    to: "{install}/templates"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/bitrix/templates
-      - ./examples/structure/local/templates
-
+      - "{bitrix}/templates"
+      - "{local}/templates"
   - name: "rootFiles"
     to: "."
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
-
+      - "{structPath}/simple-file.php"
   - name: "testFiles"
     to: "test"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
-
+      - "{structPath}/simple-file.php"
 ignore:
   - "**/*.log"
 `

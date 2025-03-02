@@ -43,84 +43,99 @@ bx build --name my_module --version 1.2.3
 ### Example of default module configuration
 
 ```yaml
-name: test
-version: 1.0.0
-account: test
-repository: ""
-buildDirectory: "./dist"
-logDirectory: "./logs"
+name: "test"
+version: "1.0.0"
+account: "test"
+buildDirectory: "./dist/test"
+logDirectory: "./logs/test"
+
+variables:
+  structPath: "./examples/structure"
+  install: "install"
+  bitrix: "{structPath}/bitrix"
+  local: "{structPath}/local"
+  
 stages:
   - name: "components"
-    to: "install/components"
+    to: "{install}/components"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/bitrix/components
-      - ./examples/structure/local/components
-
+      - "{bitrix}/components"
+      - "{local}/components"
   - name: "templates"
-    to: "install/templates"
+    to: "{install}/templates"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/bitrix/templates
-      - ./examples/structure/local/templates
-
+      - "{bitrix}/templates"
+      - "{local}/templates"
   - name: "rootFiles"
-    to: "."
+    to: .
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
-
+      - "{structPath}/simple-file.php"
   - name: "testFiles"
     to: "test"
     actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
-
-  - name: "another stage name"
-    to: "any-path"
-    actionIfFileExists: "skip"
+      - "{structPath}/simple-file.php"
+  - name: "anotherTestFiles"
+    to: "another-test"
+    actionIfFileExists: "replace"
     from:
-      - ./examples/structure/simple-file.php
+      - "./examples/structure/simple-file.php"
 
 ignore:
   - "**/*.log"
 ```
 
-### Configuration Fields  
+### Configuration Fields
 
-- **name** – The name of the module.  
-- **version** – The version of the module.  
-- **account** – The account associated with the module.  
-- **repository** – The repository URL where the project is stored (can be empty if not specified).  
-- **buildDirectory** – Directory where the build artifacts will be output.  
-- **logDirectory** – Directory where log files will be stored.  
+- **name** – The name of the module.
+- **version** – The version of the module.
+- **account** – The account associated with the module.
+- **repository** – The repository URL where the project is stored (can be empty if not specified).
+- **buildDirectory** – Directory where the build artifacts will be output.
+- **logDirectory** – Directory where log files will be stored.
+- **variables** (optional) – A set of key-value pairs where both keys and values are strings. These variables can be used in the `stages` section for the `name`, `to`, and `from` fields. Placeholders in curly braces `{}` will be replaced with their corresponding values.
 
-### Stages  
+  Example:
 
-The `stages` section defines the steps for copying files. Each stage consists of:  
+  ```yaml
+  variables:
+    structPath: "./examples/structure"
+    install: "install"
+    bitrix: "{structPath}/bitrix"
+    local: "{structPath}/local"
+  ```
 
-- **name** – The name of the stage.  
-- **to** – The location where files and directories will be copied, relative to the module's distribution root.
-  - For example, if the module's root is `/build/1.2.3`, then setting `to: install/components` means files will be placed in `/build/1.2.3/install/components`.
-- **from** – The source paths from which files should be copied.  
-- **actionIfFileExists** – Action to take if the file already exists:  
-  - `replace` – Overwrite the existing file.  
-  - `skip` – Skip copying if the file exists.  
-  - `replace_if_newer` – Overwrite only if the source file is newer.  
+  In this case, `{bitrix}` will expand to `./examples/structure/bitrix`, and `{install}` will be replaced with `install` when used in `stages`.
 
-### Example Stages  
+### Stages
 
-- **components** – Copies component files to `install/components`.  
-- **templates** – Copies template files to `install/templates`.  
-- **rootFiles** – Copies specific files to the root directory (`.`).  
-- **testFiles** – Copies test files to `test/`.  
+The `stages` section defines the steps for copying files. Each stage consists of:
+
+- **name** – The name of the stage. Can use variables.
+- **to** – The location where files and directories will be copied, relative to the module's distribution root. Can use variables.
+  - For example, if the module's root is `/build/1.2.3`, then setting `to: {install}/components` means files will be placed in `/build/1.2.3/install/components`.
+- **from** – The source paths from which files should be copied. Can use variables.
+- **actionIfFileExists** – Action to take if the file already exists:
+  - `replace` – Overwrite the existing file.
+  - `skip` – Skip copying if the file exists.
+  - `replace_if_newer` – Overwrite only if the source file is newer.
+
+### Example Stages
+
+- **components** – Copies component files to `{install}/components`.
+- **templates** – Copies template files to `{install}/templates`.
+- **rootFiles** – Copies specific files to the root directory (`.`).
+- **testFiles** – Copies test files to `test/`.
 
 **The stage names provided in the examples are for reference only and can be customized as needed.**
 
-### Ignored Files  
+### Ignored Files
 
 The `ignore` section defines file patterns to be excluded from processing.  
-For example:  
+For example:
 
 ```yaml
 ignore:
