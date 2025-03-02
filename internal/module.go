@@ -21,6 +21,7 @@ type Stage struct {
 	To                 string           `yaml:"to"`
 	ActionIfFileExists FileExistsAction `yaml:"actionIfFileExists"`
 	From               []string         `yaml:"from"`
+	ConvertTo1251      bool             `yaml:"convertTo1251,omitempty"`
 }
 
 type Module struct {

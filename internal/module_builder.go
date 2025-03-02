@@ -231,19 +231,19 @@ func handleStage(
 	errCh chan<- error,
 	log *zerolog.Logger,
 	ignore *[]string,
-	item Stage,
+	stage Stage,
 	buildDirectory string,
 ) {
 	defer wg.Done()
 
 	var err error
-	log.Info().Msg(fmt.Sprintf("Handling stage %s", item.Name))
+	log.Info().Msg(fmt.Sprintf("Handling stage %s", stage.Name))
 	defer func() {
 		if err != nil {
-			log.Error().Err(err).Msg(fmt.Sprintf("Failed to handle stage %s: %s", item.Name, err))
+			log.Error().Err(err).Msg(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err))
 			errCh <- err
 		} else {
-			log.Info().Msg(fmt.Sprintf("Finished stage %s", item.Name))
+			log.Info().Msg(fmt.Sprintf("Finished stage %s", stage.Name))
 		}
 	}()
 
@@ -251,18 +251,27 @@ func handleStage(
 		return
 	}
 
-	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, item.To))
+	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, stage.To))
 	if err != nil {
 		return
 	}
 
-	for _, from := range item.From {
+	for _, from := range stage.From {
 		if err := CheckContext(ctx); err != nil {
 			return
 		}
 
 		wg.Add(1)
-		go copyFromPath(ctx, wg, errCh, ignore, from, to, item.ActionIfFileExists)
+		go copyFromPath(
+			ctx,
+			wg,
+			errCh,
+			ignore,
+			from,
+			to,
+			stage.ActionIfFileExists,
+			stage.ConvertTo1251,
+		)
 	}
 }
 
