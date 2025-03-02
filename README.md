@@ -11,7 +11,9 @@ The project is currently in active development, and its API may change without b
 
 ### Installation
 
-The installation process will be described later, as the project is still under development.
+```shell
+go install github.com/pixel365/bx@latest
+```
 
 ### Usage
 
