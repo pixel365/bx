@@ -85,6 +85,7 @@ stages:
     actionIfFileExists: "replace"
     from:
       - "./examples/structure/simple-file.php"
+    convertTo1251: false
 
 ignore:
   - "**/*.log"
@@ -124,6 +125,7 @@ The `stages` section defines the steps for copying files. Each stage consists of
   - `replace` – Overwrite the existing file.
   - `skip` – Skip copying if the file exists.
   - `replace_if_newer` – Overwrite only if the source file is newer.
+- **convertTo1251** (optional) - Specifies whether to convert the file contents to windows-1251 encoding. Applies only to *.php files, as well as description.ru. Defaults to false.
 
 ### Example Stages
 

@@ -136,7 +136,7 @@ func Test_copyFromPath(t *testing.T) {
 		}
 
 		wg.Add(1)
-		copyFromPath(context.Background(), &wg, errChan, &patterns, from, to, Replace)
+		copyFromPath(context.Background(), &wg, errChan, &patterns, from, to, Replace, false)
 
 		defer func() {
 			if err := os.Remove(fmt.Sprintf("%s/%s", toPath, fileName)); err != nil {
@@ -144,4 +144,26 @@ func Test_copyFromPath(t *testing.T) {
 			}
 		}()
 	})
+}
+
+func Test_isConvertable(t *testing.T) {
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		args args
+		name string
+		want bool
+	}{
+		{args{"/some/path/file.php"}, "php", true},
+		{args{"/some/path/description.ru"}, "description.ru", true},
+		{args{"/some/path/image.jpg"}, "jpg", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isConvertable(tt.args.path); got != tt.want {
+				t.Errorf("isConvertable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

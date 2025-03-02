@@ -41,6 +41,7 @@ stages:
     actionIfFileExists: "replace"
     from:
       - "{structPath}/simple-file.php"
+	convertTo1251: false
 ignore:
   - "**/*.log"
 `

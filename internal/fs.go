@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/text/encoding/charmap"
+
 	"github.com/bmatcuk/doublestar/v4"
 )
 
@@ -22,6 +24,7 @@ func copyFromPath(
 	ignore *[]string,
 	from, to string,
 	existsMode FileExistsAction,
+	convert bool,
 ) {
 	defer wg.Done()
 
@@ -30,7 +33,7 @@ func copyFromPath(
 		return
 	}
 
-	if err := walk(ctx, wg, errCh, from, to, ignore, existsMode); err != nil {
+	if err := walk(ctx, wg, errCh, from, to, ignore, existsMode, convert); err != nil {
 		if !errors.Is(err, doublestar.SkipDir) {
 			errCh <- err
 		}
@@ -44,6 +47,7 @@ func walk(
 	from, to string,
 	patterns *[]string,
 	existsMode FileExistsAction,
+	convert bool,
 ) error {
 	wg.Add(1)
 	defer wg.Done()
@@ -97,7 +101,7 @@ func walk(
 			}
 
 			wg2.Add(1)
-			go copyFile(ctx, &wg2, errCh, absFrom, absTo, jobs, existsMode)
+			go copyFile(ctx, &wg2, errCh, absFrom, absTo, jobs, existsMode, convert)
 		}
 
 		return nil
@@ -115,6 +119,7 @@ func copyFile(
 	src, dst string,
 	jobs chan struct{},
 	existsMode FileExistsAction,
+	convert bool,
 ) {
 	defer wg.Done()
 
@@ -191,7 +196,15 @@ func copyFile(
 			return
 		}
 
-		_, err = io.Copy(out, in)
+		var writer io.Writer
+		if convert && isConvertable(src) {
+			encoder := charmap.Windows1251.NewEncoder()
+			writer = encoder.Writer(out)
+		} else {
+			writer = out
+		}
+
+		_, err = io.Copy(writer, in)
 		if err != nil {
 			errCh <- err
 			return
@@ -310,4 +323,12 @@ func zipIt(dirPath, archivePath string) error {
 		return err
 	})
 	return err
+}
+
+func isConvertable(path string) bool {
+	if path == "" {
+		return false
+	}
+
+	return strings.HasSuffix(path, ".php") || strings.HasSuffix(path, "description.ru")
 }
