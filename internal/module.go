@@ -53,6 +53,20 @@ func (m *Module) IsValid() error {
 	//	//TODO: check repository
 	//}
 
+	if m.Variables != nil {
+		i := 0
+		for key, value := range m.Variables {
+			i++
+			if key == "" {
+				return fmt.Errorf("variable [#%d]: key is required", i)
+			}
+
+			if value == "" {
+				return fmt.Errorf("variable [%s]: value is required", key)
+			}
+		}
+	}
+
 	if len(m.Stages) == 0 {
 		return errors.New("stages is not valid")
 	}
@@ -85,9 +99,39 @@ func (m *Module) IsValid() error {
 		}
 	}
 
+	if err := m.NormalizeStages(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (m *Module) ToYAML() ([]byte, error) {
 	return yaml.Marshal(m)
+}
+
+func (m *Module) NormalizeStages() error {
+	if m.Variables != nil {
+		var err error
+		for i, stage := range m.Stages {
+			m.Stages[i].Name, err = ReplaceVariables(stage.Name, m.Variables, 0)
+			if err != nil {
+				return err
+			}
+
+			m.Stages[i].To, err = ReplaceVariables(stage.To, m.Variables, 0)
+			if err != nil {
+				return err
+			}
+
+			for j, from := range stage.From {
+				m.Stages[i].From[j], err = ReplaceVariables(from, m.Variables, 0)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
