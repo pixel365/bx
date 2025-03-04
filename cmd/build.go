@@ -36,6 +36,17 @@ bx build --name my_module --version 1.2.3
 	return cmd
 }
 
+// build handles the logic of building a module based on the flags provided by the user.
+// It retrieves the module name, file path, and version from the command flags, validates them,
+// and triggers the build process for the module. The function supports building modules
+// both by name and from a specified YAML file.
+//
+// Parameters:
+// - cmd (*cobra.Command): The Cobra command that invoked the build function.
+// - args ([]string): A slice of arguments passed to the command (unused here).
+//
+// Returns:
+// - error: An error if the build process encounters any issues or validation fails.
 func build(cmd *cobra.Command, _ []string) error {
 	path := cmd.Context().Value(internal.RootDir).(string)
 	name, err := cmd.Flags().GetString("name")

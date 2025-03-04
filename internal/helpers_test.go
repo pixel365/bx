@@ -13,11 +13,13 @@ version: "1.0.0"
 account: ""
 buildDirectory: "./dist/test"
 logDirectory: "./logs/test"
+
 variables:
   structPath: "./examples/structure"
   install: "install"
   bitrix: "{structPath}/bitrix"
   local: "{structPath}/local"
+
 stages:
   - name: "components"
     to: "{install}/components"
@@ -42,6 +44,7 @@ stages:
     from:
       - "{structPath}/simple-file.php"
 	convertTo1251: false
+
 ignore:
   - "**/*.log"
 `

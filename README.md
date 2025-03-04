@@ -1,6 +1,6 @@
-# Bitrix CLI
+# BX
 
-Bitrix CLI is a command-line tool for developers of 1C-Bitrix platform modules. 
+BX is a command-line tool for developers of 1C-Bitrix platform modules. 
 The project is currently in active development, and its API may change without backward compatibility.
 
 ### Features
@@ -170,7 +170,6 @@ ignore:
 - **name** – The name of the module.
 - **version** – The version of the module.
 - **account** – The account associated with the module.
-- **repository** – The repository URL where the project is stored (can be empty if not specified).
 - **buildDirectory** – Directory where the build artifacts will be output.
 - **logDirectory** – Directory where log files will be stored.
 - **variables** (optional) – A set of key-value pairs where both keys and values are strings. These variables can be used in the `stages` section for the `name`, `to`, and `from` fields. Placeholders in curly braces `{}` will be replaced with their corresponding values.
