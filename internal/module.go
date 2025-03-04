@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -135,4 +137,33 @@ func (m *Module) NormalizeStages() error {
 	}
 
 	return nil
+}
+
+func (m *Module) ZipPath() (string, error) {
+	path, err := filepath.Abs(fmt.Sprintf("%s/%s.zip", m.BuildDirectory, m.Version))
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Clean(path)
+
+	if err = CheckPath(path); err != nil {
+		return path, err
+	}
+
+	return path, nil
+}
+
+// PasswordEnv returns the environment variable name
+// that stores the password for the module.
+//
+// The variable name is generated based on the module's name:
+// - Converted to uppercase
+// - All dots (".") are replaced with underscores ("_")
+// - The suffix "_PASSWORD" is appended
+//
+// For example, for a module named "my.module", the function will return "MY_MODULE_PASSWORD".
+func (m *Module) PasswordEnv() string {
+	name := strings.ToUpper(m.Name)
+	name = strings.ReplaceAll(name, ".", "_")
+	return fmt.Sprintf("%s_PASSWORD", name)
 }

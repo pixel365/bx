@@ -71,3 +71,26 @@ func TestValidateVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestValidatePassword(t *testing.T) {
+	type args struct {
+		password string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"valid", args{password: "123456"}, false},
+		{"empty", args{password: ""}, true},
+		{"only spaces", args{password: "    "}, true},
+		{"short", args{password: "123"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidatePassword(tt.args.password); (err != nil) != tt.wantErr {
+				t.Errorf("ValidatePassword() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
