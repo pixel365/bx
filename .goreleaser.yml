@@ -30,9 +30,3 @@ changelog:
 checksum:
   ids:
     - bx
-  split: true
-
-sboms:
-  - artifacts: archive
-    documents:
-      - "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}.sbom"
