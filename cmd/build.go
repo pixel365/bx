@@ -74,6 +74,9 @@ func build(cmd *cobra.Command, _ []string) error {
 	}
 
 	if version != "" {
+		if err := internal.ValidateVersion(version); err != nil {
+			return err
+		}
 		module.Version = version
 	}
 
