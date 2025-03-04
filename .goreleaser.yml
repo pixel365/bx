@@ -10,19 +10,13 @@ builds:
     goarch:
       - amd64
       - arm64
-      - riscv64
     ldflags: "-s -w"
     binary: bx
     no_unique_dist_dir: true
 
 archives:
-  - format: binary
-    id: binaries
-    name_template: >-
-      {{ .Binary }}
   - format: tar.gz
-    name_template: >-
-      {{ .Binary }}
+    name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}.tar.gz"
 
 changelog:
   sort: asc
