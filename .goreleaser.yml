@@ -11,42 +11,36 @@ builds:
     goarch: [amd64]
     ldflags: "-s -w"
     binary: bx
-    dir: dist/linux_amd64
 
   - id: linux_arm64
     goos: [linux]
     goarch: [arm64]
     ldflags: "-s -w"
     binary: bx
-    dir: dist/linux_arm64
 
   - id: windows_amd64
     goos: [windows]
     goarch: [amd64]
     ldflags: "-s -w"
-    binary: bx.exe
-    dir: dist/windows_amd64
+    binary: bx
 
   - id: windows_arm64
     goos: [windows]
     goarch: [arm64]
     ldflags: "-s -w"
-    binary: bx.exe
-    dir: dist/windows_arm64
+    binary: bx
 
   - id: darwin_amd64
     goos: [darwin]
     goarch: [amd64]
     ldflags: "-s -w"
     binary: bx
-    dir: dist/darwin_amd64
 
   - id: darwin_arm64
     goos: [darwin]
     goarch: [arm64]
     ldflags: "-s -w"
     binary: bx
-    dir: dist/darwin_arm64
 
 
 archives:
