@@ -23,6 +23,12 @@ jobs:
           mkdir -p goreleaser
           curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.7.0/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C goreleaser
 
+      - name: Install syft
+        run: |
+          mkdir -p syft
+          curl -sSL https://github.com/anchore/syft/releases/download/v1.20.0/syft_1.20.0_linux_amd64.tar.gz | tar -xzv -C syft
+          sudo mv syft/syft /usr/local/bin/
+
       - name: Run GoReleaser
         run: |
           ./goreleaser/goreleaser release --clean

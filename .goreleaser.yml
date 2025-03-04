@@ -17,7 +17,7 @@ builds:
     no_unique_dist_dir: true
 
 archives:
-  - format: tar.gz
+  - formats: ['tar.gz']
     name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}.tar.gz"
 
 changelog:
