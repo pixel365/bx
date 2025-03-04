@@ -68,12 +68,25 @@ func push(cmd *cobra.Command, _ []string) error {
 		path = file
 	}
 
+	version, err := cmd.Flags().GetString("version")
+	version = strings.TrimSpace(version)
+	if err != nil {
+		return err
+	}
+
 	module, err := internal.ReadModule(path, name, isFile)
 	if err != nil {
 		return err
 	}
 
 	module.Ctx = cmd.Context()
+
+	if version != "" {
+		if err := internal.ValidateVersion(version); err != nil {
+			return err
+		}
+		module.Version = version
+	}
 
 	if err = module.IsValid(); err != nil {
 		return err

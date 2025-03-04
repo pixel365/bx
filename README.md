@@ -17,29 +17,103 @@ go install github.com/pixel365/bx@latest
 
 ### Usage
 
+#### Create module
+
+```shell
+# Enter a module name via standard input
+bx create
+```
+
 ```shell
 # Create a new module (default config)
 bx create --name my_module
 ```
 
 ```shell
+# Help
+bx create -h
+```
+
+#### Validate module configuration
+
+```shell
+# Choose a module via standard dialog
+bx check
+```
+
+```shell
 # Check the configuration of a module by name
 bx check --name my_module
+```
 
-
+```shell
 # Check the configuration of a module by file path
-bx check -f module-path/config.yaml
+bx check --file module-path/config.yaml
+```
+
+```shell
+# Help
+bx check -h
+```
+
+#### Build module
+
+```shell
+# Choose a module via standard dialog
+bx build
 ```
 
 ```shell
 # Build a module by name
 bx build --name my_module
+```
 
+```shell
 # Build a module by file path
-bx build -f config.yaml
+bx build --file config.yaml
+```
 
+```shell
 # Override version
 bx build --name my_module --version 1.2.3
+```
+
+```shell
+# Help
+bx build -h
+```
+
+#### Push module to Marketplace
+
+```shell
+# Choose a module via standard dialog
+bx push
+```
+
+```shell
+# Push a module by name
+bx push --name my_module
+```
+
+```shell
+# Push a module by file path
+bx push --file config.yaml
+```
+
+```shell
+# Override version
+bx push --name my_module --version 1.2.3
+```
+
+```shell
+# Help
+bx push -h
+```
+
+#### Help
+
+```shell
+bx -h
 ```
 
 ### Example of default module configuration
