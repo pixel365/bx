@@ -18,7 +18,7 @@ builds:
 
 archives:
   - formats: ['tar.gz']
-    name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}.tar.gz"
+    name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
 
 changelog:
   sort: asc
