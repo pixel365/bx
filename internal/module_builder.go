@@ -63,13 +63,6 @@ func (m *Module) Build() error {
 
 	log.Info().Msg("Cleanup complete")
 
-	if err := m.Push(&log); err != nil {
-		log.Error().Err(err).Msg("Failed to push build")
-		return err
-	}
-
-	log.Info().Msg("Push complete")
-
 	return nil
 }
 
@@ -169,11 +162,6 @@ func (m *Module) Rollback(log *zerolog.Logger) error {
 	log.Info().Msgf("Removed version directory: %s", versionDir)
 	log.Info().Msg("Rollback complete")
 
-	return nil
-}
-
-func (m *Module) Push(log *zerolog.Logger) error {
-	//TODO: implementation
 	return nil
 }
 
