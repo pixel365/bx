@@ -26,3 +26,5 @@ build/
 .bx/
 dist/
 logs/
+
+goreleaser/
