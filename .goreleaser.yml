@@ -4,20 +4,80 @@ before:
   hooks:
     - go mod tidy
 
+
 builds:
-  - goos:
-      - linux
-      - windows
-      - darwin
-    goarch:
-      - amd64
-      - arm64
+  - id: linux_amd64
+    goos: [linux]
+    goarch: [amd64]
     ldflags: "-s -w"
     binary: bx
-    no_unique_dist_dir: true
+    dir: dist/linux_amd64
+
+  - id: linux_arm64
+    goos: [linux]
+    goarch: [arm64]
+    ldflags: "-s -w"
+    binary: bx
+    dir: dist/linux_arm64
+
+  - id: windows_amd64
+    goos: [windows]
+    goarch: [amd64]
+    ldflags: "-s -w"
+    binary: bx.exe
+    dir: dist/windows_amd64
+
+  - id: windows_arm64
+    goos: [windows]
+    goarch: [arm64]
+    ldflags: "-s -w"
+    binary: bx.exe
+    dir: dist/windows_arm64
+
+  - id: darwin_amd64
+    goos: [darwin]
+    goarch: [amd64]
+    ldflags: "-s -w"
+    binary: bx
+    dir: dist/darwin_amd64
+
+  - id: darwin_arm64
+    goos: [darwin]
+    goarch: [arm64]
+    ldflags: "-s -w"
+    binary: bx
+    dir: dist/darwin_arm64
+
 
 archives:
-  - formats: ['tar.gz']
+  - id: linux_amd64
+    builds: [linux_amd64]
+    formats: ['tar.gz']
+    name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: linux_arm64
+    builds: [linux_arm64]
+    formats: ['tar.gz']
+    name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: windows_amd64
+    builds: [windows_amd64]
+    formats: ['tar.gz']
+    name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: windows_arm64
+    builds: [windows_arm64]
+    formats: ['tar.gz']
+    name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: darwin_amd64
+    builds: [darwin_amd64]
+    formats: ['tar.gz']
+    name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: darwin_arm64
+    builds: [darwin_arm64]
+    formats: ['tar.gz']
     name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
 
 changelog:
@@ -29,4 +89,9 @@ changelog:
 
 checksum:
   ids:
-    - bx
+    - linux_amd64
+    - linux_arm64
+    - windows_amd64
+    - windows_arm64
+    - darwin_amd64
+    - darwin_arm64
