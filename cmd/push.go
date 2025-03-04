@@ -44,6 +44,16 @@ bx push --name my_module --version 1.2.3
 	return cmd
 }
 
+// push handles the logic for pushing a module to the Marketplace.
+// It validates the module name, reads the module configuration, and authenticates the user.
+// The module is then uploaded to the specified server after authentication.
+//
+// Parameters:
+// - cmd (*cobra.Command): The Cobra command that invoked the push function.
+// - args ([]string): A slice of arguments passed to the command (unused here).
+//
+// Returns:
+// - error: An error if any validation or upload step fails.
 func push(cmd *cobra.Command, _ []string) error {
 	path := cmd.Context().Value(internal.RootDir).(string)
 	name, err := cmd.Flags().GetString("name")
@@ -128,6 +138,17 @@ func push(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+// handlePassword manages the process of obtaining and validating the password needed for authentication.
+// It first checks if the password was provided as a flag, then checks environment variables, and if neither are found,
+// it prompts the user to enter a password interactively.
+//
+// Parameters:
+// - cmd (*cobra.Command): The Cobra command that invoked the function.
+// - module (*internal.Module): The module for which the password is being provided (may use environment variable).
+//
+// Returns:
+// - string: The validated password.
+// - error: An error if the password is invalid or the prompt fails.
 func handlePassword(cmd *cobra.Command, module *internal.Module) (string, error) {
 	password, err := cmd.Flags().GetString("password")
 	if err != nil {

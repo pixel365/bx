@@ -32,16 +32,35 @@ type Module struct {
 	Name           string            `yaml:"name"`
 	Version        string            `yaml:"version"`
 	Account        string            `yaml:"account"`
-	Repository     string            `yaml:"repository,omitempty"`
 	BuildDirectory string            `yaml:"buildDirectory,omitempty"`
 	LogDirectory   string            `yaml:"logDirectory,omitempty"`
 	Stages         []Stage           `yaml:"stages"`
 	Ignore         []string          `yaml:"ignore"`
 }
 
+// IsValid validates the fields of the Module struct.
+//
+// It checks the following conditions:
+//
+//  1. The `Name` field must not be an empty string and must not contain spaces.
+//  2. The `Version` field must be a valid version, validated by the `ValidateVersion` function.
+//  3. The `Account` field must not be empty.
+//  4. If the `Variables` map is not nil, it checks that each key and value in the map is non-empty.
+//  5. The `Stages` field must contain at least one stage.
+//     Each stage must have a valid `Name`, `To` field, and an `ActionIfFileExists` field.
+//     Additionally, each `From` path in a stage must be non-empty.
+//  6. If the `Ignore` field is not empty, each rule must be non-empty.
+//  7. The `NormalizeStages` function is called to ensure the validity of the stages after other checks.
+//
+// If any of these conditions are violated, the method returns an error with a detailed message.
+// If all validations pass, it returns nil.
 func (m *Module) IsValid() error {
 	if m.Name == "" {
 		return errors.New("module name is required")
+	}
+
+	if strings.Contains(m.Name, " ") {
+		return errors.New("module name must not contain spaces")
 	}
 
 	if err := ValidateVersion(m.Version); err != nil {
@@ -51,10 +70,6 @@ func (m *Module) IsValid() error {
 	if m.Account == "" {
 		return errors.New("account is not valid")
 	}
-
-	//if m.Repository != "" {
-	//	//TODO: check repository
-	//}
 
 	if m.Variables != nil {
 		i := 0
@@ -109,10 +124,30 @@ func (m *Module) IsValid() error {
 	return nil
 }
 
+// ToYAML converts the Module struct to its YAML representation.
+//
+// It uses the `yaml.Marshal` function to serialize the `Module` struct into a YAML format.
+// If the conversion is successful, it returns the resulting YAML as a byte slice.
+// If an error occurs during marshaling, it returns the error.
+//
+// Returns:
+// - []byte: The YAML representation of the Module struct.
+// - error: Any error that occurred during the marshaling process.
 func (m *Module) ToYAML() ([]byte, error) {
 	return yaml.Marshal(m)
 }
 
+// NormalizeStages processes and normalizes the stages in the Module by replacing any variables
+// within the stage fields (Name, To, From) with values from the Module's Variables map.
+//
+// The method iterates over each stage in the Module's Stages slice, and for each field (Name, To, From),
+// it uses the `ReplaceVariables` function to replace any placeholders with corresponding variable values.
+//
+// If any error occurs while replacing variables or processing the stages, it returns the error.
+// If no errors are encountered, it returns nil.
+//
+// Returns:
+// - error: Any error that occurred during the variable replacement process. If successful, returns nil.
 func (m *Module) NormalizeStages() error {
 	if m.Variables != nil {
 		var err error
@@ -139,6 +174,17 @@ func (m *Module) NormalizeStages() error {
 	return nil
 }
 
+// ZipPath generates the absolute path for the ZIP file associated with the Module.
+//
+// The method constructs a path by combining the Module's BuildDirectory and Version fields,
+// appending the ".zip" extension. It then checks if the path exists and is valid using the `CheckPath` function.
+//
+// If the path is valid, it returns the cleaned absolute path of the ZIP file. If any error occurs
+// during path creation or validation, it returns an empty string along with the error.
+//
+// Returns:
+// - string: The absolute path of the ZIP file.
+// - error: Any error encountered during path creation or validation, otherwise nil.
 func (m *Module) ZipPath() (string, error) {
 	path, err := filepath.Abs(fmt.Sprintf("%s/%s.zip", m.BuildDirectory, m.Version))
 	if err != nil {

@@ -43,6 +43,16 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
+// initRootDir is responsible for initializing the root directory for the project.
+// It checks if the specified root directory exists, creates it if it doesn't,
+// and returns the absolute path to the directory.
+//
+// Parameters:
+// - command (*cobra.Command): The command that called this function, used to retrieve the directory flag.
+//
+// Returns:
+// - string: The absolute path to the root directory of the project.
+// - error: An error if the directory cannot be created or accessed.
 func initRootDir(command *cobra.Command) (string, error) {
 	dir, err := command.Flags().GetString("directory")
 	if err != nil {

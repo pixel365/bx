@@ -31,6 +31,16 @@ bx check -f module-path/config.yaml
 	return cmd
 }
 
+// check handles the logic of checking the configuration of a module based on the flags provided by the user.
+// It retrieves the module name, file path, and validates the module configuration, including its stages.
+// The function supports checking modules by name or by the specified YAML file.
+//
+// Parameters:
+// - cmd (*cobra.Command): The Cobra command that invoked the check function.
+// - args ([]string): A slice of arguments passed to the command (unused here).
+//
+// Returns:
+// - error: An error if the module configuration is invalid or any other error occurs.
 func check(cmd *cobra.Command, _ []string) error {
 	path := cmd.Context().Value(internal.RootDir).(string)
 	name, err := cmd.Flags().GetString("name")
