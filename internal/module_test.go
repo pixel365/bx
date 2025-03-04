@@ -164,3 +164,27 @@ func TestModule_NormalizeStages(t *testing.T) {
 		})
 	}
 }
+
+func TestModule_PasswordEnv(t *testing.T) {
+	type fields struct {
+		Name string
+	}
+	tests := []struct {
+		name   string
+		want   string
+		fields fields
+	}{
+		{"success without dots", "TEST_PASSWORD", fields{"test"}},
+		{"success with dots", "TEST_TEST_PASSWORD", fields{"test.test"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Module{
+				Name: tt.fields.Name,
+			}
+			if got := m.PasswordEnv(); got != tt.want {
+				t.Errorf("PasswordEnv() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
