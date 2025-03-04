@@ -18,7 +18,7 @@ builds:
 
 archives:
   - formats: ['tar.gz']
-    name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
+    name_template: "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
 
 changelog:
   sort: asc
@@ -33,6 +33,6 @@ checksum:
   split: true
 
 sboms:
-  - artifacts: binary
+  - artifacts: archive
     documents:
-      - "{{ .Binary }}.sbom"
+      - "{{ .Binary }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}.sbom"
