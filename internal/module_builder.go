@@ -199,13 +199,14 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(m.Stages))
 
-	for _, item := range m.Stages {
+	for _, stage := range m.Stages {
 		if err := CheckContext(m.Ctx); err != nil {
 			return err
 		}
 
 		wg.Add(1)
-		go handleStage(m.Ctx, &wg, errCh, log, &m.Ignore, item, versionDirectory)
+
+		go handleStage(m.Ctx, &wg, errCh, log, &m.Ignore, stage, versionDirectory, m.StageCallback)
 	}
 
 	wg.Wait()
@@ -250,6 +251,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 //   - ignore: A list of files or directories to be ignored during file copying.
 //   - stage: The specific stage being processed, which contains source and destination paths.
 //   - buildDirectory: The directory where the build files will be placed.
+//   - callback: Stage Callback
 //
 // Returns:
 //   - None.
@@ -262,8 +264,28 @@ func handleStage(
 	ignore *[]string,
 	stage Stage,
 	buildDirectory string,
+	cb func(string) (Runnable, error),
 ) {
-	defer wg.Done()
+	callback, cbErr := cb(stage.Name)
+
+	defer func() {
+		if cbErr == nil {
+			if err := callback.PostRun(); err != nil {
+				log.Error().
+					Err(err).
+					Msg(fmt.Sprintf("Failed to post run callback for stage %s", stage.Name))
+			}
+		}
+		wg.Done()
+	}()
+
+	if cbErr == nil {
+		if err := callback.PreRun(); err != nil {
+			log.Error().
+				Err(err).
+				Msg(fmt.Sprintf("Failed to pre run callback for stage %s", stage.Name))
+		}
+	}
 
 	var err error
 	log.Info().Msg(fmt.Sprintf("Handling stage %s", stage.Name))

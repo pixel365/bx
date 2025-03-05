@@ -36,6 +36,7 @@ type Module struct {
 	LogDirectory   string            `yaml:"logDirectory,omitempty"`
 	Stages         []Stage           `yaml:"stages"`
 	Ignore         []string          `yaml:"ignore"`
+	Callbacks      []Callback        `yaml:"callbacks,omitempty"`
 }
 
 // IsValid validates the fields of the Module struct.
@@ -119,6 +120,14 @@ func (m *Module) IsValid() error {
 
 	if err := m.NormalizeStages(); err != nil {
 		return err
+	}
+
+	if len(m.Callbacks) > 0 {
+		for index, callback := range m.Callbacks {
+			if err := callback.IsValid(); err != nil {
+				return fmt.Errorf("callback [%d]: %w", index, err)
+			}
+		}
 	}
 
 	return nil
@@ -212,4 +221,22 @@ func (m *Module) PasswordEnv() string {
 	name := strings.ToUpper(m.Name)
 	name = strings.ReplaceAll(name, ".", "_")
 	return fmt.Sprintf("%s_PASSWORD", name)
+}
+
+// StageCallback returns the callback associated with the given stage.
+// If no matching callback is found, an error is returned.
+//
+// stageName - the name of the stage to find the callback for.
+//
+// Returns:
+// - Runnable - the found callback if it exists.
+// - error - an error if the callback is not found.
+func (m *Module) StageCallback(stageName string) (Runnable, error) {
+	for _, callback := range m.Callbacks {
+		if callback.Stage == stageName {
+			return callback, nil
+		}
+	}
+
+	return Callback{}, errors.New("stage callback not found")
 }
