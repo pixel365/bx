@@ -1,13 +1,27 @@
-# BX
+# BX - Command-Line Tool for 1C-Bitrix Module Development
 
-BX is a command-line tool for developers of 1C-Bitrix platform modules. 
-The project is currently in active development, and its API may change without backward compatibility.
+BX is a command-line tool for developers working on 1C-Bitrix platform modules. It allows you to declaratively define all stages of project build, as well as validate the module configuration and deploy the final distribution. Build configurations are versioned alongside the project, ensuring consistency and traceability of changes throughout the development process. The configuration file allows you to specify:
+
+- **Variables**: paths to required files and directories.
+- **Build Stages**: each stage describes which files to copy, to which directory, and how to handle existing files (e.g., replace).
+- **Callbacks**: you can specify actions before and after each stage, such as executing commands or sending HTTP requests.
+- **File Exclusions**: you can configure which files or directories should be ignored.
+
+Additionally,
+BX supports module configuration validation
+to ensure it's properly setup and automatic deployment of the final distribution,
+simplifying the deployment process.
+
+For example, during one of the build stages, you can copy components and templates from different directories into the final project structure, while also running additional commands before or after the process. This flexibility allows you to manage the build, validation, and deployment processes efficiently, and versioning the configuration ensures that changes won't affect the project's stability.
 
 ### Features
 
-- Manage developer accounts
-- Maintain a module registry
-- Build and prepare a module bundle for publication in the 1C-Bitrix Marketplace
+- **Declarative Build Configuration**: Define all build stages and actions (e.g., copying files, handling conflicts) in a simple configuration file.
+- **Module Configuration Validation**: Ensure the module configuration is correct and complete before building or deploying.
+- **Versioned Build Configurations**: Manage build configurations as part of the project, ensuring changes are tracked and consistent.
+- **Automatic Deployment**: Deploy the final module distribution to the 1C-Bitrix Marketplace with a single command.
+- **Customizable Build Stages**: Define custom stages for different parts of the build process, such as copying components, templates, or files to specific directories.
+- **Pre- and Post-Build Callbacks**: Execute additional commands or HTTP requests before or after each build stage for extra automation.
 
 ### Installation
 
@@ -284,4 +298,7 @@ ignore:
 
 ### Status
 
-The project is under active development. The API is unstable and subject to change.
+The project is under active development.
+The API is unstable and subject to change, so it may lack backward compatibility in future versions.
+The current release corresponds to the latest stable branch,
+and breaking changes will be documented with each new version.
