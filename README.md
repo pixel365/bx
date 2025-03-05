@@ -161,6 +161,21 @@ stages:
       - "./examples/structure/simple-file.php"
     convertTo1251: false
 
+callbacks:
+  - stage: "components"
+    pre:
+      type: "command"
+      action: "ls"
+      parameters:
+        - "-lsa"
+    post:
+      type: "external"
+      action: "http://localhost:80"
+      method: "GET"
+      parameters:
+        - "param1=value1"
+        - "param2=value2"
+
 ignore:
   - "**/*.log"
 ```
@@ -200,7 +215,7 @@ The `stages` section defines the steps for copying files. Each stage consists of
   - `replace_if_newer` – Overwrite only if the source file is newer.
 - **convertTo1251** (optional) - Specifies whether to convert the file contents to windows-1251 encoding. Applies only to *.php files, as well as description.ru. Defaults to false.
 
-### Example Stages
+#### Example
 
 - **components** – Copies component files to `{install}/components`.
 - **templates** – Copies template files to `{install}/templates`.
@@ -208,6 +223,54 @@ The `stages` section defines the steps for copying files. Each stage consists of
 - **testFiles** – Copies test files to `test/`.
 
 **The stage names provided in the examples are for reference only and can be customized as needed.**
+
+### Callbacks
+
+The `callbacks` section allows executing additional actions **before** (`pre`) or **after** (`post`) a specific stage (`stage`).
+
+Each callback consists of:
+- **stage** – The name of the stage it is associated with.
+- **pre** – Action executed **before** the stage starts.
+- **post** – Action executed **after** the stage is completed.
+
+### Supported action types
+
+- **command** – Executes a shell command.
+- **external** – Sends an HTTP request to an external service.
+
+#### Example
+
+```yaml
+callbacks:
+  - stage: "components"
+    pre:
+      type: "command"
+      action: "ls"
+      parameters:
+        - "-lsa"
+    post:
+      type: "external"
+      action: "http://localhost:80"
+      method: "GET"
+      parameters:
+        - "param1=value1"
+        - "param2=value2"
+```
+
+In this example:
+- Before copying `components`, the `ls -lsa` command is executed.
+- After copying, a GET request is sent to `http://localhost:80` with query parameters.
+
+### Available parameters
+
+- **type**:
+  - `command` – Runs a shell command.
+  - `external` – Sends an HTTP request.
+- **action**:
+  - For `command`: The command to execute.
+  - For `external`: The target URL.
+- **method** *(for `external` only)* – HTTP method (`GET`, `POST`, etc.).
+- **parameters** *(optional)* – List of arguments for commands or query parameters for requests.
 
 ### Ignored Files
 

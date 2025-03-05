@@ -6,6 +6,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.8.1
 	github.com/charmbracelet/huh v0.6.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250303111024-59cea25b2811
+	github.com/go-cmd/cmd v1.4.3
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/net v0.35.0
