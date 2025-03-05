@@ -270,21 +270,15 @@ func handleStage(
 
 	defer func() {
 		if cbErr == nil {
-			if err := callback.PostRun(); err != nil {
-				log.Error().
-					Err(err).
-					Msg(fmt.Sprintf("Failed to post run callback for stage %s", stage.Name))
-			}
+			wg.Add(1)
+			go callback.PostRun(ctx, wg, log)
 		}
 		wg.Done()
 	}()
 
 	if cbErr == nil {
-		if err := callback.PreRun(); err != nil {
-			log.Error().
-				Err(err).
-				Msg(fmt.Sprintf("Failed to pre run callback for stage %s", stage.Name))
-		}
+		wg.Add(1)
+		go callback.PreRun(ctx, wg, log)
 	}
 
 	var err error

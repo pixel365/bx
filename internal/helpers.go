@@ -149,6 +149,22 @@ stages:
       - "{structPath}/simple-file.php"
     convertTo1251: false
 
+#callbacks:
+#  - stage: "components"
+#    pre:
+#      type: "CommandType"
+#      action: "ls"
+#      parameters:
+#        - "-lsa"
+#        - "."
+#    post:
+#      type: "ExternalType"
+#      action: "http://localhost:80"
+#      method: "GET"
+#      parameters:
+#        - "param1=value1"
+#        - "param2=value2"
+
 ignore:
   - "**/*.log"
 `

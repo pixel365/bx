@@ -1,7 +1,11 @@
 package internal
 
 import (
+	"io"
 	"net/http"
+	"net/url"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -31,7 +35,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "https://example.com",
 					Method: http.MethodHead,
 				},
@@ -43,7 +47,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "https://example.com",
 					Method: "",
 				},
@@ -55,7 +59,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "some invalid url",
 					Method: http.MethodGet,
 				},
@@ -72,7 +76,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "",
 					Method: http.MethodGet,
 				},
@@ -84,7 +88,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "ftp://example.com",
 					Method: http.MethodGet,
 				},
@@ -96,7 +100,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "example.com",
 					Method: http.MethodGet,
 				},
@@ -108,7 +112,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "https://example.com",
 					Method: http.MethodGet,
 				},
@@ -120,7 +124,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "https://example.com",
 					Method: http.MethodGet,
 					Parameters: []string{
@@ -136,7 +140,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "https://example.com",
 					Method: http.MethodGet,
 					Parameters: []string{
@@ -152,7 +156,7 @@ func TestCallback_IsValid(t *testing.T) {
 			fields{
 				Stage: "stage name",
 				Pre: CallbackParameters{
-					Type:   external,
+					Type:   ExternalType,
 					Action: "https://example.com",
 					Method: http.MethodGet,
 					Parameters: []string{
@@ -192,28 +196,32 @@ func TestCallbackParameters_IsValid(t *testing.T) {
 	}{
 		{"empty", fields{}, true},
 		{"empty type", fields{Type: ""}, true},
-		{"empty action", fields{Type: external, Action: ""}, true},
+		{"empty action", fields{Type: ExternalType, Action: ""}, true},
 		{"invalid type", fields{Type: "some type"}, true},
 		{
 			"invalid method",
-			fields{Type: external, Action: "https://example.com", Method: http.MethodHead},
+			fields{Type: ExternalType, Action: "https://example.com", Method: http.MethodHead},
 			true,
 		},
-		{"empty method", fields{Type: external, Action: "https://example.com", Method: ""}, true},
+		{
+			"empty method",
+			fields{Type: ExternalType, Action: "https://example.com", Method: ""},
+			true,
+		},
 		{
 			"invalid action url",
-			fields{Type: external, Action: "some invalid url", Method: http.MethodGet},
+			fields{Type: ExternalType, Action: "some invalid url", Method: http.MethodGet},
 			true,
 		},
 		{
 			"invalid action url scheme",
-			fields{Type: external, Action: "ftp://example.com", Method: http.MethodGet},
+			fields{Type: ExternalType, Action: "ftp://example.com", Method: http.MethodGet},
 			true,
 		},
 		{
 			"valid",
 			fields{
-				Type:       external,
+				Type:       ExternalType,
 				Action:     "https://example.com",
 				Method:     http.MethodGet,
 				Parameters: []string{"key=value"},
@@ -223,7 +231,7 @@ func TestCallbackParameters_IsValid(t *testing.T) {
 		{
 			"invalid parameters",
 			fields{
-				Type:       external,
+				Type:       ExternalType,
 				Action:     "https://example.com",
 				Method:     http.MethodGet,
 				Parameters: []string{"=value"},
@@ -241,6 +249,100 @@ func TestCallbackParameters_IsValid(t *testing.T) {
 			}
 			if err := c.IsValid(); (err != nil) != tt.wantErr {
 				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCallbackParameters_buildUrlAndBody(t *testing.T) {
+	type fields struct {
+		Type       string
+		Action     string
+		Method     string
+		Parameters []string
+	}
+	tests := []struct {
+		want1  io.Reader
+		name   string
+		want   string
+		fields fields
+	}{
+		{
+			nil,
+			"valid get",
+			"https://example.com?key=value",
+			fields{
+				Type:       ExternalType,
+				Action:     "https://example.com",
+				Method:     http.MethodGet,
+				Parameters: []string{"key=value"},
+			},
+		},
+		{
+			nil,
+			"valid get without params",
+			"https://example.com",
+			fields{
+				Type:   ExternalType,
+				Action: "https://example.com",
+				Method: http.MethodGet,
+			},
+		},
+		{
+			strings.NewReader(url.Values{"key": []string{"value"}}.Encode()),
+			"valid post",
+			"https://example.com",
+			fields{
+				Type:       ExternalType,
+				Action:     "https://example.com",
+				Method:     http.MethodPost,
+				Parameters: []string{"key=value"},
+			},
+		},
+		{
+			nil,
+			"valid post without params",
+			"https://example.com",
+			fields{
+				Type:   ExternalType,
+				Action: "https://example.com",
+				Method: http.MethodPost,
+			},
+		},
+		{
+			nil,
+			"valid command",
+			"ls -lsa",
+			fields{
+				Type:       CommandType,
+				Action:     "ls",
+				Parameters: []string{"-lsa"},
+			},
+		},
+		{
+			nil,
+			"valid command without params",
+			"ls",
+			fields{
+				Type:   CommandType,
+				Action: "ls",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &CallbackParameters{
+				Type:       tt.fields.Type,
+				Action:     tt.fields.Action,
+				Method:     tt.fields.Method,
+				Parameters: tt.fields.Parameters,
+			}
+			got, got1 := c.buildUrlAndBody()
+			if got != tt.want {
+				t.Errorf("buildUrlAndBody() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("buildUrlAndBody() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

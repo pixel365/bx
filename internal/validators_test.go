@@ -94,3 +94,25 @@ func TestValidatePassword(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateArgument(t *testing.T) {
+	type args struct {
+		arg string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"empty argument", args{""}, false},
+		{"invalid argument", args{"*"}, false},
+		{"valid argument", args{"--name"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ValidateArgument(tt.args.arg); got != tt.want {
+				t.Errorf("ValidateArgument() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -76,3 +76,16 @@ func ValidatePassword(password string) error {
 
 	return nil
 }
+
+// ValidateArgument checks if the provided argument contains only
+// alphanumeric characters, underscores, slashes, or hyphens.
+//
+// Parameters:
+// - arg (string): The argument to validate.
+//
+// Returns:
+// - bool: True if the argument is valid, otherwise false.
+func ValidateArgument(arg string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9>./_-]+$`)
+	return re.MatchString(arg)
+}
