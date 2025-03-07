@@ -155,7 +155,8 @@ func Test_isConvertable(t *testing.T) {
 		name string
 		want bool
 	}{
-		{args{"/some/path/file.php"}, "php", true},
+		{args{"/some/lang/file.php"}, "php", true},
+		{args{"/some/path/file.php"}, "php", false},
 		{args{"/some/path/description.ru"}, "description.ru", true},
 		{args{"/some/path/image.jpg"}, "jpg", false},
 	}

@@ -440,5 +440,6 @@ func isConvertable(path string) bool {
 		return false
 	}
 
-	return strings.HasSuffix(path, ".php") || strings.HasSuffix(path, "description.ru")
+	return (strings.Contains(path, "/lang/") && strings.HasSuffix(path, ".php")) ||
+		strings.HasSuffix(path, "description.ru")
 }
