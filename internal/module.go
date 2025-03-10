@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,6 +36,7 @@ type Module struct {
 	Account        string            `yaml:"account"`
 	BuildDirectory string            `yaml:"buildDirectory,omitempty"`
 	LogDirectory   string            `yaml:"logDirectory,omitempty"`
+	Repository     string            `yaml:"repository,omitempty"`
 	Stages         []Stage           `yaml:"stages"`
 	Ignore         []string          `yaml:"ignore"`
 	Callbacks      []Callback        `yaml:"callbacks,omitempty"`
@@ -127,6 +130,13 @@ func (m *Module) IsValid() error {
 			if err := callback.IsValid(); err != nil {
 				return fmt.Errorf("callback [%d]: %w", index, err)
 			}
+		}
+	}
+
+	if m.Repository != "" {
+		_, err := git.PlainOpen(m.Repository)
+		if err != nil {
+			return fmt.Errorf("repository [%s]: %w", m.Repository, err)
 		}
 	}
 

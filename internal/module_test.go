@@ -29,7 +29,7 @@ func TestModule_IsValid(t *testing.T) {
 			Name:           "test",
 			Version:        "1.0.0",
 			Account:        "tester",
-			Repository:     "tester",
+			Repository:     "",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
 			Stages: []Stage{
@@ -47,7 +47,7 @@ func TestModule_IsValid(t *testing.T) {
 			Name:           "test",
 			Version:        "",
 			Account:        "tester",
-			Repository:     "tester",
+			Repository:     "",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
 			Stages: []Stage{
@@ -60,6 +60,25 @@ func TestModule_IsValid(t *testing.T) {
 			},
 			Ignore:    []string{},
 			Variables: nil,
+		}, true},
+		{"repository does not exists", fields{
+			Ctx:            context.Background(),
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Account:        "tester",
+			Repository:     "repository",
+			BuildDirectory: "tester",
+			LogDirectory:   "tester",
+			Stages: []Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: Replace,
+					From:               []string{"./tester"},
+				},
+			},
+			Ignore: []string{},
 		}, true},
 	}
 	for _, tt := range tests {
@@ -74,6 +93,7 @@ func TestModule_IsValid(t *testing.T) {
 				LogDirectory:   tt.fields.LogDirectory,
 				Stages:         tt.fields.Stages,
 				Ignore:         tt.fields.Ignore,
+				Repository:     tt.fields.Repository,
 			}
 			if err := m.IsValid(); (err != nil) != tt.wantErr {
 				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
