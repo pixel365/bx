@@ -32,6 +32,7 @@ bx build --name my_module --version 1.2.3
 	cmd.Flags().StringP("name", "n", "", "Name of the module")
 	cmd.Flags().StringP("file", "f", "", "Path to a module")
 	cmd.Flags().StringP("version", "v", "", "Version of the module")
+	cmd.Flags().StringP("repository", "r", "", "Path to a repository")
 
 	return cmd
 }
@@ -89,6 +90,15 @@ func build(cmd *cobra.Command, _ []string) error {
 			return err
 		}
 		module.Version = version
+	}
+
+	repository, err := cmd.Flags().GetString("repository")
+	if err != nil {
+		return err
+	}
+
+	if repository != "" {
+		module.Repository = repository
 	}
 
 	if err := module.IsValid(); err != nil {
