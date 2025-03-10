@@ -206,3 +206,165 @@ func TestModule_PasswordEnv(t *testing.T) {
 		})
 	}
 }
+
+func TestModule_ValidateChangelog(t *testing.T) {
+	type fields struct {
+		Ctx            context.Context
+		Changelog      Changelog
+		Name           string
+		Version        string
+		Account        string
+		BuildDirectory string
+		LogDirectory   string
+		Repository     string
+		Stages         []Stage
+	}
+
+	mod := fields{
+		Ctx:            context.TODO(),
+		Changelog:      Changelog{},
+		Name:           "test",
+		Version:        "1.0.0",
+		Account:        "tester",
+		BuildDirectory: "tester",
+		LogDirectory:   "tester",
+		Repository:     ".",
+		Stages: []Stage{
+			{
+				Name:               "test",
+				To:                 "test",
+				ActionIfFileExists: Replace,
+				From:               []string{"./tes"},
+			},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		fields  Changelog
+		wantErr bool
+	}{
+		{"empty", Changelog{}, true},
+		{"empty from type", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  "",
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+		}, true},
+		{"empty from value", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+		}, true},
+		{"empty to type", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  "",
+				Value: "v2.0.0",
+			},
+		}, true},
+		{"empty to value", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "",
+			},
+		}, true},
+		{"valid without conditions", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+		}, false},
+		{"empty condition", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+			Condition: TypeValue[ChangelogConditionType, []string]{
+				Type: Include,
+				Value: []string{
+					`^feat: ([\W\w]+)$`,
+					`^fix: ([\W\w]+)$`,
+					"",
+				},
+			},
+		}, true},
+		{"invalid regex in condition", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+			Condition: TypeValue[ChangelogConditionType, []string]{
+				Type: Include,
+				Value: []string{
+					`^feat: ([\W\w]+)$`,
+					`^fix: ([\W\w]+)$`,
+					`(`,
+				},
+			},
+		}, true},
+		{"fully valid", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+			Condition: TypeValue[ChangelogConditionType, []string]{
+				Type: Include,
+				Value: []string{
+					`^feat: ([\W\w]+)$`,
+					`^fix: ([\W\w]+)$`,
+				},
+			},
+		}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Module{
+				Ctx:            mod.Ctx,
+				Changelog:      tt.fields,
+				Name:           mod.Name,
+				Version:        mod.Version,
+				Account:        mod.Account,
+				BuildDirectory: mod.BuildDirectory,
+				LogDirectory:   mod.LogDirectory,
+				Repository:     mod.Repository,
+				Stages:         mod.Stages,
+			}
+			if err := m.ValidateChangelog(); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateChangelog() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

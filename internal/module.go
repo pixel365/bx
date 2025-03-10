@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -13,12 +14,31 @@ import (
 )
 
 type FileExistsAction string
+type ChangelogType string
+type ChangelogConditionType string
 
 const (
 	Replace        FileExistsAction = "replace"
 	Skip           FileExistsAction = "skip"
 	ReplaceIfNewer FileExistsAction = "replace_if_newer"
+
+	Commit ChangelogType = "commit"
+	Tag    ChangelogType = "tag"
+
+	Include ChangelogConditionType = "include"
+	Exclude ChangelogConditionType = "exclude"
 )
+
+type TypeValue[T1 any, T2 any] struct {
+	Type  T1 `yaml:"type"`
+	Value T2 `yaml:"value"`
+}
+
+type Changelog struct {
+	From      TypeValue[ChangelogType, string]            `yaml:"from"`
+	To        TypeValue[ChangelogType, string]            `yaml:"to"`
+	Condition TypeValue[ChangelogConditionType, []string] `yaml:"condition,omitempty"`
+}
 
 type Stage struct {
 	Name               string           `yaml:"name"`
@@ -31,6 +51,7 @@ type Stage struct {
 type Module struct {
 	Ctx            context.Context   `yaml:"-"`
 	Variables      map[string]string `yaml:"variables,omitempty"`
+	Changelog      Changelog         `yaml:"changelog,omitempty"`
 	Name           string            `yaml:"name"`
 	Version        string            `yaml:"version"`
 	Account        string            `yaml:"account"`
@@ -138,6 +159,10 @@ func (m *Module) IsValid() error {
 		if err != nil {
 			return fmt.Errorf("repository [%s]: %w", m.Repository, err)
 		}
+	}
+
+	if err := m.ValidateChangelog(); err != nil {
+		return err
 	}
 
 	return nil
@@ -249,4 +274,66 @@ func (m *Module) StageCallback(stageName string) (Runnable, error) {
 	}
 
 	return Callback{}, errors.New("stage callback not found")
+}
+
+// ValidateChangelog validates the changelog configuration of the module.
+// It checks for the presence and correctness of required fields:
+// - Ensures 'repository' is specified if 'from' or 'to' types are defined.
+// - Validates that 'from' and 'to' types are either 'commit' or 'tag'.
+// - Confirms 'from' and 'to' values are non-empty.
+// - If 'condition' is specified, checks that:
+//   - a Condition type is either 'include' or 'exclude'.
+//   - Condition values are non-empty and valid regular expressions.
+//
+// Returns an error detailing the first encountered validation issue, or nil if the configuration is valid.
+func (m *Module) ValidateChangelog() error {
+	if (m.Changelog.From.Type != "" || m.Changelog.To.Type != "") && m.Repository == "" {
+		return errors.New("repository is required")
+	}
+
+	if m.Repository != "" {
+		if m.Changelog.From.Type != Commit && m.Changelog.From.Type != Tag {
+			return fmt.Errorf("changelog from: type must be %s or %s", Commit, Tag)
+		}
+
+		if m.Changelog.To.Type != Commit && m.Changelog.To.Type != Tag {
+			return fmt.Errorf("changelog to: type must be %s or %s", Commit, Tag)
+		}
+
+		if m.Changelog.From.Value == "" {
+			return errors.New("changelog from: value is required")
+		}
+
+		if m.Changelog.To.Value == "" {
+			return errors.New("changelog to: value is required")
+		}
+
+		if m.Changelog.Condition.Type != "" {
+			if m.Changelog.Condition.Type != Include && m.Changelog.Condition.Type != Exclude {
+				return fmt.Errorf(
+					"changelog [%s] condition: type must be %s or %s",
+					m.Name,
+					Include,
+					Exclude,
+				)
+			}
+
+			if len(m.Changelog.Condition.Value) == 0 {
+				return errors.New("condition value is required")
+			}
+
+			for i, condition := range m.Changelog.Condition.Value {
+				if condition == "" {
+					return fmt.Errorf("condition [%d]: value is required", i)
+				}
+
+				_, err := regexp.Compile(condition)
+				if err != nil {
+					return fmt.Errorf("invalid condition [%d]: %w", i, err)
+				}
+			}
+		}
+	}
+
+	return nil
 }

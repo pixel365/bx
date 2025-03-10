@@ -130,7 +130,168 @@ bx push -h
 bx -h
 ```
 
-### Example of default module configuration
+### Configuration Fields
+
+- **name** – The name of the module.
+- **version** – The version of the module.
+- **account** – The account associated with the module.
+- **buildDirectory** – Directory where the build artifacts will be output.
+- **logDirectory** – Directory where log files will be stored.
+- **repository** *(optional)* – Path to a module repository.
+- **variables** (optional) – A set of key-value pairs where both keys and values are strings. These variables can be used in the stages section for the name, to, and from fields. Placeholders in curly braces {} will be replaced with their corresponding values.
+- **changelog** *(optional)* – Specifies how to automatically generate a changelog from commit history.
+  - `from` and `to` – Define the commit range (tags or specific commits).
+    - `type` – Allowed values: `tag`, `commit`.
+    - `value` – The specific tag or commit hash.
+  - `condition` – Criteria for including or excluding commits.
+    - `type` – Allowed values: `include`, `exclude`.
+    - `value` – Array of regular expressions for filtering commits.
+- **stages** – Defines the file copying and processing stages.
+  - `name` – Stage name (supports variables).
+  - `to` – Target directory (supports variables).
+  - `from` – Source directories or files (supports variables).
+  - `actionIfFileExists` – How to handle existing files (`replace`, `skip`, `replace_if_newer`).
+  - `convertTo1251` *(optional)* – Converts PHP files and `description.ru` to windows-1251 encoding. Default: `false`.
+- **callbacks** *(optional)* – Actions executed before (`pre`) or after (`post`) specific stages.
+  - `stage` – Associated stage name.
+  - `pre`/`post` – Actions executed before/after the stage.
+    - `type` – Allowed values: `command`, `external`.
+    - `action` – Command to run or URL for external requests.
+    - `method` *(for **`external`**)* – HTTP method (`GET`, `POST`, etc.).
+    - `parameters` *(optional)* – Arguments for commands or query parameters for requests.
+- **ignore** *(optional)* – Patterns for files or directories to exclude from processing.
+
+### Variables explanation
+
+```yaml
+variables:
+    structPath: "./examples/structure"
+    install: "install"
+    bitrix: "{structPath}/bitrix"
+    local: "{structPath}/local"
+```
+
+In this case, {bitrix} will expand to ./examples/structure/bitrix, and {install} will be replaced with install when used in stages.
+
+### Changelog explanation
+
+The `changelog` section defines how to automatically generate a changelog from your project's commit history. It consists of the following fields:
+
+- **from** – Defines the starting point of the commit range.
+  - **type** – Indicates the type of the reference point (`tag` or `commit`).
+  - **value** – The specific tag name or commit hash.
+
+- **to** – Defines the endpoint of the commit range.
+  - **type** – Indicates the type of the reference point (`tag` or `commit`).
+  - **value** – The specific tag name or commit hash.
+
+- **condition** (optional) – Criteria for selecting commits to include or exclude.
+  - **type** – Filtering mode:
+    - `include` – Includes only commits matching the specified patterns.
+    - `exclude` – Excludes commits matching the specified patterns.
+  - **value** – An array of regular expressions used for filtering commit messages.
+
+#### Example
+
+```yaml
+changelog:
+  from:
+    type: "tag"
+    value: "v1.0.0"
+  to:
+    type: "tag"
+    value: "v2.0.0"
+  condition:
+    type: "include"
+    value:
+      - "^feat:([\\W\\w]+)$"
+      - "^fix:([\\W\\w]+)$"
+```
+
+In this example,
+the changelog will include only commits between tags v1.0.0 and v2.0.0 that match patterns starting with feat: or fix:.
+
+**The provided patterns and types are customizable, according to your project's requirements.**
+
+### Stages explanation
+
+The stages section defines the steps for copying files. Each stage consists of:
+
+- **name** – The name of the stage. Can use variables.
+- **to** – The location where files and directories will be copied, relative to the module's distribution root. Can use variables.
+  - For example, if the module's root is /build/1.2.3, then setting to: {install}/components means files will be placed in /build/1.2.3/install/components.
+- **from** – The source paths from which files should be copied. Can use variables.
+- **actionIfFileExists** – Action to take if the file already exists:
+  - replace – Overwrite the existing file.
+  - skip – Skip copying if the file exists.
+  - replace_if_newer – Overwrite only if the source file is newer.
+- **convertTo1251** (optional) - Specifies whether to convert the file contents to windows-1251 encoding. Applies only to *.php files, as well as description.ru. Defaults to false.
+
+#### Example
+
+```yaml
+stages:
+  - name: "components"
+    to: "{install}/components"
+    actionIfFileExists: "replace"
+    from:
+      - "{bitrix}/components"
+      - "{local}/components"
+```
+
+- **components** – Copies component files to {install}/components.
+
+**The stage names provided in the examples are for reference only and can be customized as needed.**
+
+### Callbacks explanation
+
+The callbacks section allows executing additional actions **before** (pre) or **after** (post) a specific stage (stage).
+
+Each callback consists of:
+- **stage** – The name of the stage it is associated with.
+- **pre** – Action executed **before** the stage starts.
+- **post** – Action executed **after** the stage is completed.
+
+#### Supported action types
+
+- **command** – Executes a shell command.
+- **external** – Sends an HTTP request to an external service.
+
+#### Example
+
+```yaml
+callbacks:
+  - stage: "components"
+    pre:
+      type: "command"
+      action: "ls"
+      parameters:
+        - "-lsa"
+    post:
+      type: "external"
+      action: "http://localhost:80"
+      method: "GET"
+      parameters:
+        - "param1=value1"
+        - "param2=value2"
+```
+
+In this example:
+- Before copying components, the ls -lsa command is executed.
+- After copying, a GET request is sent to http://localhost:80 with query parameters.
+
+#### Available parameters
+
+- **type**:
+  - command – Runs a shell command.
+  - external – Sends an HTTP request.
+- **action**:
+  - For command: The command to execute.
+  - For external: The target URL.
+- **method** *(for external only)* – HTTP method (GET, POST, etc.).
+- **parameters** *(optional)* – List of arguments for commands or query parameters for requests.
+
+### Full example of default module configuration
 
 ```yaml
 name: "test"
@@ -138,13 +299,27 @@ version: "1.0.0"
 account: "test"
 buildDirectory: "./dist/test"
 logDirectory: "./logs/test"
+repository: "."
 
 variables:
   structPath: "./examples/structure"
   install: "install"
   bitrix: "{structPath}/bitrix"
   local: "{structPath}/local"
-  
+
+changelog:
+  from:
+    type: "tag"
+    value: "v1.0.0"
+  to:
+    type: "tag"
+    value: "v2.0.0"
+  condition:
+    type: "include"
+    value:
+      - "^feat:([\W\w]+)$"
+      - "^fix:([\W\w]+)$"
+
 stages:
   - name: "components"
     to: "{install}/components"
@@ -192,108 +367,6 @@ callbacks:
 
 ignore:
   - "**/*.log"
-```
-
-### Configuration Fields
-
-- **name** – The name of the module.
-- **version** – The version of the module.
-- **account** – The account associated with the module.
-- **buildDirectory** – Directory where the build artifacts will be output.
-- **logDirectory** – Directory where log files will be stored.
-- **variables** (optional) – A set of key-value pairs where both keys and values are strings. These variables can be used in the `stages` section for the `name`, `to`, and `from` fields. Placeholders in curly braces `{}` will be replaced with their corresponding values.
-
-  Example:
-
-  ```yaml
-  variables:
-    structPath: "./examples/structure"
-    install: "install"
-    bitrix: "{structPath}/bitrix"
-    local: "{structPath}/local"
-  ```
-
-  In this case, `{bitrix}` will expand to `./examples/structure/bitrix`, and `{install}` will be replaced with `install` when used in `stages`.
-
-### Stages
-
-The `stages` section defines the steps for copying files. Each stage consists of:
-
-- **name** – The name of the stage. Can use variables.
-- **to** – The location where files and directories will be copied, relative to the module's distribution root. Can use variables.
-  - For example, if the module's root is `/build/1.2.3`, then setting `to: {install}/components` means files will be placed in `/build/1.2.3/install/components`.
-- **from** – The source paths from which files should be copied. Can use variables.
-- **actionIfFileExists** – Action to take if the file already exists:
-  - `replace` – Overwrite the existing file.
-  - `skip` – Skip copying if the file exists.
-  - `replace_if_newer` – Overwrite only if the source file is newer.
-- **convertTo1251** (optional) - Specifies whether to convert the file contents to windows-1251 encoding. Applies only to *.php files, as well as description.ru. Defaults to false.
-
-#### Example
-
-- **components** – Copies component files to `{install}/components`.
-- **templates** – Copies template files to `{install}/templates`.
-- **rootFiles** – Copies specific files to the root directory (`.`).
-- **testFiles** – Copies test files to `test/`.
-
-**The stage names provided in the examples are for reference only and can be customized as needed.**
-
-### Callbacks
-
-The `callbacks` section allows executing additional actions **before** (`pre`) or **after** (`post`) a specific stage (`stage`).
-
-Each callback consists of:
-- **stage** – The name of the stage it is associated with.
-- **pre** – Action executed **before** the stage starts.
-- **post** – Action executed **after** the stage is completed.
-
-### Supported action types
-
-- **command** – Executes a shell command.
-- **external** – Sends an HTTP request to an external service.
-
-#### Example
-
-```yaml
-callbacks:
-  - stage: "components"
-    pre:
-      type: "command"
-      action: "ls"
-      parameters:
-        - "-lsa"
-    post:
-      type: "external"
-      action: "http://localhost:80"
-      method: "GET"
-      parameters:
-        - "param1=value1"
-        - "param2=value2"
-```
-
-In this example:
-- Before copying `components`, the `ls -lsa` command is executed.
-- After copying, a GET request is sent to `http://localhost:80` with query parameters.
-
-### Available parameters
-
-- **type**:
-  - `command` – Runs a shell command.
-  - `external` – Sends an HTTP request.
-- **action**:
-  - For `command`: The command to execute.
-  - For `external`: The target URL.
-- **method** *(for `external` only)* – HTTP method (`GET`, `POST`, etc.).
-- **parameters** *(optional)* – List of arguments for commands or query parameters for requests.
-
-### Ignored Files
-
-The `ignore` section defines file patterns to be excluded from processing.  
-For example:
-
-```yaml
-ignore:
-  - "**/*.log"  # Exclude all log files.
 ```
 
 ### Status
