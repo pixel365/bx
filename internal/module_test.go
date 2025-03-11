@@ -17,6 +17,7 @@ func TestModule_IsValid(t *testing.T) {
 		LogDirectory   string
 		Stages         []Stage
 		Ignore         []string
+		Changelog      Changelog
 	}
 	tests := []struct {
 		name    string
@@ -80,6 +81,28 @@ func TestModule_IsValid(t *testing.T) {
 			},
 			Ignore: []string{},
 		}, true},
+		{"valid sort value", fields{
+			Ctx:            context.Background(),
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			LogDirectory:   "tester",
+			Stages: []Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: Replace,
+					From:               []string{"./tester"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: Changelog{
+				Sort: Asc,
+			},
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

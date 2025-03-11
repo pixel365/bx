@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/text/encoding/charmap"
+
 	"github.com/rs/zerolog"
 )
 
@@ -224,6 +226,12 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 
 	log.Info().Msg("Collect complete")
 
+	err = makeVersionDescription(m, log)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to collect build description")
+		return err
+	}
+
 	zipPath, err := makeZipFilePath(m)
 	if err != nil {
 		return err
@@ -338,4 +346,53 @@ func makeVersionDirectory(module *Module) (string, error) {
 	}
 	path = filepath.Clean(path)
 	return path, nil
+}
+
+func makeVersionDescription(module *Module, log *zerolog.Logger) error {
+	versionDir, err := makeVersionDirectory(module)
+	if err != nil {
+		return err
+	}
+
+	if module.Repository != "" {
+		commits, err := ChangelogList(module.Repository, module.Changelog)
+		if err != nil {
+			return err
+		}
+
+		if len(commits) > 0 {
+			descriptionPath := filepath.Join(versionDir, "description.ru")
+			descriptionPath = filepath.Clean(descriptionPath)
+
+			file, err := os.Create(descriptionPath)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to create description file [%s]: %w",
+					descriptionPath,
+					err,
+				)
+			}
+
+			defer func() {
+				if err := file.Close(); err != nil {
+					log.Error().Err(err).Msg("Failed to close description file")
+				}
+			}()
+
+			encoder := charmap.Windows1251.NewEncoder()
+			for _, commit := range commits {
+				encodedLine, err := encoder.String(commit + "\n")
+				if err != nil {
+					return fmt.Errorf("encoding commit [%s]: %w", commit, err)
+				}
+
+				_, err = file.WriteString(encodedLine)
+				if err != nil {
+					return fmt.Errorf("failed to write commit to %s: %w", descriptionPath, err)
+				}
+			}
+		}
+	}
+
+	return nil
 }

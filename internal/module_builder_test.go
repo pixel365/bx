@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/rs/zerolog"
 )
 
 func Test_makeZipFilePath(t *testing.T) {
@@ -81,6 +83,32 @@ func Test_makeVersionDirectory(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("makeVersionDirectory() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_makeVersionDescription(t *testing.T) {
+	mod := &Module{
+		BuildDirectory: "testdata",
+		Version:        "1.0.0",
+	}
+
+	type args struct {
+		module *Module
+		log    *zerolog.Logger
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{mod, nil}, "empty repository", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := makeVersionDescription(tt.args.module, tt.args.log); (err != nil) != tt.wantErr {
+				t.Errorf("makeVersionDescription() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
