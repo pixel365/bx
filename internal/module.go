@@ -8,14 +8,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/go-git/go-git/v5"
-
 	"gopkg.in/yaml.v3"
 )
 
 type FileExistsAction string
 type ChangelogType string
 type ChangelogConditionType string
+type ChangelogSort string
 
 const (
 	Replace        FileExistsAction = "replace"
@@ -27,6 +26,9 @@ const (
 
 	Include ChangelogConditionType = "include"
 	Exclude ChangelogConditionType = "exclude"
+
+	Asc  ChangelogSort = "asc"
+	Desc ChangelogSort = "desc"
 )
 
 type TypeValue[T1 any, T2 any] struct {
@@ -37,6 +39,7 @@ type TypeValue[T1 any, T2 any] struct {
 type Changelog struct {
 	From      TypeValue[ChangelogType, string]            `yaml:"from"`
 	To        TypeValue[ChangelogType, string]            `yaml:"to"`
+	Sort      ChangelogSort                               `yaml:"sort,omitempty"`
 	Condition TypeValue[ChangelogConditionType, []string] `yaml:"condition,omitempty"`
 }
 
@@ -155,9 +158,8 @@ func (m *Module) IsValid() error {
 	}
 
 	if m.Repository != "" {
-		_, err := git.PlainOpen(m.Repository)
-		if err != nil {
-			return fmt.Errorf("repository [%s]: %w", m.Repository, err)
+		if _, err := OpenRepository(m.Repository); err != nil {
+			return err
 		}
 	}
 
@@ -332,6 +334,12 @@ func (m *Module) ValidateChangelog() error {
 					return fmt.Errorf("invalid condition [%d]: %w", i, err)
 				}
 			}
+		}
+	}
+
+	if m.Changelog.Sort != "" {
+		if m.Changelog.Sort != Asc && m.Changelog.Sort != Desc {
+			return fmt.Errorf("changelog sort must be %s or %s", Asc, Desc)
 		}
 	}
 

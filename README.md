@@ -190,6 +190,7 @@ The `changelog` section defines how to automatically generate a changelog from y
     - `include` – Includes only commits matching the specified patterns.
     - `exclude` – Excludes commits matching the specified patterns.
   - **value** – An array of regular expressions used for filtering commit messages.
+- **sort** (optional) – Sorting commits (`asc` or `desc`)
 
 #### Example
 
@@ -204,8 +205,9 @@ changelog:
   condition:
     type: "include"
     value:
-      - "^feat:([\\W\\w]+)$"
-      - "^fix:([\\W\\w]+)$"
+      - '^feat:([\\W\\w]+)$'
+      - '^fix:([\\W\\w]+)$'
+  sort: "asc"
 ```
 
 In this example,
@@ -317,8 +319,9 @@ changelog:
   condition:
     type: "include"
     value:
-      - "^feat:([\W\w]+)$"
-      - "^fix:([\W\w]+)$"
+      - '^feat:([\W\w]+)$'
+      - '^fix:([\W\w]+)$'
+  sort: "asc"
 
 stages:
   - name: "components"
