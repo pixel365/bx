@@ -116,3 +116,359 @@ func TestValidateArgument(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateStages(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty stages", true},
+		{args{m: &Module{Stages: []Stage{{Name: ""}}}}, "empty stage name", true},
+		{args{m: &Module{Stages: []Stage{{Name: "testing"}}}}, "empty stage to", true},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing", To: "testing", ActionIfFileExists: ""}},
+				},
+			},
+			"empty stage action",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{
+						{
+							Name:               "testing",
+							To:                 "testing",
+							ActionIfFileExists: ReplaceIfNewer,
+							From:               []string{""},
+						},
+					},
+				},
+			},
+			"empty stage from",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{
+						{
+							Name:               "testing",
+							To:                 "testing",
+							ActionIfFileExists: ReplaceIfNewer,
+							From:               []string{"testing"},
+						},
+					},
+				},
+			},
+			"valid stages",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateStages(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateStages() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateIgnore(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty ignore list", false},
+		{args{m: &Module{Ignore: []string{""}}}, "empty ignore value", true},
+		{args{m: &Module{Ignore: []string{"**/*.log"}}}, "valid list", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateIgnore(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateIgnore() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateVariables(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty variables list", false},
+		{args{m: &Module{Variables: map[string]string{"": "value"}}}, "empty variable key", true},
+		{args{m: &Module{Variables: map[string]string{"key": ""}}}, "empty variable value", true},
+		{args{m: &Module{Variables: map[string]string{"key": "value"}}}, "valid", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateVariables(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateVariables() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateCallbacks(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty callback list", false},
+		{args{m: &Module{Callbacks: []Callback{{Stage: ""}}}}, "empty callback stage", true},
+		{
+			args{m: &Module{Callbacks: []Callback{{Stage: "testing"}}}},
+			"empty callback pre/post type",
+			true,
+		},
+		// TODO: we need more tests
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateCallbacks(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateCallbacks() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateBuilds(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty build list", true},
+		{
+			args{m: &Module{Builds: Builds{Release: []string{""}}}},
+			"empty stage in release list",
+			true,
+		},
+		{
+			args{m: &Module{Builds: Builds{Release: []string{"testing", "testing"}}}},
+			"duplicate stage in release list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"test"}},
+				},
+			},
+			"invalid stage in release list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}},
+				},
+			},
+			"valid stage in release list",
+			false,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}},
+				},
+			},
+			"empty lastVersion list",
+			false,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}, LastVersion: []string{""}},
+				},
+			},
+			"empty stage in lastVersion list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{
+						Release:     []string{"testing"},
+						LastVersion: []string{"testing", "testing"},
+					},
+				},
+			},
+			"duplicate stage in lastVersion list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}, LastVersion: []string{"testing"}},
+				},
+			},
+			"valid stage in lastVersion list",
+			false,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}, LastVersion: []string{"test"}},
+				},
+			},
+			"invalid stage in lastVersion list",
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateBuilds(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateBuilds() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateLastVersion(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}},
+				},
+			},
+			"empty lastVersion list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}, LastVersion: []string{""}},
+				},
+			},
+			"empty stage in lastVersion list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{
+						Release:     []string{"testing"},
+						LastVersion: []string{"testing", "testing"},
+					},
+				},
+			},
+			"duplicate stage in lastVersion list",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}, LastVersion: []string{"testing"}},
+				},
+			},
+			"valid stage in lastVersion list",
+			false,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{{Name: "testing"}},
+					Builds: Builds{Release: []string{"testing"}, LastVersion: []string{"test"}},
+				},
+			},
+			"invalid stage in lastVersion list",
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateLastVersion(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateLastVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_validateStagesInBuilds(t *testing.T) {
+	m := &Module{Stages: []Stage{{Name: "testing"}}}
+	type args struct {
+		find   func(string) (Stage, error)
+		name   string
+		stages []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"empty stages",
+			args{
+				find:   m.FindStage,
+				name:   "release",
+				stages: m.Builds.Release,
+			}, true},
+		{"empty stage",
+			args{
+				find:   m.FindStage,
+				name:   "release",
+				stages: []string{""},
+			}, true},
+		{"valid stage",
+			args{
+				find:   m.FindStage,
+				name:   "release",
+				stages: []string{"testing"},
+			}, false},
+		{"duplicate stage",
+			args{
+				find:   m.FindStage,
+				name:   "release",
+				stages: []string{"testing", "testing"},
+			}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateStagesInBuilds(tt.args.stages, tt.args.name, tt.args.find); (err != nil) != tt.wantErr {
+				t.Errorf("validateStagesInBuilds() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
