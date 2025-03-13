@@ -93,6 +93,11 @@ bx build --name my_module --version 1.2.3
 ```
 
 ```shell
+# Build .last_version
+bx build --name my_module --last
+```
+
+```shell
 # Help
 bx build -h
 ```

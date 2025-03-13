@@ -25,7 +25,12 @@ func (m *Module) Build() error {
 	}
 
 	logFile, err := os.OpenFile(
-		fmt.Sprintf("./%s-%s.%s.log", m.Name, m.Version, time.Now().UTC().Format(time.RFC3339)),
+		fmt.Sprintf(
+			"./%s-%s.%s.log",
+			m.Name,
+			m.GetVersion(),
+			time.Now().UTC().Format(time.RFC3339),
+		),
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
 		0600,
 	)
@@ -121,7 +126,7 @@ func (m *Module) Prepare(log *zerolog.Logger) error {
 
 	m.LogDirectory = path
 
-	path, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.Version))
+	path, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.GetVersion()))
 	if err != nil {
 		log.Error().Err(err).Msg("Prepare: failed to make build version directory")
 		return err
@@ -201,9 +206,19 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(m.Stages))
 
-	for _, stage := range m.Stages {
+	stages := m.Builds.Release
+	if m.LastVersion {
+		stages = m.Builds.LastVersion
+	}
+
+	for _, stageName := range stages {
 		if err := CheckContext(m.Ctx); err != nil {
 			return err
+		}
+
+		stage, err := m.FindStage(stageName)
+		if err != nil {
+			return fmt.Errorf("failed to find stage: %w", err)
 		}
 
 		wg.Add(1)
@@ -329,7 +344,7 @@ func handleStage(
 }
 
 func makeZipFilePath(module *Module) (string, error) {
-	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.Version))
+	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.GetVersion()))
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", err
@@ -339,7 +354,7 @@ func makeZipFilePath(module *Module) (string, error) {
 }
 
 func makeVersionDirectory(module *Module) (string, error) {
-	path := filepath.Join(module.BuildDirectory, module.Version)
+	path := filepath.Join(module.BuildDirectory, module.GetVersion())
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", err

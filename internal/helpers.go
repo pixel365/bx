@@ -26,27 +26,6 @@ const (
 	No  = "No"
 )
 
-type Printer interface {
-	PrintSummary(verbose bool)
-}
-
-type OptionProvider interface {
-	Option() string
-}
-
-func Confirmation(flag *bool, title string) error {
-	if err := huh.NewConfirm().
-		Title(title).
-		Affirmative(Yes).
-		Negative(No).
-		Value(flag).
-		Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func Choose(items *[]string, value *string, title string) error {
 	if len(*items) == 0 {
 		switch any(items).(type) {
@@ -149,21 +128,17 @@ stages:
       - "{structPath}/simple-file.php"
     convertTo1251: false
 
-#callbacks:
-#  - stage: "components"
-#    pre:
-#      type: "CommandType"
-#      action: "ls"
-#      parameters:
-#        - "-lsa"
-#        - "."
-#    post:
-#      type: "ExternalType"
-#      action: "http://localhost:80"
-#      method: "GET"
-#      parameters:
-#        - "param1=value1"
-#        - "param2=value2"
+builds:
+  release:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
+  lastVersion:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
 
 ignore:
   - "**/*.log"

@@ -23,6 +23,9 @@ bx build -f config.yaml
 
 # Override version
 bx build --name my_module --version 1.2.3
+
+# Build .last_version
+bx build --name my_module --last
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return build(cmd, args)
@@ -33,6 +36,7 @@ bx build --name my_module --version 1.2.3
 	cmd.Flags().StringP("file", "f", "", "Path to a module")
 	cmd.Flags().StringP("version", "v", "", "Version of the module")
 	cmd.Flags().StringP("repository", "r", "", "Path to a repository")
+	cmd.Flags().BoolP("last", "", false, "Build a module .last_version.zip")
 
 	return cmd
 }
@@ -61,12 +65,6 @@ func build(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	version, err := cmd.Flags().GetString("version")
-	version = strings.TrimSpace(version)
-	if err != nil {
-		return err
-	}
-
 	isFile := len(file) > 0
 
 	if !isFile && name == "" {
@@ -81,6 +79,12 @@ func build(cmd *cobra.Command, _ []string) error {
 	}
 
 	module, err := internal.ReadModule(path, name, isFile)
+	if err != nil {
+		return err
+	}
+
+	version, err := cmd.Flags().GetString("version")
+	version = strings.TrimSpace(version)
 	if err != nil {
 		return err
 	}
@@ -106,6 +110,19 @@ func build(cmd *cobra.Command, _ []string) error {
 	}
 
 	module.Ctx = cmd.Context()
+
+	last, err := cmd.Flags().GetBool("last")
+	if err != nil {
+		return err
+	}
+
+	if last {
+		if err := internal.ValidateLastVersion(module); err != nil {
+			return err
+		}
+	}
+
+	module.LastVersion = last
 
 	if err := module.Build(); err != nil {
 		return err
