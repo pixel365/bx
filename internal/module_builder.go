@@ -19,13 +19,18 @@ import (
 // If any of these phases fails, the build will be rolled back to ensure a clean state.
 //
 // The method returns an error if any of the steps (Prepare, Collect, or Cleanup) fail.
-func (m *Module) Build(last bool) error {
+func (m *Module) Build() error {
 	if err := CheckContext(m.Ctx); err != nil {
 		return err
 	}
 
 	logFile, err := os.OpenFile(
-		fmt.Sprintf("./%s-%s.%s.log", m.Name, m.Version, time.Now().UTC().Format(time.RFC3339)),
+		fmt.Sprintf(
+			"./%s-%s.%s.log",
+			m.Name,
+			m.GetVersion(),
+			time.Now().UTC().Format(time.RFC3339),
+		),
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
 		0600,
 	)
@@ -56,7 +61,7 @@ func (m *Module) Build(last bool) error {
 
 	log.Info().Msg("Prepare complete")
 
-	if err := m.Collect(last, &log); err != nil {
+	if err := m.Collect(&log); err != nil {
 		log.Error().Err(err).Msg("Failed to collect build")
 		return m.Rollback(&log)
 	}
@@ -121,7 +126,7 @@ func (m *Module) Prepare(log *zerolog.Logger) error {
 
 	m.LogDirectory = path
 
-	path, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.Version))
+	path, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.GetVersion()))
 	if err != nil {
 		log.Error().Err(err).Msg("Prepare: failed to make build version directory")
 		return err
@@ -192,7 +197,7 @@ func (m *Module) Rollback(log *zerolog.Logger) error {
 // The function creates the necessary directories for each stage and copies files as defined in the stage configuration.
 //
 // The method returns an error if any stage fails or if there are issues zipping the collected files.
-func (m *Module) Collect(last bool, log *zerolog.Logger) error {
+func (m *Module) Collect(log *zerolog.Logger) error {
 	versionDirectory, err := makeVersionDirectory(m)
 	if err != nil {
 		return err
@@ -202,7 +207,7 @@ func (m *Module) Collect(last bool, log *zerolog.Logger) error {
 	errCh := make(chan error, len(m.Stages))
 
 	stages := m.Builds.Release
-	if last {
+	if m.LastVersion {
 		stages = m.Builds.LastVersion
 	}
 
@@ -339,7 +344,7 @@ func handleStage(
 }
 
 func makeZipFilePath(module *Module) (string, error) {
-	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.Version))
+	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.GetVersion()))
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", err
@@ -349,7 +354,7 @@ func makeZipFilePath(module *Module) (string, error) {
 }
 
 func makeVersionDirectory(module *Module) (string, error) {
-	path := filepath.Join(module.BuildDirectory, module.Version)
+	path := filepath.Join(module.BuildDirectory, module.GetVersion())
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", err

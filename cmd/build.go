@@ -23,6 +23,9 @@ bx build -f config.yaml
 
 # Override version
 bx build --name my_module --version 1.2.3
+
+# Build .last_version
+bx build --name my_module --last
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return build(cmd, args)
@@ -113,7 +116,15 @@ func build(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err := module.Build(last); err != nil {
+	if last {
+		if err := internal.ValidateLastVersion(module); err != nil {
+			return err
+		}
+	}
+
+	module.LastVersion = last
+
+	if err := module.Build(); err != nil {
 		return err
 	}
 

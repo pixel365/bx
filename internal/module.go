@@ -67,4 +67,12 @@ type Module struct {
 	Stages         []Stage           `yaml:"stages"`
 	Ignore         []string          `yaml:"ignore"`
 	Callbacks      []Callback        `yaml:"callbacks,omitempty"`
+	LastVersion    bool              `yaml:"-"`
+}
+
+func (m *Module) GetVersion() string {
+	if m.LastVersion {
+		return ".last_version"
+	}
+	return m.Version
 }

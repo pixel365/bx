@@ -273,5 +273,5 @@ func (m *Module) FindStage(name string) (Stage, error) {
 		}
 	}
 
-	return Stage{}, errors.New("stage not found")
+	return Stage{}, fmt.Errorf("stage `%s` not found", name)
 }

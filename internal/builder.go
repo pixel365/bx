@@ -5,9 +5,9 @@ import (
 )
 
 type Builder interface {
-	Build(last bool) error
+	Build() error
 	Prepare(log *zerolog.Logger) error
 	Cleanup(log *zerolog.Logger) error
 	Rollback(log *zerolog.Logger) error
-	Collect(last bool, log *zerolog.Logger) error
+	Collect(log *zerolog.Logger) error
 }

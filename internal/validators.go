@@ -161,31 +161,41 @@ func ValidateCallbacks(m *Module) error {
 }
 
 func ValidateBuilds(m *Module) error {
-	if len(m.Builds.Release) == 0 {
-		return errors.New("release is required")
-	}
-
-	for index, stage := range m.Builds.Release {
-		if stage == "" {
-			return fmt.Errorf("release [%d]: stage is required", index)
-		}
-
-		_, err := m.FindStage(stage)
-		if err != nil {
-			return fmt.Errorf("release [%d]: %w", index, err)
-		}
+	if err := validateStagesInBuilds(m.Builds.Release, "release", m.FindStage); err != nil {
+		return err
 	}
 
 	if len(m.Builds.LastVersion) > 0 {
-		for index, stage := range m.Builds.LastVersion {
-			if stage == "" {
-				return fmt.Errorf("lastVersion [%d]: stage is required", index)
-			}
+		return ValidateLastVersion(m)
+	}
 
-			_, err := m.FindStage(stage)
-			if err != nil {
-				return fmt.Errorf("lastVersion [%d]: %w", index, err)
-			}
+	return nil
+}
+
+func ValidateLastVersion(m *Module) error {
+	return validateStagesInBuilds(m.Builds.LastVersion, "lastVersion", m.FindStage)
+}
+
+func validateStagesInBuilds(stages []string, name string, find func(string) (Stage, error)) error {
+	if len(stages) == 0 {
+		return fmt.Errorf("%s is required", name)
+	}
+
+	collection := make(map[string]struct{})
+	for index, stage := range stages {
+		if stage == "" {
+			return fmt.Errorf("%s [%d]: stage is required", name, index)
+		}
+
+		if _, exists := collection[stage]; exists {
+			return fmt.Errorf("%s [%d]: duplicate stage [%s]", name, index, stage)
+		}
+
+		collection[stage] = struct{}{}
+
+		_, err := find(stage)
+		if err != nil {
+			return fmt.Errorf("%s [%d]: %w", name, index, err)
 		}
 	}
 
