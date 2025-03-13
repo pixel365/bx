@@ -164,6 +164,9 @@ bx -h
     - `action` – Command to run or URL for external requests.
     - `method` *(for **`external`**)* – HTTP method (`GET`, `POST`, etc.).
     - `parameters` *(optional)* – Arguments for commands or query parameters for requests.
+- **builds** – Defines named build presets to group-specific stages for different types of builds.
+  - **Profile name** – The name of the build preset (e.g., `release`, `lastVersion`).
+  - **Stages list** – A list of stage names to be included in the build process.
 - **ignore** *(optional)* – Patterns for files or directories to exclude from processing.
 
 ### Variables explanation
@@ -175,11 +178,8 @@ variables:
     bitrix: "{structPath}/bitrix"
     local: "{structPath}/local"
 ```
-
 In this case, {bitrix} will expand to ./examples/structure/bitrix, and {install} will be replaced with install when used in stages.
-
 ### Changelog explanation
-
 The `changelog` section defines how to automatically generate a changelog from your project's commit history. It consists of the following fields:
 
 - **from** – Defines the starting point of the commit range.
@@ -298,8 +298,40 @@ In this example:
 - **method** *(for external only)* – HTTP method (GET, POST, etc.).
 - **parameters** *(optional)* – List of arguments for commands or query parameters for requests.
 
-### Full example of default module configuration
+### Builds explanation
 
+The `builds` section defines named build presets that allow grouping specific stages for different types of builds. Instead of executing all stages, you can specify a subset of them using predefined build profiles.
+
+Each build profile consists of:
+
+- **Profile name** – The name of the build preset (`release`, `lastVersion` (optional)).
+- **Stages list** – A list of stage names to be included in the build process.
+
+#### Example
+
+```yaml
+builds:
+  release:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
+  lastVersion:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
+```
+
+In this example:
+
+- The `release` build includes the `components`, `templates`, `rootFiles`, and `testFiles` stages.
+- The `lastVersion` build includes the same stages but can be used to distinguish a specific build variant.
+
+Using the `builds` section allows for greater flexibility
+by enabling different build configurations without modifying the core `stages` definition.
+
+### Full example of default module configuration
 ```yaml
 name: "test"
 version: "1.0.0"
@@ -313,7 +345,7 @@ variables:
   install: "install"
   bitrix: "{structPath}/bitrix"
   local: "{structPath}/local"
-
+  
 changelog:
   from:
     type: "tag"
@@ -357,7 +389,7 @@ stages:
     from:
       - "./examples/structure/simple-file.php"
     convertTo1251: false
-
+    
 callbacks:
   - stage: "components"
     pre:
@@ -372,6 +404,18 @@ callbacks:
       parameters:
         - "param1=value1"
         - "param2=value2"
+
+builds:
+  release:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
+  lastVersion:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
 
 ignore:
   - "**/*.log"
