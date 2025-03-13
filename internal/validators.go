@@ -89,3 +89,105 @@ func ValidateArgument(arg string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9>./_-]+$`)
 	return re.MatchString(arg)
 }
+
+func ValidateStages(m *Module) error {
+	if len(m.Stages) == 0 {
+		return errors.New("stages is not valid")
+	}
+
+	for index, item := range m.Stages {
+		if item.Name == "" {
+			return fmt.Errorf("stages [%d]: name is required", index)
+		}
+
+		if item.To == "" {
+			return fmt.Errorf("stages [%d]: to is required", index)
+		}
+
+		if item.ActionIfFileExists == "" {
+			return fmt.Errorf("stages [%d]: actionIfFileExists is required", index)
+		}
+
+		for pathIndex, path := range item.From {
+			if path == "" {
+				return fmt.Errorf("stages [%s]: path [%d] is required", item.Name, pathIndex)
+			}
+		}
+	}
+
+	return nil
+}
+
+func ValidateIgnore(m *Module) error {
+	if len(m.Ignore) > 0 {
+		for index, rule := range m.Ignore {
+			if rule == "" {
+				return fmt.Errorf("ignore [%d]: rule is required", index)
+			}
+		}
+	}
+
+	return nil
+}
+
+func ValidateVariables(m *Module) error {
+	if m.Variables != nil {
+		i := 0
+		for key, value := range m.Variables {
+			i++
+			if key == "" {
+				return fmt.Errorf("variable [#%d]: key is required", i)
+			}
+
+			if value == "" {
+				return fmt.Errorf("variable [%s]: value is required", key)
+			}
+		}
+	}
+
+	return nil
+}
+
+func ValidateCallbacks(m *Module) error {
+	if len(m.Callbacks) > 0 {
+		for index, callback := range m.Callbacks {
+			if err := callback.IsValid(); err != nil {
+				return fmt.Errorf("callback [%d]: %w", index, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func ValidateBuilds(m *Module) error {
+	if len(m.Builds.Release) == 0 {
+		return errors.New("release is required")
+	}
+
+	for index, stage := range m.Builds.Release {
+		if stage == "" {
+			return fmt.Errorf("release [%d]: stage is required", index)
+		}
+
+		_, err := m.FindStage(stage)
+		if err != nil {
+			return fmt.Errorf("release [%d]: %w", index, err)
+		}
+	}
+
+	if len(m.Builds.LastVersion) > 0 {
+		for index, stage := range m.Builds.LastVersion {
+			if stage == "" {
+				return fmt.Errorf("lastVersion [%d]: stage is required", index)
+			}
+
+			_, err := m.FindStage(stage)
+			if err != nil {
+				return fmt.Errorf("lastVersion [%d]: %w", index, err)
+			}
+		}
+	}
+
+	return nil
+}

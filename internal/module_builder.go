@@ -19,7 +19,7 @@ import (
 // If any of these phases fails, the build will be rolled back to ensure a clean state.
 //
 // The method returns an error if any of the steps (Prepare, Collect, or Cleanup) fail.
-func (m *Module) Build() error {
+func (m *Module) Build(last bool) error {
 	if err := CheckContext(m.Ctx); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (m *Module) Build() error {
 
 	log.Info().Msg("Prepare complete")
 
-	if err := m.Collect(&log); err != nil {
+	if err := m.Collect(last, &log); err != nil {
 		log.Error().Err(err).Msg("Failed to collect build")
 		return m.Rollback(&log)
 	}
@@ -192,7 +192,7 @@ func (m *Module) Rollback(log *zerolog.Logger) error {
 // The function creates the necessary directories for each stage and copies files as defined in the stage configuration.
 //
 // The method returns an error if any stage fails or if there are issues zipping the collected files.
-func (m *Module) Collect(log *zerolog.Logger) error {
+func (m *Module) Collect(last bool, log *zerolog.Logger) error {
 	versionDirectory, err := makeVersionDirectory(m)
 	if err != nil {
 		return err
@@ -201,9 +201,19 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(m.Stages))
 
-	for _, stage := range m.Stages {
+	stages := m.Builds.Release
+	if last {
+		stages = m.Builds.LastVersion
+	}
+
+	for _, stageName := range stages {
 		if err := CheckContext(m.Ctx); err != nil {
 			return err
+		}
+
+		stage, err := m.FindStage(stageName)
+		if err != nil {
+			return fmt.Errorf("failed to find stage: %w", err)
 		}
 
 		wg.Add(1)

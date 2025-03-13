@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"reflect"
 	"testing"
 )
 
@@ -18,6 +19,7 @@ func TestModule_IsValid(t *testing.T) {
 		Stages         []Stage
 		Ignore         []string
 		Changelog      Changelog
+		Builds         Builds
 	}
 	tests := []struct {
 		name    string
@@ -42,6 +44,9 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
+			Builds: Builds{
+				Release: []string{"test"},
+			},
 		}, false},
 		{"invalid", fields{
 			Ctx:            context.Background(),
@@ -102,6 +107,9 @@ func TestModule_IsValid(t *testing.T) {
 			Changelog: Changelog{
 				Sort: Asc,
 			},
+			Builds: Builds{
+				Release: []string{"test"},
+			},
 		}, false},
 	}
 	for _, tt := range tests {
@@ -117,6 +125,7 @@ func TestModule_IsValid(t *testing.T) {
 				Stages:         tt.fields.Stages,
 				Ignore:         tt.fields.Ignore,
 				Repository:     tt.fields.Repository,
+				Builds:         tt.fields.Builds,
 			}
 			if err := m.IsValid(); (err != nil) != tt.wantErr {
 				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
@@ -387,6 +396,95 @@ func TestModule_ValidateChangelog(t *testing.T) {
 			}
 			if err := m.ValidateChangelog(); (err != nil) != tt.wantErr {
 				t.Errorf("ValidateChangelog() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestModule_FindStage(t *testing.T) {
+	type fields struct {
+		Ctx            context.Context
+		Name           string
+		Version        string
+		Account        string
+		BuildDirectory string
+		LogDirectory   string
+		Stages         []Stage
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    Stage
+		wantErr bool
+	}{
+		{"valid", fields{
+			Ctx:            context.TODO(),
+			Name:           "test",
+			Version:        "1.0.0",
+			Account:        "test",
+			BuildDirectory: "./build",
+			LogDirectory:   "./logs",
+			Stages: []Stage{
+				{
+					Name:               "stage_1",
+					To:                 "to",
+					ActionIfFileExists: Replace,
+					From:               []string{"from"},
+				},
+			},
+		},
+			args{name: "stage_1"},
+			Stage{
+				Name:               "stage_1",
+				To:                 "to",
+				ActionIfFileExists: Replace,
+				From:               []string{"from"},
+			},
+			false,
+		},
+		{"invalid", fields{
+			Ctx:            context.TODO(),
+			Name:           "test",
+			Version:        "1.0.0",
+			Account:        "test",
+			BuildDirectory: "./build",
+			LogDirectory:   "./logs",
+			Stages: []Stage{
+				{
+					Name:               "stage_1",
+					To:                 "to",
+					ActionIfFileExists: Replace,
+					From:               []string{"from"},
+				},
+			},
+		},
+			args{name: "stage_2"},
+			Stage{},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Module{
+				Ctx:            tt.fields.Ctx,
+				BuildDirectory: tt.fields.BuildDirectory,
+				Version:        tt.fields.Version,
+				Account:        tt.fields.Account,
+				Name:           tt.fields.Name,
+				LogDirectory:   tt.fields.LogDirectory,
+				Stages:         tt.fields.Stages,
+			}
+			got, err := m.FindStage(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FindStage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FindStage() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
