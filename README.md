@@ -29,6 +29,112 @@ For example, during one of the build stages, you can copy components and templat
 go install github.com/pixel365/bx@latest
 ```
 
+### Usage
+
+#### Create module
+
+```shell
+# Enter a module name via standard input
+bx create
+```
+
+```shell
+# Create a new module (default config)
+bx create --name my_module
+```
+
+```shell
+# Help
+bx create -h
+```
+
+#### Validate module configuration
+
+```shell
+# Choose a module via standard dialog
+bx check
+```
+
+```shell
+# Check the configuration of a module by name
+bx check --name my_module
+```
+
+```shell
+# Check the configuration of a module by file path
+bx check --file module-path/config.yaml
+```
+
+```shell
+# Help
+bx check -h
+```
+
+#### Build module
+
+```shell
+# Choose a module via standard dialog
+bx build
+```
+
+```shell
+# Build a module by name
+bx build --name my_module
+```
+
+```shell
+# Build a module by file path
+bx build --file config.yaml
+```
+
+```shell
+# Override version
+bx build --name my_module --version 1.2.3
+```
+
+```shell
+# Build .last_version
+bx build --name my_module --last
+```
+
+```shell
+# Help
+bx build -h
+```
+
+#### Push module to Marketplace
+
+```shell
+# Choose a module via standard dialog
+bx push
+```
+
+```shell
+# Push a module by name
+bx push --name my_module
+```
+
+```shell
+# Push a module by file path
+bx push --file config.yaml
+```
+
+```shell
+# Override version
+bx push --name my_module --version 1.2.3
+```
+
+```shell
+# Help
+bx push -h
+```
+
+#### Help
+
+```shell
+bx -h
+```
+
 ### Configuration Fields
 
 - **name** – The name of the module.
@@ -63,6 +169,135 @@ go install github.com/pixel365/bx@latest
   - **Stages list** – A list of stage names to be included in the build process.
 - **ignore** *(optional)* – Patterns for files or directories to exclude from processing.
 
+### Variables explanation
+
+```yaml
+variables:
+    structPath: "./examples/structure"
+    install: "install"
+    bitrix: "{structPath}/bitrix"
+    local: "{structPath}/local"
+```
+In this case, {bitrix} will expand to ./examples/structure/bitrix, and {install} will be replaced with install when used in stages.
+### Changelog explanation
+The `changelog` section defines how to automatically generate a changelog from your project's commit history. It consists of the following fields:
+
+- **from** – Defines the starting point of the commit range.
+  - **type** – Indicates the type of the reference point (`tag` or `commit`).
+  - **value** – The specific tag name or commit hash.
+
+- **to** – Defines the endpoint of the commit range.
+  - **type** – Indicates the type of the reference point (`tag` or `commit`).
+  - **value** – The specific tag name or commit hash.
+
+- **condition** (optional) – Criteria for selecting commits to include or exclude.
+  - **type** – Filtering mode:
+    - `include` – Includes only commits matching the specified patterns.
+    - `exclude` – Excludes commits matching the specified patterns.
+  - **value** – An array of regular expressions used for filtering commit messages.
+- **sort** (optional) – Sorting commits (`asc` or `desc`)
+
+#### Example
+
+```yaml
+changelog:
+  from:
+    type: "tag"
+    value: "v1.0.0"
+  to:
+    type: "tag"
+    value: "v2.0.0"
+  condition:
+    type: "include"
+    value:
+      - '^feat:([\\W\\w]+)$'
+      - '^fix:([\\W\\w]+)$'
+  sort: "asc"
+```
+
+In this example,
+the changelog will include only commits between tags v1.0.0 and v2.0.0 that match patterns starting with feat: or fix:.
+
+**The provided patterns and types are customizable, according to your project's requirements.**
+
+### Stages explanation
+
+The stages section defines the steps for copying files. Each stage consists of:
+
+- **name** – The name of the stage. Can use variables.
+- **to** – The location where files and directories will be copied, relative to the module's distribution root. Can use variables.
+  - For example, if the module's root is /build/1.2.3, then setting to: {install}/components means files will be placed in /build/1.2.3/install/components.
+- **from** – The source paths from which files should be copied. Can use variables.
+- **actionIfFileExists** – Action to take if the file already exists:
+  - replace – Overwrite the existing file.
+  - skip – Skip copying if the file exists.
+  - replace_if_newer – Overwrite only if the source file is newer.
+- **convertTo1251** (optional) - Specifies whether to convert the file contents to windows-1251 encoding. Applies only to *.php files, as well as description.ru. Defaults to false.
+
+#### Example
+
+```yaml
+stages:
+  - name: "components"
+    to: "{install}/components"
+    actionIfFileExists: "replace"
+    from:
+      - "{bitrix}/components"
+      - "{local}/components"
+```
+
+- **components** – Copies component files to {install}/components.
+
+**The stage names provided in the examples are for reference only and can be customized as needed.**
+
+### Callbacks explanation
+
+The callbacks section allows executing additional actions **before** (pre) or **after** (post) a specific stage (stage).
+
+Each callback consists of:
+- **stage** – The name of the stage it is associated with.
+- **pre** – Action executed **before** the stage starts.
+- **post** – Action executed **after** the stage is completed.
+
+#### Supported action types
+
+- **command** – Executes a shell command.
+- **external** – Sends an HTTP request to an external service.
+
+#### Example
+
+```yaml
+callbacks:
+  - stage: "components"
+    pre:
+      type: "command"
+      action: "ls"
+      parameters:
+        - "-lsa"
+    post:
+      type: "external"
+      action: "http://localhost:80"
+      method: "GET"
+      parameters:
+        - "param1=value1"
+        - "param2=value2"
+```
+
+In this example:
+- Before copying components, the ls -lsa command is executed.
+- After copying, a GET request is sent to http://localhost:80 with query parameters.
+
+#### Available parameters
+
+- **type**:
+  - command – Runs a shell command.
+  - external – Sends an HTTP request.
+- **action**:
+  - For command: The command to execute.
+  - For external: The target URL.
+- **method** *(for external only)* – HTTP method (GET, POST, etc.).
+- **parameters** *(optional)* – List of arguments for commands or query parameters for requests.
+
 ### Builds explanation
 
 The `builds` section defines named build presets that allow grouping specific stages for different types of builds. Instead of executing all stages, you can specify a subset of them using predefined build profiles.
@@ -95,6 +330,96 @@ In this example:
 
 Using the `builds` section allows for greater flexibility
 by enabling different build configurations without modifying the core `stages` definition.
+
+### Full example of default module configuration
+```yaml
+name: "test"
+version: "1.0.0"
+account: "test"
+buildDirectory: "./dist/test"
+logDirectory: "./logs/test"
+repository: "."
+
+variables:
+  structPath: "./examples/structure"
+  install: "install"
+  bitrix: "{structPath}/bitrix"
+  local: "{structPath}/local"
+  
+changelog:
+  from:
+    type: "tag"
+    value: "v1.0.0"
+  to:
+    type: "tag"
+    value: "v2.0.0"
+  condition:
+    type: "include"
+    value:
+      - '^feat:([\W\w]+)$'
+      - '^fix:([\W\w]+)$'
+  sort: "asc"
+
+stages:
+  - name: "components"
+    to: "{install}/components"
+    actionIfFileExists: "replace"
+    from:
+      - "{bitrix}/components"
+      - "{local}/components"
+  - name: "templates"
+    to: "{install}/templates"
+    actionIfFileExists: "replace"
+    from:
+      - "{bitrix}/templates"
+      - "{local}/templates"
+  - name: "rootFiles"
+    to: .
+    actionIfFileExists: "replace"
+    from:
+      - "{structPath}/simple-file.php"
+  - name: "testFiles"
+    to: "test"
+    actionIfFileExists: "replace"
+    from:
+      - "{structPath}/simple-file.php"
+  - name: "anotherTestFiles"
+    to: "another-test"
+    actionIfFileExists: "replace"
+    from:
+      - "./examples/structure/simple-file.php"
+    convertTo1251: false
+    
+callbacks:
+  - stage: "components"
+    pre:
+      type: "command"
+      action: "ls"
+      parameters:
+        - "-lsa"
+    post:
+      type: "external"
+      action: "http://localhost:80"
+      method: "GET"
+      parameters:
+        - "param1=value1"
+        - "param2=value2"
+
+builds:
+  release:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
+  lastVersion:
+    - "components"
+    - "templates"
+    - "rootFiles"
+    - "testFiles"
+
+ignore:
+  - "**/*.log"
+```
 
 ### Status
 
