@@ -129,6 +129,12 @@ bx push --name my_module --version 1.2.3
 bx push -h
 ```
 
+#### Run custom subcommand
+
+```shell
+bx run --cmd customCommand --name my_module
+```
+
 #### Help
 
 ```shell
@@ -331,6 +337,33 @@ In this example:
 Using the `builds` section allows for greater flexibility
 by enabling different build configurations without modifying the core `stages` definition.
 
+### Run explanation
+
+The `run` section provides a way to arbitrarily group any stages from the `stages` section into custom subcommands, allowing them to be executed independently of the main distribution build process. This enables users to define reusable commands tailored to specific workflows without modifying the core build configuration.
+
+Each subcommand consists of:
+
+- **Subcommand name** – The name of the custom command (e.g., `customCommand`).
+- **Stages list** – A list of stage names to be executed when the command is run.
+
+#### Example
+
+```yaml
+run:
+  customCommand:
+    - "components"
+    - "anotherTestFiles"
+```
+
+In this example:
+
+- Running `bx run --cmd customCommand` will execute the components and anotherTestFiles stages.
+- This approach allows users to create tailored commands for different workflows without interfering with the primary build process.
+- The `run` section is optional — if not specified, no custom subcommands will be available.
+
+This provides a flexible way to execute specific tasks or workflows without triggering a full module build,
+making automation and iterative development more efficient.
+
 ### Full example of default module configuration
 ```yaml
 name: "test"
@@ -416,6 +449,11 @@ builds:
     - "templates"
     - "rootFiles"
     - "testFiles"
+
+run:
+  customCommand:
+    - "components"
+    - "anotherTestFiles"
 
 ignore:
   - "**/*.log"
