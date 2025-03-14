@@ -463,6 +463,8 @@ func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 		return nil, err
 	}
 
+	module.Ctx = cmd.Context()
+
 	return module, nil
 }
 
@@ -498,5 +500,6 @@ func HandleStages(
 
 		go handleStage(m.Ctx, wg, errCh, log, &m.Ignore, stage, dir, m.StageCallback)
 	}
+
 	return nil
 }

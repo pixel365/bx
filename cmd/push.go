@@ -66,8 +66,6 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	module.Ctx = cmd.Context()
-
 	if version != "" {
 		if err := internal.ValidateVersion(version); err != nil {
 			return err

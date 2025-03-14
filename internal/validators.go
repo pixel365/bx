@@ -177,8 +177,12 @@ func ValidateLastVersion(m *Module) error {
 }
 
 func ValidateRun(m *Module) error {
-	if len(m.Run) == 0 {
+	if m.Run == nil {
 		return nil
+	}
+
+	if len(m.Run) == 0 {
+		return errors.New("run is required")
 	}
 
 	for key, stages := range m.Run {

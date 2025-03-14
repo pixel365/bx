@@ -262,7 +262,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 //   - log: The logger used to log messages about the process.
 //   - ignore: A list of files or directories to be ignored during file copying.
 //   - stage: The specific stage being processed, which contains source and destination paths.
-//   - buildDirectory: The directory where the build files will be placed.
+//   - rootDir: The directory where the files will be placed.
 //   - callback: Stage Callback
 //
 // Returns:
@@ -275,7 +275,7 @@ func handleStage(
 	log *zerolog.Logger,
 	ignore *[]string,
 	stage Stage,
-	buildDirectory string,
+	rootDir string,
 	cb func(string) (Runnable, error),
 ) {
 	callback, cbErr := cb(stage.Name)
@@ -318,8 +318,27 @@ func handleStage(
 		return
 	}
 
-	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, stage.To))
+	dirPath := stage.To
+	if rootDir != "" {
+		dirPath = filepath.Join(rootDir, stage.To)
+	}
+
+	dirPath = filepath.Clean(dirPath)
+	dirPath, err = filepath.Abs(dirPath)
 	if err != nil {
+		if log != nil {
+			log.Error().
+				Err(err).
+				Msg(fmt.Sprintf("Failed to get absolute path for stage %s: %s", stage.Name, err))
+		}
+		return
+	}
+
+	to, err := mkdir(dirPath)
+	if err != nil {
+		if log != nil {
+			log.Error().Err(err).Msg("Failed to make stage `to` directory")
+		}
 		return
 	}
 

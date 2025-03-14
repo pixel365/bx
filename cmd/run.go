@@ -31,11 +31,6 @@ bx run --name my_module --cmd custom_command
 }
 
 func run(cmd *cobra.Command, _ []string) error {
-	module, err := internal.ReadModuleFromFlags(cmd)
-	if err != nil {
-		return err
-	}
-
 	command, err := cmd.Flags().GetString("cmd")
 	if err != nil {
 		return err
@@ -43,6 +38,15 @@ func run(cmd *cobra.Command, _ []string) error {
 
 	if command == "" {
 		return errors.New("no command specified")
+	}
+
+	module, err := internal.ReadModuleFromFlags(cmd)
+	if err != nil {
+		return err
+	}
+
+	if err := module.IsValid(); err != nil {
+		return err
 	}
 
 	if err := internal.ValidateRun(module); err != nil {
