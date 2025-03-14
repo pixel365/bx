@@ -55,36 +55,13 @@ bx push --name my_module --version 1.2.3
 // Returns:
 // - error: An error if any validation or upload step fails.
 func push(cmd *cobra.Command, _ []string) error {
-	path := cmd.Context().Value(internal.RootDir).(string)
-	name, err := cmd.Flags().GetString("name")
+	module, err := internal.ReadModuleFromFlags(cmd)
 	if err != nil {
 		return err
-	}
-
-	file, err := cmd.Flags().GetString("file")
-	file = strings.TrimSpace(file)
-	if err != nil {
-		return err
-	}
-
-	isFile := len(file) > 0
-	if !isFile && name == "" {
-		if err := internal.Choose(internal.AllModules(path), &name, ""); err != nil {
-			return err
-		}
-	}
-
-	if isFile {
-		path = file
 	}
 
 	version, err := cmd.Flags().GetString("version")
 	version = strings.TrimSpace(version)
-	if err != nil {
-		return err
-	}
-
-	module, err := internal.ReadModule(path, name, isFile)
 	if err != nil {
 		return err
 	}

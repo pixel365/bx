@@ -54,20 +54,21 @@ type Builds struct {
 }
 
 type Module struct {
-	Ctx            context.Context   `yaml:"-"`
-	Variables      map[string]string `yaml:"variables,omitempty"`
-	Builds         Builds            `yaml:"builds"`
-	BuildDirectory string            `yaml:"buildDirectory,omitempty"`
-	Version        string            `yaml:"version"`
-	Account        string            `yaml:"account"`
-	Name           string            `yaml:"name"`
-	LogDirectory   string            `yaml:"logDirectory,omitempty"`
-	Repository     string            `yaml:"repository,omitempty"`
-	Changelog      Changelog         `yaml:"changelog,omitempty"`
-	Stages         []Stage           `yaml:"stages"`
-	Ignore         []string          `yaml:"ignore"`
-	Callbacks      []Callback        `yaml:"callbacks,omitempty"`
-	LastVersion    bool              `yaml:"-"`
+	Ctx            context.Context     `yaml:"-"`
+	Variables      map[string]string   `yaml:"variables,omitempty"`
+	Run            map[string][]string `yaml:"run,omitempty"`
+	Name           string              `yaml:"name"`
+	Version        string              `yaml:"version"`
+	Account        string              `yaml:"account"`
+	BuildDirectory string              `yaml:"buildDirectory,omitempty"`
+	LogDirectory   string              `yaml:"logDirectory,omitempty"`
+	Repository     string              `yaml:"repository,omitempty"`
+	Changelog      Changelog           `yaml:"changelog,omitempty"`
+	Builds         Builds              `yaml:"builds"`
+	Stages         []Stage             `yaml:"stages"`
+	Ignore         []string            `yaml:"ignore"`
+	Callbacks      []Callback          `yaml:"callbacks,omitempty"`
+	LastVersion    bool                `yaml:"-"`
 }
 
 func (m *Module) GetVersion() string {
