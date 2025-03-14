@@ -12,6 +12,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/rs/zerolog"
+
+	"github.com/spf13/cobra"
+
 	"gopkg.in/yaml.v3"
 
 	"github.com/charmbracelet/huh"
@@ -426,4 +430,76 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 	}
 
 	return ReplaceVariables(updated, variables, depth+1)
+}
+
+func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
+	path := cmd.Context().Value(RootDir).(string)
+	name, err := cmd.Flags().GetString("name")
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := cmd.Flags().GetString("file")
+	file = strings.TrimSpace(file)
+	if err != nil {
+		return nil, err
+	}
+
+	isFile := len(file) > 0
+
+	if !isFile && name == "" {
+		err := Choose(AllModules(path), &name, "")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if isFile {
+		path = file
+	}
+
+	module, err := ReadModule(path, name, isFile)
+	if err != nil {
+		return nil, err
+	}
+
+	module.Ctx = cmd.Context()
+
+	return module, nil
+}
+
+func HandleStages(
+	stages []string,
+	m *Module,
+	wg *sync.WaitGroup,
+	errCh chan<- error,
+	log *zerolog.Logger,
+	customCommandMode bool,
+) error {
+	var err error
+	dir := ""
+
+	if !customCommandMode {
+		dir, err = makeVersionDirectory(m)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, stageName := range stages {
+		if err := CheckContext(m.Ctx); err != nil {
+			return err
+		}
+
+		stage, err := m.FindStage(stageName)
+		if err != nil {
+			return fmt.Errorf("failed to find stage: %w", err)
+		}
+
+		wg.Add(1)
+
+		go handleStage(m.Ctx, wg, errCh, log, &m.Ignore, stage, dir, m.StageCallback)
+	}
+
+	return nil
 }

@@ -39,6 +39,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(newBuildCommand())
 	cmd.AddCommand(newCheckCommand())
 	cmd.AddCommand(newPushCommand())
+	cmd.AddCommand(newRunCommand())
 
 	return cmd
 }

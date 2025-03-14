@@ -77,6 +77,10 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
+	if err := ValidateRun(m); err != nil {
+		return err
+	}
+
 	return nil
 }
 

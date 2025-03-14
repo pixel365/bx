@@ -466,8 +466,52 @@ func Test_validateStagesInBuilds(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateStagesInBuilds(tt.args.stages, tt.args.name, tt.args.find); (err != nil) != tt.wantErr {
-				t.Errorf("validateStagesInBuilds() error = %v, wantErr %v", err, tt.wantErr)
+			if err := validateStagesList(tt.args.stages, tt.args.name, tt.args.find); (err != nil) != tt.wantErr {
+				t.Errorf("validateStagesList() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateRun(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty run", false},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{"testing": {}}},
+		}, "empty stage values", true},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{"testing": {"unknown"}}},
+		}, "unknown stage", true},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{"testing": {"testing", "testing"}}},
+		}, "duplicated stage", true},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{"testing": {"testing"}}},
+		}, "valid", false},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{"": {"testing"}}},
+		}, "empty key", true},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{"some key": {"testing"}}},
+		}, "key with spaces", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateRun(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateRun() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

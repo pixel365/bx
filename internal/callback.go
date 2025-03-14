@@ -46,7 +46,7 @@ func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.L
 		return
 	}
 
-	if err := c.Pre.Run(ctx, log); err != nil {
+	if err := c.Pre.Run(ctx, log); err != nil && log != nil {
 		log.Error().
 			Err(err).
 			Msg(fmt.Sprintf("failed to pre run callback for stage %s", c.Stage))
@@ -60,7 +60,7 @@ func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.
 		return
 	}
 
-	if err := c.Post.Run(ctx, log); err != nil {
+	if err := c.Post.Run(ctx, log); err != nil && log != nil {
 		log.Error().
 			Err(err).
 			Msg(fmt.Sprintf("failed to post run callback for stage %s", c.Stage))
@@ -336,7 +336,9 @@ func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger
 			case <-ctx.Done():
 				return
 			case out := <-com.Stdout:
-				log.Info().Msg(out)
+				if log != nil {
+					log.Info().Msg(out)
+				}
 			}
 		}
 	}()
@@ -347,7 +349,9 @@ func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger
 			case <-ctx.Done():
 				return
 			case out := <-com.Stderr:
-				log.Error().Msg(out)
+				if log != nil {
+					log.Error().Msg(out)
+				}
 			}
 		}
 	}()

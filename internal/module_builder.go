@@ -211,19 +211,8 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 		stages = m.Builds.LastVersion
 	}
 
-	for _, stageName := range stages {
-		if err := CheckContext(m.Ctx); err != nil {
-			return err
-		}
-
-		stage, err := m.FindStage(stageName)
-		if err != nil {
-			return fmt.Errorf("failed to find stage: %w", err)
-		}
-
-		wg.Add(1)
-
-		go handleStage(m.Ctx, &wg, errCh, log, &m.Ignore, stage, versionDirectory, m.StageCallback)
+	if err := HandleStages(stages, m, &wg, errCh, log, false); err != nil {
+		log.Error().Err(err).Msg("Collect: handle stages failed")
 	}
 
 	wg.Wait()
@@ -273,7 +262,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 //   - log: The logger used to log messages about the process.
 //   - ignore: A list of files or directories to be ignored during file copying.
 //   - stage: The specific stage being processed, which contains source and destination paths.
-//   - buildDirectory: The directory where the build files will be placed.
+//   - rootDir: The directory where the files will be placed.
 //   - callback: Stage Callback
 //
 // Returns:
@@ -286,7 +275,7 @@ func handleStage(
 	log *zerolog.Logger,
 	ignore *[]string,
 	stage Stage,
-	buildDirectory string,
+	rootDir string,
 	cb func(string) (Runnable, error),
 ) {
 	callback, cbErr := cb(stage.Name)
@@ -305,13 +294,23 @@ func handleStage(
 	}
 
 	var err error
-	log.Info().Msg(fmt.Sprintf("Handling stage %s", stage.Name))
+
+	if log != nil {
+		log.Info().Msg(fmt.Sprintf("Handling stage %s", stage.Name))
+	}
+
 	defer func() {
 		if err != nil {
-			log.Error().Err(err).Msg(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err))
+			if log != nil {
+				log.Error().
+					Err(err).
+					Msg(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err))
+			}
 			errCh <- err
 		} else {
-			log.Info().Msg(fmt.Sprintf("Finished stage %s", stage.Name))
+			if log != nil {
+				log.Info().Msg(fmt.Sprintf("Finished stage %s", stage.Name))
+			}
 		}
 	}()
 
@@ -319,8 +318,27 @@ func handleStage(
 		return
 	}
 
-	to, err := mkdir(fmt.Sprintf("%s/%s", buildDirectory, stage.To))
+	dirPath := stage.To
+	if rootDir != "" {
+		dirPath = filepath.Join(rootDir, stage.To)
+	}
+
+	dirPath = filepath.Clean(dirPath)
+	dirPath, err = filepath.Abs(dirPath)
 	if err != nil {
+		if log != nil {
+			log.Error().
+				Err(err).
+				Msg(fmt.Sprintf("Failed to get absolute path for stage %s: %s", stage.Name, err))
+		}
+		return
+	}
+
+	to, err := mkdir(dirPath)
+	if err != nil {
+		if log != nil {
+			log.Error().Err(err).Msg("Failed to make stage `to` directory")
+		}
 		return
 	}
 
@@ -389,7 +407,7 @@ func makeVersionDescription(module *Module, log *zerolog.Logger) error {
 			}
 
 			defer func() {
-				if err := file.Close(); err != nil {
+				if err := file.Close(); err != nil && log != nil {
 					log.Error().Err(err).Msg("Failed to close description file")
 				}
 			}()

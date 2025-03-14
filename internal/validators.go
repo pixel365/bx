@@ -161,7 +161,7 @@ func ValidateCallbacks(m *Module) error {
 }
 
 func ValidateBuilds(m *Module) error {
-	if err := validateStagesInBuilds(m.Builds.Release, "release", m.FindStage); err != nil {
+	if err := validateStagesList(m.Builds.Release, "release", m.FindStage); err != nil {
 		return err
 	}
 
@@ -173,10 +173,37 @@ func ValidateBuilds(m *Module) error {
 }
 
 func ValidateLastVersion(m *Module) error {
-	return validateStagesInBuilds(m.Builds.LastVersion, "lastVersion", m.FindStage)
+	return validateStagesList(m.Builds.LastVersion, "lastVersion", m.FindStage)
 }
 
-func validateStagesInBuilds(stages []string, name string, find func(string) (Stage, error)) error {
+func ValidateRun(m *Module) error {
+	if m.Run == nil {
+		return nil
+	}
+
+	if len(m.Run) == 0 {
+		return errors.New("run is required")
+	}
+
+	for key, stages := range m.Run {
+		key = strings.TrimSpace(key)
+		if key == "" {
+			return fmt.Errorf("run [%s]: key is required", key)
+		}
+
+		if strings.Contains(key, " ") {
+			return fmt.Errorf("run [%s]: key must not contain spaces", key)
+		}
+
+		if err := validateStagesList(stages, fmt.Sprintf("run: %s stages", key), m.FindStage); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateStagesList(stages []string, name string, find func(string) (Stage, error)) error {
 	if len(stages) == 0 {
 		return fmt.Errorf("%s is required", name)
 	}
