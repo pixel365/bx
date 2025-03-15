@@ -135,6 +135,16 @@ bx push -h
 bx run --cmd customCommand --name my_module
 ```
 
+#### Get Version
+
+```shell
+bx version
+```
+
+```shell
+bx v
+```
+
 #### Help
 
 ```shell
