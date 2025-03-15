@@ -4,44 +4,66 @@ before:
   hooks:
     - go mod tidy
 
-
 builds:
   - id: linux_amd64
     goos: [linux]
     goarch: [amd64]
-    ldflags: "-s -w"
     binary: bx
+    ldflags:
+      - "-s -w"
+      - "-X 'github.com/pixel365/bx/cmd.buildVersion={{.Tag}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildDate={{.Date}}'"
 
   - id: linux_arm64
     goos: [linux]
     goarch: [arm64]
-    ldflags: "-s -w"
     binary: bx
+    ldflags:
+      - "-s -w"
+      - "-X 'github.com/pixel365/bx/cmd.buildVersion={{.Tag}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildDate={{.Date}}'"
 
   - id: windows_amd64
     goos: [windows]
     goarch: [amd64]
-    ldflags: "-s -w"
     binary: bx
+    ldflags:
+      - "-s -w"
+      - "-X 'github.com/pixel365/bx/cmd.buildVersion={{.Tag}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildDate={{.Date}}'"
 
   - id: windows_arm64
     goos: [windows]
     goarch: [arm64]
-    ldflags: "-s -w"
     binary: bx
+    ldflags:
+      - "-s -w"
+      - "-X 'github.com/pixel365/bx/cmd.buildVersion={{.Tag}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildDate={{.Date}}'"
 
   - id: darwin_amd64
     goos: [darwin]
     goarch: [amd64]
-    ldflags: "-s -w"
     binary: bx
+    ldflags:
+      - "-s -w"
+      - "-X 'github.com/pixel365/bx/cmd.buildVersion={{.Tag}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildDate={{.Date}}'"
 
   - id: darwin_arm64
     goos: [darwin]
     goarch: [arm64]
-    ldflags: "-s -w"
     binary: bx
-
+    ldflags:
+      - "-s -w"
+      - "-X 'github.com/pixel365/bx/cmd.buildVersion={{.Tag}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}'"
+      - "-X 'github.com/pixel365/bx/cmd.buildDate={{.Date}}'"
 
 archives:
   - id: linux_amd64
