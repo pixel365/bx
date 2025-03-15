@@ -40,6 +40,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(newCheckCommand())
 	cmd.AddCommand(newPushCommand())
 	cmd.AddCommand(newRunCommand())
+	cmd.AddCommand(newVersionCommand())
 
 	return cmd
 }
