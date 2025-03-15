@@ -32,6 +32,10 @@ jobs:
           curl -sSL https://github.com/anchore/syft/releases/download/v1.20.0/syft_1.20.0_linux_amd64.tar.gz | tar -xzv -C syft
           sudo mv syft/syft /usr/local/bin/
 
+      - name: Git Tags
+        run: |
+          git fetch --tags
+
       - name: Run GoReleaser
         run: |
           ./goreleaser/goreleaser release --clean
