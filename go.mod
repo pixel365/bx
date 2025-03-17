@@ -1,8 +1,6 @@
 module github.com/pixel365/bx
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.24
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.8.1

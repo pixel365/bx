@@ -1,4 +1,6 @@
 linters-settings:
+  go:
+    go-version: "1.24"
   govet:
     shadow: true
   dupl:
