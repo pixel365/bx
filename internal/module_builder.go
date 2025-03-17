@@ -56,14 +56,20 @@ func (m *Module) Build() error {
 
 	if err := m.Prepare(&log); err != nil {
 		log.Error().Err(err).Msg("Failed to prepare build")
-		return m.Rollback(&log)
+		if rollbackErr := m.Rollback(&log); rollbackErr != nil {
+			log.Error().Err(rollbackErr).Msg("Failed to rollback")
+		}
+		return err
 	}
 
 	log.Info().Msg("Prepare complete")
 
 	if err := m.Collect(&log); err != nil {
 		log.Error().Err(err).Msg("Failed to collect build")
-		return m.Rollback(&log)
+		if rollbackErr := m.Rollback(&log); rollbackErr != nil {
+			log.Error().Err(rollbackErr).Msg("Failed to rollback")
+		}
+		return err
 	}
 
 	log.Info().Msg("Build complete")
@@ -382,6 +388,12 @@ func makeVersionDirectory(module *Module) (string, error) {
 }
 
 func makeVersionDescription(module *Module, log *zerolog.Logger) error {
+	// If the full latest version is being built, then the version description file is not needed.
+	// However, it may be present when copying if specified in the configuration, at the discretion of the developer.
+	if module.LastVersion {
+		return nil
+	}
+
 	versionDir, err := makeVersionDirectory(module)
 	if err != nil {
 		return err
