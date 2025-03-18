@@ -15,9 +15,9 @@ var versionRegex = regexp.MustCompile(`(?m)^(\d+\.\d+\.\d+)$`)
 //
 // The function constructs the expected file path for the module definition using the format "<directory>/<name>.yaml".
 // It then checks if the file exists:
-// - If the file does not exist, the function returns nil (indicating the module name is available).
-// - If the file exists, it returns an error indicating that the module name is already taken.
-// - If an error occurs while checking the file, it is returned.
+//   - If the file does not exist, the function returns nil (indicating the module name is available).
+//   - If the file exists, it returns an error indicating that the module name is already taken.
+//   - If an error occurs while checking the file, it is returned.
 //
 // Returns nil if the module name is available, otherwise returns an error.
 func ValidateModuleName(name, directory string) error {
@@ -38,9 +38,9 @@ func ValidateModuleName(name, directory string) error {
 // ValidateVersion checks if the given module version is valid.
 //
 // The function performs the following checks:
-// - Trims any leading and trailing whitespace.
-// - Ensures the version is not empty.
-// - Validates the version format using a predefined regex.
+//   - Trims any leading and trailing whitespace.
+//   - Ensures the version is not empty.
+//   - Validates the version format using a predefined regex.
 //
 // Returns nil if the version is valid, otherwise returns an error.
 func ValidateVersion(version string) error {
@@ -59,9 +59,9 @@ func ValidateVersion(version string) error {
 // ValidatePassword checks if the given password meets basic validation criteria.
 //
 // The function performs the following checks:
-// - Trims any leading and trailing whitespace.
-// - Ensures the password is not empty.
-// - Ensures the password is at least 6 characters long.
+//   - Trims any leading and trailing whitespace.
+//   - Ensures the password is not empty.
+//   - Ensures the password is at least 6 characters long.
 //
 // Returns an error if the password is invalid, otherwise returns nil.
 func ValidatePassword(password string) error {
@@ -81,10 +81,10 @@ func ValidatePassword(password string) error {
 // alphanumeric characters, underscores, slashes, or hyphens.
 //
 // Parameters:
-// - arg (string): The argument to validate.
+//   - arg (string): The argument to validate.
 //
 // Returns:
-// - bool: True if the argument is valid, otherwise false.
+//   - bool: True if the argument is valid, otherwise false.
 func ValidateArgument(arg string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9>./_-]+$`)
 	return re.MatchString(arg)

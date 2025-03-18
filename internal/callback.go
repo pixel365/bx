@@ -72,7 +72,7 @@ func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.
 // Additionally, it validates the pre and post parameters if they are set.
 //
 // Returns:
-// - error: An error if validation fails, otherwise nil.
+//   - error: An error if validation fails, otherwise nil.
 func (c *Callback) IsValid() error {
 	if c.Stage == "" {
 		return errors.New("callback stage is required")
@@ -101,7 +101,7 @@ func (c *Callback) IsValid() error {
 // It performs type, method, action, and parameters validation.
 //
 // Returns:
-// - error: An error if validation fails, otherwise nil.
+//   - error: An error if validation fails, otherwise nil.
 func (c *CallbackParameters) IsValid() error {
 	if err := c.validateType(); err != nil {
 		return err
@@ -127,11 +127,11 @@ func (c *CallbackParameters) IsValid() error {
 // or a system command depending on the `Type` of the callback.
 //
 // Parameters:
-// - ctx (context.Context): The context for the execution, used for cancellation and timeouts.
-// - log (*zerolog.Logger): The logger to record any logs or errors during execution.
+//   - ctx (context.Context): The context for the execution, used for cancellation and timeouts.
+//   - log (*zerolog.Logger): The logger to record any logs or errors during execution.
 //
 // Returns:
-// - error: Returns an error if validation fails or if execution of the callback fails.
+//   - error: Returns an error if validation fails or if execution of the callback fails.
 func (c *CallbackParameters) Run(ctx context.Context, log *zerolog.Logger) error {
 	if err := c.IsValid(); err != nil {
 		return err
@@ -151,7 +151,7 @@ func (c *CallbackParameters) Run(ctx context.Context, log *zerolog.Logger) error
 // validateType ensures the callback type is either "CommandType" or "ExternalType".
 //
 // Returns:
-// - error: An error if the type is missing or invalid, otherwise nil.
+// 	- error: An error if the type is missing or invalid, otherwise nil.
 
 func (c *CallbackParameters) validateType() error {
 	if c.Type == "" {
@@ -173,7 +173,7 @@ func (c *CallbackParameters) validateType() error {
 // It ensures that the method is either GET or POST when the callback type is ExternalType.
 //
 // Returns:
-// - error: An error if the method is missing or invalid for ExternalType callbacks, otherwise nil.
+//   - error: An error if the method is missing or invalid for ExternalType callbacks, otherwise nil.
 func (c *CallbackParameters) validateMethod() error {
 	if c.Type == ExternalType {
 		if c.Method == "" {
@@ -196,7 +196,7 @@ func (c *CallbackParameters) validateMethod() error {
 // if it's an ExternalType callback, checks that it's a properly formatted URL.
 //
 // Returns:
-// - error: An error if the action is missing or improperly formatted, otherwise nil.
+//   - error: An error if the action is missing or improperly formatted, otherwise nil.
 func (c *CallbackParameters) validateAction() error {
 	if c.Action == "" {
 		return errors.New("callback action is required")
@@ -226,7 +226,7 @@ func (c *CallbackParameters) validateAction() error {
 // If the callback type is ExternalType, each parameter must follow the key=value format.
 //
 // Returns:
-// - error: An error if validation fails, otherwise nil.
+//   - error: An error if validation fails, otherwise nil.
 func (c *CallbackParameters) validateParameters() error {
 	if len(c.Parameters) == 0 {
 		return nil
@@ -271,10 +271,10 @@ func (c *CallbackParameters) validateParameters() error {
 // The function has a timeout of 30 seconds for the request.
 //
 // Parameters:
-// - ctx (context.Context): The context for the execution, used for cancellation and timeouts.
+//   - ctx (context.Context): The context for the execution, used for cancellation and timeouts.
 //
 // Returns:
-// - error: Returns an error if the request fails or if the response status code is not OK.
+//   - error: Returns an error if the request fails or if the response status code is not OK.
 func (c *CallbackParameters) runExternal(ctx context.Context) error {
 	ttlCtx, cancelFunc := context.WithTimeout(ctx, 30*time.Second)
 	defer cancelFunc()
@@ -310,11 +310,11 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 // If the command fails or the context is cancelled, it handles the errors accordingly.
 //
 // Parameters:
-// - ctx (context.Context): The context for execution, used for cancellation and deadlines.
-// - log (*zerolog.Logger): The logger to capture and display output from the command.
+//   - ctx (context.Context): The context for execution, used for cancellation and deadlines.
+//   - log (*zerolog.Logger): The logger to capture and display output from the command.
 //
 // Returns:
-// - error: Returns an error if the command execution fails, arguments are invalid, or the context is cancelled.
+//   - error: Returns an error if the command execution fails, arguments are invalid, or the context is cancelled.
 func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger) error {
 	_, cancelFunc := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
 	defer cancelFunc()
@@ -377,8 +377,8 @@ func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger
 // For `CommandType`, the action and parameters are combined into a command string.
 //
 // Returns:
-// - string: The constructed URL or command string.
-// - io.Reader: The body of the request if applicable (nil for GET requests or CommandType).
+//   - string: The constructed URL or command string.
+//   - io.Reader: The body of the request if applicable (nil for GET requests or CommandType).
 func (c *CallbackParameters) buildUrlAndBody() (string, io.Reader) {
 	if len(c.Parameters) == 0 {
 		return c.Action, nil

@@ -35,11 +35,11 @@ bx check -f module-path/config.yaml
 // The function supports checking modules by name or by the specified YAML file.
 //
 // Parameters:
-// - cmd (*cobra.Command): The Cobra command that invoked the check function.
-// - args ([]string): A slice of arguments passed to the command (unused here).
+//   - cmd (*cobra.Command): The Cobra command that invoked the check function.
+//   - args ([]string): A slice of arguments passed to the command (unused here).
 //
 // Returns:
-// - error: An error if the module configuration is invalid or any other error occurs.
+//   - error: An error if the module configuration is invalid or any other error occurs.
 func check(cmd *cobra.Command, _ []string) error {
 	module, err := internal.ReadModuleFromFlags(cmd)
 	if err != nil {
