@@ -37,11 +37,11 @@ bx create --name my_module
 // It validates the module name and uses default values to create the module's YAML configuration file.
 //
 // Parameters:
-// - cmd (*cobra.Command): The Cobra command that invoked the create function.
-// - args ([]string): A slice of arguments passed to the command (unused here).
+//   - cmd (*cobra.Command): The Cobra command that invoked the create function.
+//   - args ([]string): A slice of arguments passed to the command (unused here).
 //
 // Returns:
-// - error: An error if the module name is invalid or any other error occurs during the creation process.
+//   - error: An error if the module name is invalid or any other error occurs during the creation process.
 func create(cmd *cobra.Command, _ []string) error {
 	name, err := cmd.Flags().GetString("name")
 	name = strings.TrimSpace(name)

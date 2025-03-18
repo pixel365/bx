@@ -91,8 +91,8 @@ func (m *Module) IsValid() error {
 // If an error occurs during marshaling, it returns the error.
 //
 // Returns:
-// - []byte: The YAML representation of the Module struct.
-// - error: Any error that occurred during the marshaling process.
+//   - []byte: The YAML representation of the Module struct.
+//   - error: Any error that occurred during the marshaling process.
 func (m *Module) ToYAML() ([]byte, error) {
 	return yaml.Marshal(m)
 }
@@ -107,7 +107,7 @@ func (m *Module) ToYAML() ([]byte, error) {
 // If no errors are encountered, it returns nil.
 //
 // Returns:
-// - error: Any error that occurred during the variable replacement process. If successful, returns nil.
+//   - error: Any error that occurred during the variable replacement process. If successful, returns nil.
 func (m *Module) NormalizeStages() error {
 	if m.Variables != nil {
 		var err error
@@ -143,8 +143,8 @@ func (m *Module) NormalizeStages() error {
 // during path creation or validation, it returns an empty string along with the error.
 //
 // Returns:
-// - string: The absolute path of the ZIP file.
-// - error: Any error encountered during path creation or validation, otherwise nil.
+//   - string: The absolute path of the ZIP file.
+//   - error: Any error encountered during path creation or validation, otherwise nil.
 func (m *Module) ZipPath() (string, error) {
 	path, err := filepath.Abs(fmt.Sprintf("%s/%s.zip", m.BuildDirectory, m.Version))
 	if err != nil {
@@ -163,9 +163,9 @@ func (m *Module) ZipPath() (string, error) {
 // that stores the password for the module.
 //
 // The variable name is generated based on the module's name:
-// - Converted to uppercase
-// - All dots (".") are replaced with underscores ("_")
-// - The suffix "_PASSWORD" is appended
+//   - Converted to uppercase
+//   - All dots (".") are replaced with underscores ("_")
+//   - The suffix "_PASSWORD" is appended
 //
 // For example, for a module named "my.module", the function will return "MY_MODULE_PASSWORD".
 func (m *Module) PasswordEnv() string {
@@ -180,8 +180,8 @@ func (m *Module) PasswordEnv() string {
 // stageName - the name of the stage to find the callback for.
 //
 // Returns:
-// - Runnable - the found callback if it exists.
-// - error - an error if the callback is not found.
+//   - Runnable - the found callback if it exists.
+//   - error - an error if the callback is not found.
 func (m *Module) StageCallback(stageName string) (Runnable, error) {
 	for _, callback := range m.Callbacks {
 		if callback.Stage == stageName {
@@ -194,10 +194,10 @@ func (m *Module) StageCallback(stageName string) (Runnable, error) {
 
 // ValidateChangelog validates the changelog configuration of the module.
 // It checks for the presence and correctness of required fields:
-// - Ensures 'repository' is specified if 'from' or 'to' types are defined.
-// - Validates that 'from' and 'to' types are either 'commit' or 'tag'.
-// - Confirms 'from' and 'to' values are non-empty.
-// - If 'condition' is specified, checks that:
+//   - Ensures 'repository' is specified if 'from' or 'to' types are defined.
+//   - Validates that 'from' and 'to' types are either 'commit' or 'tag'.
+//   - Confirms 'from' and 'to' values are non-empty.
+//   - If 'condition' is specified, checks that:
 //   - a Condition type is either 'include' or 'exclude'.
 //   - Condition values are non-empty and valid regular expressions.
 //

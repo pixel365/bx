@@ -105,11 +105,11 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 // for the result of the upload operation.
 //
 // Parameters:
-// - module: The module whose ZIP file is being uploaded.
-// - cookies: The cookies containing the authentication information.
+//   - module: The module whose ZIP file is being uploaded.
+//   - cookies: The cookies containing the authentication information.
 //
 // Returns:
-// - An error if any step fails (e.g., missing session, file errors, upload failure).
+//   - An error if any step fails (e.g., missing session, file errors, upload failure).
 func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 	if module == nil {
 		return errors.New("module is nil")
@@ -198,11 +198,11 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 // like uploading data to the portal.
 //
 // Parameters:
-// - module: The module for which the session ID is being retrieved.
-// - cookies: The cookies containing the authentication information.
+//   - module: The module for which the session ID is being retrieved.
+//   - cookies: The cookies containing the authentication information.
 //
 // Returns:
-// - The session ID as a string if found, otherwise returns an empty string.
+//   - The session ID as a string if found, otherwise returns an empty string.
 func (c *Client) SessionId(module *Module, cookies []*http.Cookie) string {
 	u, _ := url.Parse("https://partners.1c-bitrix.ru/personal/modules/edit.php?ID=" + module.Name)
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
@@ -267,7 +267,7 @@ func (c *Client) SessionId(module *Module, cookies []*http.Cookie) string {
 // extracted and returned as an error.
 //
 // Parameters:
-// - htmlContent: The HTML response body to be parsed for error messages.
+//   - htmlContent: The HTML response body to be parsed for error messages.
 //
 // Returns:
 //   - An error if an error message is found in the HTML content or nil if

@@ -23,12 +23,7 @@ import (
 
 type Cfg string
 
-const (
-	RootDir Cfg = "root_dir"
-
-	Yes = "Yes"
-	No  = "No"
-)
+const RootDir Cfg = "root_dir"
 
 func Choose(items *[]string, value *string, title string) error {
 	if len(*items) == 0 {
@@ -156,10 +151,10 @@ ignore:
 // module, its name is added to the list.
 //
 // Parameters:
-// - directory (string): The path to the directory to scan for modules.
+//   - directory (string): The path to the directory to scan for modules.
 //
 // Returns:
-// - *[]string: A pointer to a slice of strings containing the names of all successfully read modules.
+//   - *[]string: A pointer to a slice of strings containing the names of all successfully read modules.
 func AllModules(directory string) *[]string {
 	var modules []string
 
@@ -198,8 +193,8 @@ func AllModules(directory string) *[]string {
 //     a module file should be looked for.
 //
 // Returns:
-// - *Module: A pointer to a `Module` object if the file can be successfully read and unmarshalled.
-// - error: An error if reading or unmarshalling the file fails.
+//   - *Module: A pointer to a `Module` object if the file can be successfully read and unmarshalled.
+//   - error: An error if reading or unmarshalling the file fails.
 func ReadModule(path, name string, file bool) (*Module, error) {
 	var filePath string
 	var err error
@@ -238,10 +233,10 @@ func ReadModule(path, name string, file bool) (*Module, error) {
 // If the file or directory does not exist or is not valid, an appropriate error is returned.
 //
 // Parameters:
-// - path (string): The path to be validated and checked for existence.
+//   - path (string): The path to be validated and checked for existence.
 //
 // Returns:
-// - error: An error if the path is invalid or does not exist, otherwise returns nil.
+//   - error: An error if the path is invalid or does not exist, otherwise returns nil.
 func CheckPath(path string) error {
 	path = filepath.Clean(path)
 	if !isValidPath(path, path) {
@@ -263,11 +258,11 @@ func CheckPath(path string) error {
 // given path is a directory or not.
 //
 // Parameters:
-// - path (string): The path to be checked.
+//   - path (string): The path to be checked.
 //
 // Returns:
-// - bool: `true` if the path is a directory, `false` otherwise.
-// - error: An error if the path is invalid or if there is an issue retrieving the file information.
+//   - bool: `true` if the path is a directory, `false` otherwise.
+//   - error: An error if the path is invalid or if there is an issue retrieving the file information.
 func IsDir(path string) (bool, error) {
 	err := CheckPath(path)
 	if err != nil {
@@ -288,7 +283,7 @@ func IsDir(path string) (bool, error) {
 // they are collected in a channel and returned as a combined error.
 //
 // Parameters:
-// - module (*Module): The module containing stages to be validated.
+//   - module (*Module): The module containing stages to be validated.
 //
 // Returns:
 //   - error: Returns an error if any validation fails in any stage's paths.
@@ -327,10 +322,10 @@ func CheckStages(module *Module) error {
 // If the context is still active, it returns nil.
 //
 // Parameters:
-// - ctx (context.Context): The context to check.
+//   - ctx (context.Context): The context to check.
 //
 // Returns:
-// - error: Returns an error if the context is done (canceled or expired), otherwise nil.
+//   - error: Returns an error if the context is done (canceled or expired), otherwise nil.
 func CheckContext(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -347,8 +342,8 @@ func CheckContext(ctx context.Context) error {
 // it sends the error to the provided channel and exits early.
 //
 // Parameters:
-// - stage (Stage): The stage containing the "From" paths to check.
-// - ch (chan<- error): A channel to send any errors encountered during the path checks.
+//   - stage (Stage): The stage containing the "From" paths to check.
+//   - ch (chan<- error): A channel to send any errors encountered during the path checks.
 //
 // The function does not return any value. If an error occurs during path validation,
 // the error is sent to the provided channel.
@@ -370,8 +365,8 @@ func checkPaths(stage Stage, ch chan<- error) {
 // structure, and that the filePath is within the basePath directory.
 //
 // Parameters:
-// - filePath (string): The path to check for validity.
-// - basePath (string): The base directory to check against.
+//   - filePath (string): The path to check for validity.
+//   - basePath (string): The base directory to check against.
 //
 // Returns:
 //   - bool: Returns true if the filePath is valid (i.e., is within the basePath directory),
@@ -395,13 +390,13 @@ func isValidPath(filePath, basePath string) bool {
 // if the depth is less than 0, an error will be returned.
 //
 // Parameters:
-// - input (string): The input string containing variables in the format `{variableName}` to replace.
-// - variables (map[string]string): A map containing variable names as keys and their replacement values as strings.
-// - depth (int): The current recursion depth, which should start from 0. The function supports up to 5 levels of recursion.
+//   - input (string): The input string containing variables in the format `{variableName}` to replace.
+//   - variables (map[string]string): A map containing variable names as keys and their replacement values as strings.
+//   - depth (int): The current recursion depth, which should start from 0. The function supports up to 5 levels of recursion.
 //
 // Returns:
-// - string: The updated string with variables replaced by their corresponding values, or an error if no replacement could be made.
-// - error: An error is returned if the depth exceeds 5, if the depth is negative, or if the replacement results in an empty string.
+//   - string: The updated string with variables replaced by their corresponding values, or an error if no replacement could be made.
+//   - error: An error is returned if the depth exceeds 5, if the depth is negative, or if the replacement results in an empty string.
 func ReplaceVariables(input string, variables map[string]string, depth int) (string, error) {
 	if depth < 0 {
 		return "", errors.New("depth cannot be less than 0")

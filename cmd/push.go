@@ -49,11 +49,11 @@ bx push --name my_module --version 1.2.3
 // The module is then uploaded to the specified server after authentication.
 //
 // Parameters:
-// - cmd (*cobra.Command): The Cobra command that invoked the push function.
-// - args ([]string): A slice of arguments passed to the command (unused here).
+//   - cmd (*cobra.Command): The Cobra command that invoked the push function.
+//   - args ([]string): A slice of arguments passed to the command (unused here).
 //
 // Returns:
-// - error: An error if any validation or upload step fails.
+//   - error: An error if any validation or upload step fails.
 func push(cmd *cobra.Command, _ []string) error {
 	module, err := internal.ReadModuleFromFlags(cmd)
 	if err != nil {

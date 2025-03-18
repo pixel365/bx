@@ -24,9 +24,6 @@ const (
 
 	Asc  ChangelogSort = "asc"
 	Desc ChangelogSort = "desc"
-
-	Release     BuildType = "release"
-	LastVersion BuildType = "lastVersion"
 )
 
 type TypeValue[T1 any, T2 any] struct {

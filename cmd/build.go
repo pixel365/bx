@@ -47,11 +47,11 @@ bx build --name my_module --last
 // both by name and from a specified YAML file.
 //
 // Parameters:
-// - cmd (*cobra.Command): The Cobra command that invoked the build function.
-// - args ([]string): A slice of arguments passed to the command (unused here).
+//   - cmd (*cobra.Command): The Cobra command that invoked the build function.
+//   - args ([]string): A slice of arguments passed to the command (unused here).
 //
 // Returns:
-// - error: An error if the build process encounters any issues or validation fails.
+//   - error: An error if the build process encounters any issues or validation fails.
 func build(cmd *cobra.Command, _ []string) error {
 	module, err := internal.ReadModuleFromFlags(cmd)
 	if err != nil {
