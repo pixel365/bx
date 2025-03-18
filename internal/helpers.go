@@ -498,7 +498,7 @@ func HandleStages(
 
 		wg.Add(1)
 
-		go handleStage(m.Ctx, wg, errCh, log, &m.Ignore, stage, dir, m.StageCallback)
+		go handleStage(m.Ctx, wg, errCh, log, m, stage, dir, m.StageCallback)
 	}
 
 	return nil

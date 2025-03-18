@@ -279,3 +279,23 @@ func (m *Module) FindStage(name string) (Stage, error) {
 
 	return Stage{}, fmt.Errorf("stage `%s` not found", name)
 }
+
+func (m *Module) GetChanges() *Changes {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.Repository == "" {
+		return nil
+	}
+
+	if m.changes == nil {
+		changes, err := ChangesList(m.Repository, m.Changelog)
+		if err != nil {
+			return nil
+		}
+
+		m.changes = changes
+	}
+
+	return m.changes
+}

@@ -174,3 +174,30 @@ func Test_hashes(t *testing.T) {
 		})
 	}
 }
+
+func TestChangesList(t *testing.T) {
+	type args struct {
+		repository string
+		rules      Changelog
+	}
+	tests := []struct {
+		want    *Changes
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{nil, "empty repository", args{}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ChangesList(tt.args.repository, tt.args.rules)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ChangesList() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ChangesList() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

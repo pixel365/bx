@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"sync"
 )
 
 type FileExistsAction string
@@ -57,18 +58,20 @@ type Module struct {
 	Ctx            context.Context     `yaml:"-"`
 	Variables      map[string]string   `yaml:"variables,omitempty"`
 	Run            map[string][]string `yaml:"run,omitempty"`
-	Name           string              `yaml:"name"`
-	Version        string              `yaml:"version"`
+	changes        *Changes            `yaml:"-"`
+	Repository     string              `yaml:"repository,omitempty"`
 	Account        string              `yaml:"account"`
 	BuildDirectory string              `yaml:"buildDirectory,omitempty"`
 	LogDirectory   string              `yaml:"logDirectory,omitempty"`
-	Repository     string              `yaml:"repository,omitempty"`
+	Version        string              `yaml:"version"`
+	Name           string              `yaml:"name"`
 	Changelog      Changelog           `yaml:"changelog,omitempty"`
 	Builds         Builds              `yaml:"builds"`
 	Stages         []Stage             `yaml:"stages"`
 	Ignore         []string            `yaml:"ignore"`
 	Callbacks      []Callback          `yaml:"callbacks,omitempty"`
 	LastVersion    bool                `yaml:"-"`
+	mu             sync.Mutex          `yaml:"-"`
 }
 
 func (m *Module) GetVersion() string {
