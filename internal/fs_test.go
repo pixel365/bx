@@ -135,8 +135,10 @@ func Test_copyFromPath(t *testing.T) {
 			"**/*some*/*",
 		}
 
+		module := Module{Ignore: patterns}
+
 		wg.Add(1)
-		copyFromPath(context.Background(), &wg, errChan, &patterns, from, to, Replace, false)
+		copyFromPath(context.Background(), &wg, errChan, &module, from, to, Replace, false)
 
 		defer func() {
 			if err := os.Remove(fmt.Sprintf("%s/%s", toPath, fileName)); err != nil {
@@ -167,4 +169,61 @@ func Test_isConvertable(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_isEmptyDir(t *testing.T) {
+	t.Run("empty dir", func(t *testing.T) {
+		name := fmt.Sprintf("./_%d", time.Now().UTC().Unix())
+		path, err := mkdir(name)
+		if err != nil {
+			t.Error(err)
+		}
+
+		defer func() {
+			if err := os.Remove(path); err != nil {
+				t.Error(err)
+			}
+		}()
+
+		if !isEmptyDir(path) {
+			t.Errorf("isEmptyDir() = %v, want %v", isEmptyDir(path), true)
+		}
+	})
+}
+
+func Test_removeEmptyDirs(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		name := fmt.Sprintf("./_%d", time.Now().UTC().Unix())
+		name2 := fmt.Sprintf("./%s/%d", name, time.Now().UTC().Unix())
+		path, err := mkdir(name)
+		if err != nil {
+			t.Error(err)
+		}
+		defer func() {
+			if err := os.Remove(path); err != nil {
+				t.Error(err)
+			}
+		}()
+
+		path2, err := mkdir(name2)
+		if err != nil {
+			t.Error(err)
+		}
+
+		status, err := removeEmptyDirs(path)
+		if err != nil {
+			t.Errorf("removeEmptyDirs() error = %v", err)
+		}
+		if !status {
+			t.Errorf("removeEmptyDirs() = %v, want %v", status, true)
+		}
+
+		if !status || err != nil {
+			defer func() {
+				if err := os.Remove(path2); err != nil {
+					t.Error(err)
+				}
+			}()
+		}
+	})
 }

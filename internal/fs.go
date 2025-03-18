@@ -24,21 +24,21 @@ import (
 // any errors encountered through the provided error channel.
 //
 // Parameters:
-// - ctx (context.Context): The context to control the execution and cancellation of the operation.
-// - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
-// - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-// - ignore (*[]string): A list of paths to ignore during the copy process.
-// - from (string): The source directory to copy from.
-// - to (string): The destination directory to copy to.
-// - existsMode (FileExistsAction): The action to take if the file already exists in the destination.
-// - convert (bool): A flag to indicate whether to convert the files during the copy process.
+//   - ctx (context.Context): The context to control the execution and cancellation of the operation.
+//   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
+//   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
+//   - module (*Module): Module instance
+//   - from (string): The source directory to copy from.
+//   - to (string): The destination directory to copy to.
+//   - existsMode (FileExistsAction): The action to take if the file already exists in the destination.
+//   - convert (bool): A flag to indicate whether to convert the files during the copy process.
 //
 // If any error is encountered during the execution, it is reported through the `errCh` channel.
 func copyFromPath(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
-	ignore *[]string,
+	module *Module,
 	from, to string,
 	existsMode FileExistsAction,
 	convert bool,
@@ -50,7 +50,7 @@ func copyFromPath(
 		return
 	}
 
-	if err := walk(ctx, wg, errCh, from, to, ignore, existsMode, convert); err != nil {
+	if err := walk(ctx, wg, errCh, from, to, module, existsMode, convert); err != nil {
 		if !errors.Is(err, doublestar.SkipDir) {
 			errCh <- err
 		}
@@ -65,14 +65,14 @@ func copyFromPath(
 // any errors encountered during the process through the provided error channel.
 //
 // Parameters:
-// - ctx (context.Context): The context to control the execution and cancellation of the operation.
-// - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
-// - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-// - from (string): The source directory to walk through.
-// - to (string): The destination directory where files should be copied.
-// - patterns (*[]string): A list of patterns to match for skipping files or directories.
-// - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
-// - convert (bool): A flag to indicate whether to convert files during the copy process.
+//   - ctx (context.Context): The context to control the execution and cancellation of the operation.
+//   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
+//   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
+//   - from (string): The source directory to walk through.
+//   - to (string): The destination directory where files should be copied.
+//   - module (*Module): Module instance
+//   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
+//   - convert (bool): A flag to indicate whether to convert files during the copy process.
 //
 // Returns:
 //   - error: If an error occurs during the traversal or file copying process, it will be returned. If the
@@ -82,7 +82,7 @@ func walk(
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	from, to string,
-	patterns *[]string,
+	module *Module,
 	existsMode FileExistsAction,
 	convert bool,
 ) error {
@@ -91,6 +91,11 @@ func walk(
 
 	var wg2 sync.WaitGroup
 	jobs := make(chan struct{}, 10)
+
+	var changes *Changes = nil
+	if !module.LastVersion {
+		changes = module.GetChanges()
+	}
 
 	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
 		if ctxErr := CheckContext(ctx); ctxErr != nil {
@@ -107,7 +112,7 @@ func walk(
 			return err
 		}
 
-		if shouldSkip(relPath, patterns) {
+		if shouldSkip(relPath, &module.Ignore) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -126,6 +131,12 @@ func walk(
 		}
 
 		if !isDir {
+			if changes != nil {
+				if !changes.IsChangedFile(absFrom) {
+					return nil
+				}
+			}
+
 			absTo, err := filepath.Abs(fmt.Sprintf("%s/%s", to, relPath))
 			if err != nil {
 				return err
@@ -153,9 +164,9 @@ func walk(
 // existing file handling mode (`existsMode`), and optional conversion of file content.
 //
 // The function checks if the destination file exists and takes action based on the specified `existsMode`:
-// - If `Skip`, it does nothing if the file already exists.
-// - If `ReplaceIfNewer`, it replaces the file only if the source file is newer than the destination file.
-// - If neither of the above, it always replaces the file.
+//   - If `Skip`, it does nothing if the file already exists.
+//   - If `ReplaceIfNewer`, it replaces the file only if the source file is newer than the destination file.
+//   - If neither of the above, it always replaces the file.
 //
 // If the `convert` flag is set to `true` and the file is convertible (determined by the `isConvertable` function),
 // it converts the file content using Windows-1251 encoding before writing it to the destination.
@@ -164,17 +175,17 @@ func walk(
 // to support cancellation during file copying.
 //
 // Parameters:
-// - ctx (context.Context): The context to control the execution and cancellation of the operation.
-// - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
-// - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-// - src (string): The source file path to copy from.
-// - dst (string): The destination file path to copy to.
-// - jobs (chan struct{}): A channel for managing concurrent file copy operations with a limited number of concurrent jobs.
-// - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
-// - convert (bool): A flag to indicate whether to convert the file content during the copy process.
+//   - ctx (context.Context): The context to control the execution and cancellation of the operation.
+//   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
+//   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
+//   - src (string): The source file path to copy from.
+//   - dst (string): The destination file path to copy to.
+//   - jobs (chan struct{}): A channel for managing concurrent file copy operations with a limited number of concurrent jobs.
+//   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
+//   - convert (bool): A flag to indicate whether to convert the file content during the copy process.
 //
 // Returns:
-// - None: Errors are sent to the error channel `errCh`, and no return value is provided.
+//   - None: Errors are sent to the error channel `errCh`, and no return value is provided.
 func copyFile(
 	ctx context.Context,
 	wg *sync.WaitGroup,
@@ -321,8 +332,8 @@ func shouldSkip(path string, patterns *[]string) bool {
 //     and ensure it is valid before attempting to create the directory.
 //
 // Returns:
-// - string: The absolute path of the created directory.
-// - error: If an error occurs during path resolution or directory creation, an error is returned.
+//   - string: The absolute path of the created directory.
+//   - error: If an error occurs during path resolution or directory creation, an error is returned.
 func mkdir(path string) (string, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
@@ -431,10 +442,10 @@ func zipIt(dirPath, archivePath string) error {
 // Otherwise, it returns false.
 //
 // Parameters:
-// - path (string): The file path to check for conversion eligibility.
+//   - path (string): The file path to check for conversion eligibility.
 //
 // Returns:
-// - bool: Returns true if the file path ends with ".php" or "description.ru", otherwise returns false.
+//   - bool: Returns true if the file path ends with ".php" or "description.ru", otherwise returns false.
 func isConvertable(path string) bool {
 	if path == "" {
 		return false
@@ -442,4 +453,90 @@ func isConvertable(path string) bool {
 
 	return (strings.Contains(path, "/lang/") && strings.HasSuffix(path, ".php")) ||
 		strings.HasSuffix(path, "description.ru")
+}
+
+// isEmptyDir checks whether the specified directory exists and is empty.
+//
+// Parameters:
+//   - path: The path to the directory to check.
+//
+// Returns:
+//   - true if the directory exists and is empty.
+//   - false if the directory does not exist, is not accessible, or contains at least one entry.
+//
+// Notes:
+//   - If the directory cannot be opened (e.g., due to permission issues), the function returns false.
+//   - If an error occurs while reading directory entries, it is assumed to be empty
+//     (e.g., when the directory does not exist).
+//   - Logs an error if closing the directory fails.
+func isEmptyDir(path string) bool {
+	path = filepath.Clean(path)
+	dir, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer func(dir *os.File) {
+		err := dir.Close()
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}(dir)
+
+	entries, err := dir.Readdirnames(1)
+	if err != nil {
+		return true
+	}
+
+	return len(entries) == 0
+}
+
+// removeEmptyDirs recursively removes empty directories within the specified root directory.
+//
+// Parameters:
+//   - root: The path of the directory to start the cleanup.
+//
+// Returns:
+//   - A boolean indicating whether the directory itself is empty after processing.
+//   - An error if any issue occurs while reading or removing directories.
+//
+// Behavior:
+//   - Traverses all subdirectories recursively.
+//   - If a subdirectory becomes empty after processing its contents, it gets removed.
+//   - If any error occurs (e.g., permission issues), the error is returned.
+//   - The function ensures that only empty directories are removed, leaving files untouched.
+//
+// Example:
+//
+//	_, err := removeEmptyDirs("/path/to/root")
+//	if err != nil {
+//	    log.Fatalf("Failed to remove empty directories: %v", err)
+//	}
+func removeEmptyDirs(root string) (bool, error) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return false, fmt.Errorf("error reading directory %s: %w", root, err)
+	}
+
+	empty := true
+	for _, entry := range entries {
+		if entry.IsDir() {
+			inner := filepath.Join(root, entry.Name())
+			isEmpty, err := removeEmptyDirs(inner)
+			if err != nil {
+				return false, fmt.Errorf("error removing empty directory %s: %w", inner, err)
+			}
+
+			if isEmpty {
+				if err := os.Remove(inner); err != nil {
+					return false, fmt.Errorf("failed to remove empty directory %s: %w", inner, err)
+				}
+			} else {
+				empty = false
+			}
+		} else {
+			empty = false
+		}
+	}
+
+	return empty, nil
 }

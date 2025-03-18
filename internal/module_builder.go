@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -242,6 +243,23 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 		return err
 	}
 
+	_, err = removeEmptyDirs(versionDirectory)
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(versionDirectory)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("version directory does not exist: %s", versionDirectory)
+		}
+		return err
+	}
+
+	if isEmptyDir(versionDirectory) {
+		return errors.New("no changes detected. version directory is empty")
+	}
+
 	zipPath, err := makeZipFilePath(m)
 	if err != nil {
 		return err
@@ -279,7 +297,7 @@ func handleStage(
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	log *zerolog.Logger,
-	ignore *[]string,
+	module *Module,
 	stage Stage,
 	rootDir string,
 	cb func(string) (Runnable, error),
@@ -358,7 +376,7 @@ func handleStage(
 			ctx,
 			wg,
 			errCh,
-			ignore,
+			module,
 			from,
 			to,
 			stage.ActionIfFileExists,
