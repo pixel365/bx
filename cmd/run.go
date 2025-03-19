@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -37,7 +36,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	}
 
 	if command == "" {
-		return errors.New("no command specified")
+		return internal.NoCommandSpecifiedError
 	}
 
 	module, err := internal.ReadModuleFromFlags(cmd)

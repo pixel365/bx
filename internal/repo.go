@@ -262,7 +262,7 @@ func listOfCommits(
 	filter CommitFilterFunc,
 ) ([]string, error) {
 	if repository == nil {
-		return nil, errors.New("repository is nil")
+		return nil, NilRepositoryError
 	}
 
 	startHash, endHash, err := hashes(repository, rules)
@@ -327,7 +327,7 @@ func listOfCommits(
 //   - Uses `repository.ResolveRevision` to translate references into commit hashes.
 func hashes(repository *git.Repository, rules Changelog) (plumbing.Hash, plumbing.Hash, error) {
 	if repository == nil {
-		return plumbing.ZeroHash, plumbing.ZeroHash, errors.New("repository is nil")
+		return plumbing.ZeroHash, plumbing.ZeroHash, NilRepositoryError
 	}
 
 	var startHash plumbing.Hash
@@ -395,7 +395,7 @@ func ChangesList(repository string, rules Changelog) (*Changes, error) {
 	}
 
 	if r == nil {
-		return nil, errors.New("repository is nil")
+		return nil, NilRepositoryError
 	}
 
 	startHash, endHash, err := hashes(r, rules)

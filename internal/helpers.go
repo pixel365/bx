@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -11,8 +10,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-
-	"github.com/rs/zerolog"
 
 	"github.com/spf13/cobra"
 
@@ -29,7 +26,7 @@ func Choose(items *[]string, value *string, title string) error {
 	if len(*items) == 0 {
 		switch any(items).(type) {
 		default:
-			return errors.New("no items")
+			return NoItemsError
 		}
 	}
 
@@ -210,7 +207,7 @@ func ReadModule(path, name string, file bool) (*Module, error) {
 	}
 
 	if !isValidPath(filePath, path) {
-		return nil, errors.New("invalid file path")
+		return nil, InvalidFilepathError
 	}
 
 	data, err := os.ReadFile(filepath.Clean(filePath))
@@ -399,11 +396,11 @@ func isValidPath(filePath, basePath string) bool {
 //   - error: An error is returned if the depth exceeds 5, if the depth is negative, or if the replacement results in an empty string.
 func ReplaceVariables(input string, variables map[string]string, depth int) (string, error) {
 	if depth < 0 {
-		return "", errors.New("depth cannot be less than 0")
+		return "", SmallDepthError
 	}
 
 	if depth > 5 {
-		return "", errors.New("depth cannot be greater than 5")
+		return "", LargeDepthError
 	}
 
 	variableRegex := regexp.MustCompile(`\{([a-zA-Z0-9-_]+)}`)
@@ -417,7 +414,7 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 	})
 
 	if updated == "" {
-		return "", fmt.Errorf("replacement variable is empty")
+		return "", ReplacementError
 	}
 
 	if updated == input {
@@ -468,7 +465,7 @@ func HandleStages(
 	m *Module,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
-	log *zerolog.Logger,
+	logger BuildLogger,
 	customCommandMode bool,
 ) error {
 	var err error
@@ -493,7 +490,7 @@ func HandleStages(
 
 		wg.Add(1)
 
-		go handleStage(m.Ctx, wg, errCh, log, m, stage, dir, m.StageCallback)
+		go handleStage(m.Ctx, wg, errCh, logger, m, stage, dir, m.StageCallback)
 	}
 
 	return nil

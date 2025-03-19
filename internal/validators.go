@@ -46,7 +46,7 @@ func ValidateModuleName(name, directory string) error {
 func ValidateVersion(version string) error {
 	version = strings.TrimSpace(version)
 	if version == "" {
-		return errors.New("module version is required")
+		return EmptyVersionError
 	}
 
 	for range versionRegex.FindAllString(version, -1) {
@@ -67,11 +67,11 @@ func ValidateVersion(version string) error {
 func ValidatePassword(password string) error {
 	password = strings.TrimSpace(password)
 	if password == "" {
-		return errors.New("password is required")
+		return EmptyPasswordError
 	}
 
 	if len(password) < 6 {
-		return errors.New("password is too short")
+		return PasswordTooShortError
 	}
 
 	return nil
@@ -92,7 +92,7 @@ func ValidateArgument(arg string) bool {
 
 func ValidateStages(m *Module) error {
 	if len(m.Stages) == 0 {
-		return errors.New("stages is not valid")
+		return InvalidStagesError
 	}
 
 	for index, item := range m.Stages {
@@ -182,7 +182,7 @@ func ValidateRun(m *Module) error {
 	}
 
 	if len(m.Run) == 0 {
-		return errors.New("run is required")
+		return InvalidRunError
 	}
 
 	for key, stages := range m.Run {

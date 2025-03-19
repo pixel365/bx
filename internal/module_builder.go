@@ -2,85 +2,61 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"golang.org/x/text/encoding/charmap"
-
-	"github.com/rs/zerolog"
 )
+
+type ModuleBuilder struct {
+	logger BuildLogger
+	module *Module
+}
+
+func NewModuleBuilder(m *Module, logger BuildLogger) *ModuleBuilder {
+	return &ModuleBuilder{
+		logger: logger,
+		module: m,
+	}
+}
 
 // Build orchestrates the entire build process for the module.
 // It logs the progress of each phase, such as preparation, collection, and cleanup.
 // If any of these phases fails, the build will be rolled back to ensure a clean state.
 //
 // The method returns an error if any of the steps (Prepare, Collect, or Cleanup) fail.
-func (m *Module) Build() error {
-	if err := CheckContext(m.Ctx); err != nil {
+func (m *ModuleBuilder) Build() error {
+	if m.module == nil {
+		return NilModuleError
+	}
+
+	if err := CheckContext(m.module.Ctx); err != nil {
 		return err
 	}
 
-	logFile, err := os.OpenFile(
-		fmt.Sprintf(
-			"./%s-%s.%s.log",
-			m.Name,
-			m.GetVersion(),
-			time.Now().UTC().Format(time.RFC3339),
-		),
-		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
-		0600,
-	)
-	if err != nil {
-		return err
-	}
-	defer func(logFile *os.File) {
-		err := logFile.Close()
-		if err != nil {
-			slog.Error(err.Error())
-		} else {
-			path := fmt.Sprintf("%s/%s", m.LogDirectory, logFile.Name())
-			path = filepath.Clean(path)
-			err := os.Rename(logFile.Name(), path)
-			if err != nil {
-				slog.Error(err.Error())
-			}
-		}
-	}(logFile)
+	m.logger.Info("Building module")
 
-	log := zerolog.New(logFile).With().Timestamp().Logger()
-	log.Info().Msg("Building module")
-
-	if err := m.Prepare(&log); err != nil {
-		log.Error().Err(err).Msg("Failed to prepare build")
-		if rollbackErr := m.Rollback(&log); rollbackErr != nil {
-			log.Error().Err(rollbackErr).Msg("Failed to rollback")
+	if err := m.Prepare(); err != nil {
+		m.logger.Error("Failed to prepare build", err)
+		if rollbackErr := m.Rollback(); rollbackErr != nil {
+			m.logger.Error("Failed to rollback", rollbackErr)
 		}
 		return err
 	}
 
-	log.Info().Msg("Prepare complete")
+	m.logger.Info("Prepare complete")
 
-	if err := m.Collect(&log); err != nil {
-		log.Error().Err(err).Msg("Failed to collect build")
-		if rollbackErr := m.Rollback(&log); rollbackErr != nil {
-			log.Error().Err(rollbackErr).Msg("Failed to rollback")
+	if err := m.Collect(); err != nil {
+		m.logger.Error("Failed to collect build", err)
+		if rollbackErr := m.Rollback(); rollbackErr != nil {
+			m.logger.Error("Failed to rollback", rollbackErr)
 		}
 		return err
 	}
 
-	log.Info().Msg("Build complete")
-
-	if err := m.Cleanup(&log); err != nil {
-		log.Error().Err(err).Msg("Failed to cleanup build")
-		return err
-	}
-
-	log.Info().Msg("Cleanup complete")
+	m.logger.Info("Build complete")
 
 	return nil
 }
@@ -90,77 +66,85 @@ func (m *Module) Build() error {
 // If any validation or directory creation fails, an error will be returned.
 //
 // The method returns an error if the module is invalid or if directories cannot be created.
-func (m *Module) Prepare(log *zerolog.Logger) error {
-	if err := m.IsValid(); err != nil {
-		log.Error().Err(err).Msg("Prepare: module is invalid")
+func (m *ModuleBuilder) Prepare() error {
+	if m.module == nil {
+		return NilModuleError
+	}
+
+	if err := m.module.IsValid(); err != nil {
+		m.logger.Error("Prepare: module is invalid", err)
 		return err
 	}
 
-	log.Info().Msg("Validation complete")
+	m.logger.Info("Validation complete")
 
-	if err := CheckStages(m); err != nil {
-		log.Error().Err(err).Msg("Prepare: check stages failed")
+	if err := CheckStages(m.module); err != nil {
+		m.logger.Error("Prepare: check stages failed", err)
 		return err
 	}
 
-	log.Info().Msg("Check stages complete")
+	m.logger.Info("Check stages complete")
 
-	if m.BuildDirectory == "" {
-		m.BuildDirectory = "./build"
+	if m.module.BuildDirectory == "" {
+		m.module.BuildDirectory = "./build"
 	}
 
-	if m.LogDirectory == "" {
-		m.LogDirectory = "./log"
+	if m.module.LogDirectory == "" {
+		m.module.LogDirectory = "./log"
 	}
 
-	path, err := mkdir(m.BuildDirectory)
+	path, err := mkdir(m.module.BuildDirectory)
 	if err != nil {
-		log.Error().Err(err).Msg("Prepare: failed to make build directory")
+		m.logger.Error("Prepare: failed to make build directory", err)
 		return err
 	}
 
-	log.Info().Msgf("Build directory complete: %s", path)
+	m.logger.Info("Build directory complete: %s", path)
 
-	m.BuildDirectory = path
+	m.module.BuildDirectory = path
 
-	path, err = mkdir(m.LogDirectory)
+	path, err = mkdir(m.module.LogDirectory)
 	if err != nil {
-		log.Error().Err(err).Msg("Prepare: failed to make log directory")
+		m.logger.Error("Prepare: failed to make log directory", err)
 		return err
 	}
 
-	log.Info().Msgf("Log directory complete: %s", path)
+	m.logger.Info("Log directory complete: %s", path)
 
-	m.LogDirectory = path
+	m.module.LogDirectory = path
 
-	path, err = mkdir(fmt.Sprintf("%s/%s", m.BuildDirectory, m.GetVersion()))
+	path, err = mkdir(fmt.Sprintf("%s/%s", m.module.BuildDirectory, m.module.GetVersion()))
 	if err != nil {
-		log.Error().Err(err).Msg("Prepare: failed to make build version directory")
+		m.logger.Info("Prepare: failed to make build version directory")
 		return err
 	}
 
-	log.Info().Msgf("Build version directory complete: %s", path)
+	m.logger.Info("Build version directory complete: %s", path)
 
 	return nil
 }
 
 // Cleanup removes any temporary files and directories created during the build process.
 // It ensures the environment is cleaned up by deleting the version-specific build directory.
-//
-// The method returns an error if the cleanup process fails.
-func (m *Module) Cleanup(log *zerolog.Logger) error {
-	versionDir, err := makeVersionDirectory(m)
+func (m *ModuleBuilder) Cleanup() {
+	if m.module == nil {
+		return
+	}
+
+	defer m.logger.Cleanup()
+
+	versionDir, err := makeVersionDirectory(m.module)
 	if err != nil {
-		return err
+		m.logger.Error("Cleanup: failed to make version dir", err)
+		return
 	}
 
 	if err := os.RemoveAll(versionDir); err != nil {
-		return err
+		m.logger.Error("Cleanup: failed to remove version directory", err)
+		return
 	}
 
-	log.Info().Msg("Cleanup complete")
-
-	return nil
+	m.logger.Info("Cleanup complete")
 }
 
 // Rollback reverts any changes made during the build process.
@@ -169,8 +153,12 @@ func (m *Module) Cleanup(log *zerolog.Logger) error {
 // and that the environment is restored to its previous state.
 //
 // The method returns an error if the rollback process fails.
-func (m *Module) Rollback(log *zerolog.Logger) error {
-	zipPath, err := makeZipFilePath(m)
+func (m *ModuleBuilder) Rollback() error {
+	if m.module == nil {
+		return NilModuleError
+	}
+
+	zipPath, err := makeZipFilePath(m.module)
 	if err != nil {
 		return err
 	}
@@ -181,10 +169,10 @@ func (m *Module) Rollback(log *zerolog.Logger) error {
 			return err
 		}
 
-		log.Info().Msgf("Removed zip file: %s", zipPath)
+		m.logger.Info("Removed zip file: %s", zipPath)
 	}
 
-	versionDir, err := makeVersionDirectory(m)
+	versionDir, err := makeVersionDirectory(m.module)
 	if err != nil {
 		return err
 	}
@@ -193,8 +181,8 @@ func (m *Module) Rollback(log *zerolog.Logger) error {
 		return err
 	}
 
-	log.Info().Msgf("Removed version directory: %s", versionDir)
-	log.Info().Msg("Rollback complete")
+	m.logger.Info("Removed version directory: %s", versionDir)
+	m.logger.Info("Rollback complete")
 
 	return nil
 }
@@ -204,22 +192,26 @@ func (m *Module) Rollback(log *zerolog.Logger) error {
 // The function creates the necessary directories for each stage and copies files as defined in the stage configuration.
 //
 // The method returns an error if any stage fails or if there are issues zipping the collected files.
-func (m *Module) Collect(log *zerolog.Logger) error {
-	versionDirectory, err := makeVersionDirectory(m)
+func (m *ModuleBuilder) Collect() error {
+	if m.module == nil {
+		return NilModuleError
+	}
+
+	versionDirectory, err := makeVersionDirectory(m.module)
 	if err != nil {
 		return err
 	}
 
 	var wg sync.WaitGroup
-	errCh := make(chan error, len(m.Stages))
+	errCh := make(chan error, len(m.module.Stages))
 
-	stages := m.Builds.Release
-	if m.LastVersion {
-		stages = m.Builds.LastVersion
+	stages := m.module.Builds.Release
+	if m.module.LastVersion {
+		stages = m.module.Builds.LastVersion
 	}
 
-	if err := HandleStages(stages, m, &wg, errCh, log, false); err != nil {
-		log.Error().Err(err).Msg("Collect: handle stages failed")
+	if err := HandleStages(stages, m.module, &wg, errCh, m.logger, false); err != nil {
+		m.logger.Error("Collect: handle stages failed", err)
 	}
 
 	wg.Wait()
@@ -231,15 +223,15 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	}
 
 	if len(errs) > 0 {
-		log.Error().Int("errors", len(errs)).Msg("Failed to collect build")
+		m.logger.Error("Failed to collect build", nil)
 		return fmt.Errorf("errors: %v", errs)
 	}
 
-	log.Info().Msg("Collect complete")
+	m.logger.Info("Collect complete")
 
-	err = makeVersionDescription(m, log)
+	err = makeVersionDescription(m)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to collect build description")
+		m.logger.Error("Failed to collect build description", err)
 		return err
 	}
 
@@ -257,20 +249,20 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 	}
 
 	if isEmptyDir(versionDirectory) {
-		return errors.New("no changes detected. version directory is empty")
+		return NoChangesError
 	}
 
-	zipPath, err := makeZipFilePath(m)
+	zipPath, err := makeZipFilePath(m.module)
 	if err != nil {
 		return err
 	}
 
 	if err := zipIt(versionDirectory, zipPath); err != nil {
-		log.Error().Err(err).Msg("Failed to zip build")
+		m.logger.Error("Failed to zip build", err)
 		return err
 	}
 
-	log.Info().Msg("Zip complete")
+	m.logger.Info("Zip complete")
 
 	return nil
 }
@@ -283,7 +275,7 @@ func (m *Module) Collect(log *zerolog.Logger) error {
 //   - ctx: The context used to manage cancellation or timeouts.
 //   - wg: The wait group to synchronize the completion of all goroutines.
 //   - errCh: A channel for capturing any errors that occur during the process.
-//   - log: The logger used to log messages about the process.
+//   - logger: The logger used to log messages about the process.
 //   - ignore: A list of files or directories to be ignored during file copying.
 //   - stage: The specific stage being processed, which contains source and destination paths.
 //   - rootDir: The directory where the files will be placed.
@@ -296,7 +288,7 @@ func handleStage(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
-	log *zerolog.Logger,
+	logger BuildLogger,
 	module *Module,
 	stage Stage,
 	rootDir string,
@@ -307,33 +299,31 @@ func handleStage(
 	defer func() {
 		if cbErr == nil {
 			wg.Add(1)
-			go callback.PostRun(ctx, wg, log)
+			go callback.PostRun(ctx, wg, logger)
 		}
 		wg.Done()
 	}()
 
 	if cbErr == nil {
 		wg.Add(1)
-		go callback.PreRun(ctx, wg, log)
+		go callback.PreRun(ctx, wg, logger)
 	}
 
 	var err error
 
-	if log != nil {
-		log.Info().Msg(fmt.Sprintf("Handling stage %s", stage.Name))
+	if logger != nil {
+		logger.Info("Handling stage %s", stage.Name)
 	}
 
 	defer func() {
 		if err != nil {
-			if log != nil {
-				log.Error().
-					Err(err).
-					Msg(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err))
+			if logger != nil {
+				logger.Error(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err), err)
 			}
 			errCh <- err
 		} else {
-			if log != nil {
-				log.Info().Msg(fmt.Sprintf("Finished stage %s", stage.Name))
+			if logger != nil {
+				logger.Info("Finished stage %s", stage.Name)
 			}
 		}
 	}()
@@ -350,18 +340,19 @@ func handleStage(
 	dirPath = filepath.Clean(dirPath)
 	dirPath, err = filepath.Abs(dirPath)
 	if err != nil {
-		if log != nil {
-			log.Error().
-				Err(err).
-				Msg(fmt.Sprintf("Failed to get absolute path for stage %s: %s", stage.Name, err))
+		if logger != nil {
+			logger.Error(
+				fmt.Sprintf("Failed to get absolute path for stage %s: %s", stage.Name, err),
+				err,
+			)
 		}
 		return
 	}
 
 	to, err := mkdir(dirPath)
 	if err != nil {
-		if log != nil {
-			log.Error().Err(err).Msg("Failed to make stage `to` directory")
+		if logger != nil {
+			logger.Error("Failed to make stage `to` directory", err)
 		}
 		return
 	}
@@ -405,20 +396,20 @@ func makeVersionDirectory(module *Module) (string, error) {
 	return path, nil
 }
 
-func makeVersionDescription(module *Module, log *zerolog.Logger) error {
+func makeVersionDescription(builder *ModuleBuilder) error {
 	// If the full latest version is being built, then the version description file is not needed.
 	// However, it may be present when copying if specified in the configuration, at the discretion of the developer.
-	if module.LastVersion {
+	if builder.module.LastVersion {
 		return nil
 	}
 
-	versionDir, err := makeVersionDirectory(module)
+	versionDir, err := makeVersionDirectory(builder.module)
 	if err != nil {
 		return err
 	}
 
-	if module.Repository != "" {
-		commits, err := ChangelogList(module.Repository, module.Changelog)
+	if builder.module.Repository != "" {
+		commits, err := ChangelogList(builder.module.Repository, builder.module.Changelog)
 		if err != nil {
 			return err
 		}
@@ -437,8 +428,8 @@ func makeVersionDescription(module *Module, log *zerolog.Logger) error {
 			}
 
 			defer func() {
-				if err := file.Close(); err != nil && log != nil {
-					log.Error().Err(err).Msg("Failed to close description file")
+				if err := file.Close(); err != nil && builder.logger != nil {
+					builder.logger.Error("Failed to close description file", err)
 				}
 			}()
 
