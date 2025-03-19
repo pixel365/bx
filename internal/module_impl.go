@@ -50,7 +50,7 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
-	if err := ValidateIgnore(m); err != nil {
+	if err := ValidateRules(m.Ignore, "ignore"); err != nil {
 		return err
 	}
 

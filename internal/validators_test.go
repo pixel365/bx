@@ -170,6 +170,74 @@ func TestValidateStages(t *testing.T) {
 			"valid stages",
 			false,
 		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{
+						{
+							Name:               "testing",
+							To:                 "testing",
+							ActionIfFileExists: ReplaceIfNewer,
+							From:               []string{"testing"},
+							Filter:             nil,
+						},
+					},
+				},
+			},
+			"nil filter",
+			false,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{
+						{
+							Name:               "testing",
+							To:                 "testing",
+							ActionIfFileExists: ReplaceIfNewer,
+							From:               []string{"testing"},
+							Filter:             []string{},
+						},
+					},
+				},
+			},
+			"empty filter",
+			false,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{
+						{
+							Name:               "testing",
+							To:                 "testing",
+							ActionIfFileExists: ReplaceIfNewer,
+							From:               []string{"testing"},
+							Filter:             []string{""},
+						},
+					},
+				},
+			},
+			"empty filter value",
+			true,
+		},
+		{
+			args{
+				m: &Module{
+					Stages: []Stage{
+						{
+							Name:               "testing",
+							To:                 "testing",
+							ActionIfFileExists: ReplaceIfNewer,
+							From:               []string{"testing"},
+							Filter:             []string{"**/*.php"},
+						},
+					},
+				},
+			},
+			"not empty filter value",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -182,21 +250,21 @@ func TestValidateStages(t *testing.T) {
 
 func TestValidateIgnore(t *testing.T) {
 	type args struct {
-		m *Module
+		m []string
 	}
 	tests := []struct {
-		args    args
 		name    string
+		args    args
 		wantErr bool
 	}{
-		{args{m: &Module{}}, "empty ignore list", false},
-		{args{m: &Module{Ignore: []string{""}}}, "empty ignore value", true},
-		{args{m: &Module{Ignore: []string{"**/*.log"}}}, "valid list", false},
+		{"empty ignore list", args{m: []string{}}, false},
+		{"empty ignore value", args{m: []string{""}}, true},
+		{"valid list", args{m: []string{"**/*.log"}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateIgnore(tt.args.m); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateIgnore() error = %v, wantErr %v", err, tt.wantErr)
+			if err := ValidateRules(tt.args.m, "ignore"); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateRules() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

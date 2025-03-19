@@ -95,34 +95,38 @@ func ValidateStages(m *Module) error {
 		return InvalidStagesError
 	}
 
-	for index, item := range m.Stages {
-		if item.Name == "" {
+	for index, stage := range m.Stages {
+		if stage.Name == "" {
 			return fmt.Errorf("stages [%d]: name is required", index)
 		}
 
-		if item.To == "" {
+		if stage.To == "" {
 			return fmt.Errorf("stages [%d]: to is required", index)
 		}
 
-		if item.ActionIfFileExists == "" {
+		if stage.ActionIfFileExists == "" {
 			return fmt.Errorf("stages [%d]: actionIfFileExists is required", index)
 		}
 
-		for pathIndex, path := range item.From {
+		for pathIndex, path := range stage.From {
 			if path == "" {
-				return fmt.Errorf("stages [%s]: path [%d] is required", item.Name, pathIndex)
+				return fmt.Errorf("stages [%s]: path [%d] is required", stage.Name, pathIndex)
 			}
+		}
+
+		if err := ValidateRules(stage.Filter, fmt.Sprintf("stage [%d] filter", index)); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func ValidateIgnore(m *Module) error {
-	if len(m.Ignore) > 0 {
-		for index, rule := range m.Ignore {
+func ValidateRules(rules []string, name string) error {
+	if len(rules) > 0 {
+		for index, rule := range rules {
 			if rule == "" {
-				return fmt.Errorf("ignore [%d]: rule is required", index)
+				return fmt.Errorf("%s [%d]: rule is required", name, index)
 			}
 		}
 	}

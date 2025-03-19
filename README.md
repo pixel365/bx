@@ -173,6 +173,7 @@ bx -h
   - `from` – Source directories or files (supports variables).
   - `actionIfFileExists` – How to handle existing files (`replace`, `skip`, `replace_if_newer`).
   - `convertTo1251` *(optional)* – Converts PHP files and `description.ru` to windows-1251 encoding. Default: `false`.
+  - `filter` *(optional)* - Filter rules for selective copying of files based on patterns.
 - **callbacks** *(optional)* – Actions executed before (`pre`) or after (`post`) specific stages.
   - `stage` – Associated stage name.
   - `pre`/`post` – Actions executed before/after the stage.
@@ -249,6 +250,7 @@ The stages section defines the steps for copying files. Each stage consists of:
   - skip – Skip copying if the file exists.
   - replace_if_newer – Overwrite only if the source file is newer.
 - **convertTo1251** (optional) - Specifies whether to convert the file contents to windows-1251 encoding. Applies only to *.php files, as well as description.ru. Defaults to false.
+- **filter** (optional) – Filter rules for selective copying of files based on patterns.
 
 #### Example
 
@@ -260,6 +262,11 @@ stages:
     from:
       - "{bitrix}/components"
       - "{local}/components"
+    filter:
+      - "**/*.php"        # include all .php files
+      - "!**/*_test.php"  # exclude all *_test.php files
+      - "**/*.js"         # include all .js files
+      - "**/*.css"        # include all .css files
 ```
 
 - **components** – Copies component files to {install}/components.
@@ -410,6 +417,11 @@ stages:
     from:
       - "{bitrix}/components"
       - "{local}/components"
+    filter:
+      - "**/*.php"
+      - "!**/*_test.php"
+      - "**/*.js"
+      - "**/*.css"
   - name: "templates"
     to: "{install}/templates"
     actionIfFileExists: "replace"

@@ -372,6 +372,7 @@ func handleStage(
 			to,
 			stage.ActionIfFileExists,
 			stage.ConvertTo1251,
+			stage.Filter,
 		)
 	}
 }

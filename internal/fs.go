@@ -32,6 +32,7 @@ import (
 //   - to (string): The destination directory to copy to.
 //   - existsMode (FileExistsAction): The action to take if the file already exists in the destination.
 //   - convert (bool): A flag to indicate whether to convert the files during the copy process.
+//   - filterRules ([]string): Filter rules for selective copying of files based on patterns.
 //
 // If any error is encountered during the execution, it is reported through the `errCh` channel.
 func copyFromPath(
@@ -42,6 +43,7 @@ func copyFromPath(
 	from, to string,
 	existsMode FileExistsAction,
 	convert bool,
+	filterRules []string,
 ) {
 	defer wg.Done()
 
@@ -50,8 +52,10 @@ func copyFromPath(
 		return
 	}
 
-	if err := walk(ctx, wg, errCh, from, to, module, existsMode, convert); err != nil {
-		if !errors.Is(err, doublestar.SkipDir) {
+	if err := walk(ctx, wg, errCh, from, to, module, existsMode, convert, filterRules); err != nil {
+		if !(errors.Is(err, doublestar.SkipDir) ||
+			errors.Is(err, FileExcludedByIgnoreRuleError) ||
+			errors.Is(err, FileExcludedByFilterRuleError)) {
 			errCh <- err
 		}
 	}
@@ -73,6 +77,7 @@ func copyFromPath(
 //   - module (*Module): Module instance
 //   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
 //   - convert (bool): A flag to indicate whether to convert files during the copy process.
+//   - filterRules ([]string): Filter rules for selective copying of files based on patterns.
 //
 // Returns:
 //   - error: If an error occurs during the traversal or file copying process, it will be returned. If the
@@ -85,6 +90,7 @@ func walk(
 	module *Module,
 	existsMode FileExistsAction,
 	convert bool,
+	filterRules []string,
 ) error {
 	wg.Add(1)
 	defer wg.Done()
@@ -112,18 +118,25 @@ func walk(
 			return err
 		}
 
-		if shouldSkip(relPath, &module.Ignore) {
-			if info.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
 		absFrom, err := filepath.Abs(fmt.Sprintf("%s/%s", from, relPath))
 		if err != nil {
 			return err
 		}
 		absFrom = filepath.Clean(absFrom)
+
+		if shouldSkip(relPath, &module.Ignore) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return FileExcludedByIgnoreRuleError
+		}
+
+		if !shouldInclude(absFrom, filterRules) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return FileExcludedByFilterRuleError
+		}
 
 		isDir, err := IsDir(absFrom)
 		if err != nil {
@@ -321,6 +334,62 @@ func shouldSkip(path string, patterns *[]string) bool {
 		}
 	}
 	return false
+}
+
+// shouldInclude determines whether a given file path should be included based on a set of patterns.
+//
+// It supports both inclusion and exclusion patterns:
+//   - Patterns **without** a `!` prefix define files that should be **included**.
+//   - Patterns **with** a `!` prefix define files that should be **excluded**.
+//
+// If no patterns are provided, the function returns `true`, allowing all files by default.
+//
+// The function follows these rules:
+//  1. If no **inclusion** patterns are specified, all files are initially allowed.
+//  2. A file matches **if it matches at least one inclusion pattern** (or if no inclusions are defined).
+//  3. A file is **excluded** if it matches an exclusion pattern, even if it was previously included.
+//
+// Parameters:
+//   - `path string`: The file path to evaluate.
+//   - `patterns []string`: A list of patterns to determine inclusion/exclusion.
+//
+// Returns:
+//   - `bool`: `true` if the file should be included, `false` if it should be excluded.
+func shouldInclude(path string, patterns []string) bool {
+	if len(patterns) == 0 || path == "" {
+		return true
+	}
+
+	var include, exclude []string
+	for _, pattern := range patterns {
+		if strings.HasPrefix(pattern, "!") {
+			exclude = append(exclude, strings.TrimPrefix(pattern, "!"))
+			continue
+		}
+		include = append(include, pattern)
+	}
+
+	allow := len(include) == 0
+
+	if !allow {
+		for _, pattern := range include {
+			if ok, err := doublestar.PathMatch(pattern, path); ok || err != nil {
+				allow = true
+				break
+			}
+		}
+	}
+
+	if allow {
+		for _, pattern := range exclude {
+			if ok, err := doublestar.PathMatch(pattern, path); ok || err != nil {
+				allow = false
+				break
+			}
+		}
+	}
+
+	return allow
 }
 
 // mkdir creates a directory at the specified path, including any necessary parent directories.

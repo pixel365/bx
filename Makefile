@@ -1,4 +1,4 @@
-.PHONY: all fa fmt lint test
+.PHONY: all fa fmt lint test build
 
 all: fa fmt lint test
 
@@ -15,3 +15,6 @@ lint:
 
 test:
 	@go $@ ./...
+
+build:
+	@go $@ -o ./bin/bx -ldflags="-s -w"
