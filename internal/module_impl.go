@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -28,11 +27,11 @@ import (
 // If all validations pass, it returns nil.
 func (m *Module) IsValid() error {
 	if m.Name == "" {
-		return errors.New("module name is required")
+		return EmptyModuleNameError
 	}
 
 	if strings.Contains(m.Name, " ") {
-		return errors.New("module name must not contain spaces")
+		return NameContainsSpaceError
 	}
 
 	if err := ValidateVersion(m.Version); err != nil {
@@ -40,7 +39,7 @@ func (m *Module) IsValid() error {
 	}
 
 	if m.Account == "" {
-		return errors.New("account is not valid")
+		return EmptyAccountNameError
 	}
 
 	if err := ValidateVariables(m); err != nil {
@@ -189,7 +188,7 @@ func (m *Module) StageCallback(stageName string) (Runnable, error) {
 		}
 	}
 
-	return Callback{}, errors.New("stage callback not found")
+	return Callback{}, StageCallbackNotFoundError
 }
 
 // ValidateChangelog validates the changelog configuration of the module.
@@ -204,7 +203,7 @@ func (m *Module) StageCallback(stageName string) (Runnable, error) {
 // Returns an error detailing the first encountered validation issue, or nil if the configuration is valid.
 func (m *Module) ValidateChangelog() error {
 	if (m.Changelog.From.Type != "" || m.Changelog.To.Type != "") && m.Repository == "" {
-		return errors.New("repository is required")
+		return InvalidChangelogSettingsError
 	}
 
 	if m.Repository != "" {
@@ -217,11 +216,11 @@ func (m *Module) ValidateChangelog() error {
 		}
 
 		if m.Changelog.From.Value == "" {
-			return errors.New("changelog from: value is required")
+			return ChangelogFromValueError
 		}
 
 		if m.Changelog.To.Value == "" {
-			return errors.New("changelog to: value is required")
+			return ChangelogToValueError
 		}
 
 		if m.Changelog.Condition.Type != "" {
@@ -235,7 +234,7 @@ func (m *Module) ValidateChangelog() error {
 			}
 
 			if len(m.Changelog.Condition.Value) == 0 {
-				return errors.New("condition value is required")
+				return ChangelogConditionValueError
 			}
 
 			for i, condition := range m.Changelog.Condition.Value {

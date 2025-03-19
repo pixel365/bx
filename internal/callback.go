@@ -2,16 +2,14 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/rs/zerolog"
 
 	"github.com/go-cmd/cmd"
 )
@@ -22,8 +20,8 @@ const (
 )
 
 type Runnable interface {
-	PreRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.Logger)
-	PostRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.Logger)
+	PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
+	PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
 }
 
 type CallbackParameters struct {
@@ -39,31 +37,27 @@ type Callback struct {
 	Post  CallbackParameters `yaml:"post,omitempty"`
 }
 
-func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.Logger) {
+func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger) {
 	defer wg.Done()
 
 	if err := c.Pre.IsValid(); err != nil {
 		return
 	}
 
-	if err := c.Pre.Run(ctx, log); err != nil && log != nil {
-		log.Error().
-			Err(err).
-			Msg(fmt.Sprintf("failed to pre run callback for stage %s", c.Stage))
+	if err := c.Pre.Run(ctx, logger); err != nil && logger != nil {
+		logger.Error(fmt.Sprintf("failed to pre run callback for stage %s", c.Stage), err)
 	}
 }
 
-func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.Logger) {
+func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger) {
 	defer wg.Done()
 
 	if err := c.Post.IsValid(); err != nil {
 		return
 	}
 
-	if err := c.Post.Run(ctx, log); err != nil && log != nil {
-		log.Error().
-			Err(err).
-			Msg(fmt.Sprintf("failed to post run callback for stage %s", c.Stage))
+	if err := c.Post.Run(ctx, logger); err != nil && logger != nil {
+		logger.Error(fmt.Sprintf("failed to post run callback for stage %s", c.Stage), err)
 	}
 }
 
@@ -75,11 +69,11 @@ func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, log *zerolog.
 //   - error: An error if validation fails, otherwise nil.
 func (c *Callback) IsValid() error {
 	if c.Stage == "" {
-		return errors.New("callback stage is required")
+		return CallbackStageError
 	}
 
 	if c.Pre.Type == "" && c.Post.Type == "" {
-		return errors.New("callback pre or post is required")
+		return CallbackPrePostError
 	}
 
 	if c.Pre.Type != "" {
@@ -128,11 +122,11 @@ func (c *CallbackParameters) IsValid() error {
 //
 // Parameters:
 //   - ctx (context.Context): The context for the execution, used for cancellation and timeouts.
-//   - log (*zerolog.Logger): The logger to record any logs or errors during execution.
+//   - logger (BuildLogger): The logger to record any logs or errors during execution.
 //
 // Returns:
 //   - error: Returns an error if validation fails or if execution of the callback fails.
-func (c *CallbackParameters) Run(ctx context.Context, log *zerolog.Logger) error {
+func (c *CallbackParameters) Run(ctx context.Context, logger BuildLogger) error {
 	if err := c.IsValid(); err != nil {
 		return err
 	}
@@ -142,7 +136,7 @@ func (c *CallbackParameters) Run(ctx context.Context, log *zerolog.Logger) error
 	}
 
 	if c.Type == CommandType {
-		return c.runCommand(ctx, log)
+		return c.runCommand(ctx, logger)
 	}
 
 	return nil
@@ -155,7 +149,7 @@ func (c *CallbackParameters) Run(ctx context.Context, log *zerolog.Logger) error
 
 func (c *CallbackParameters) validateType() error {
 	if c.Type == "" {
-		return errors.New("callback type is required")
+		return CallbackTypeError
 	}
 
 	if c.Type != CommandType && c.Type != ExternalType {
@@ -177,7 +171,7 @@ func (c *CallbackParameters) validateType() error {
 func (c *CallbackParameters) validateMethod() error {
 	if c.Type == ExternalType {
 		if c.Method == "" {
-			return errors.New("callback method is required")
+			return CallbackMethodError
 		}
 
 		if c.Method != http.MethodGet && c.Method != http.MethodPost {
@@ -199,7 +193,7 @@ func (c *CallbackParameters) validateMethod() error {
 //   - error: An error if the action is missing or improperly formatted, otherwise nil.
 func (c *CallbackParameters) validateAction() error {
 	if c.Action == "" {
-		return errors.New("callback action is required")
+		return CallbackActionError
 	}
 
 	if c.Type == ExternalType {
@@ -213,9 +207,7 @@ func (c *CallbackParameters) validateAction() error {
 		}
 
 		if u.Scheme != "http" && u.Scheme != "https" {
-			return errors.New(
-				"callback action url scheme is invalid. allowed values are 'http' or 'https'",
-			)
+			return CallbackActionSchemeError
 		}
 	}
 
@@ -232,32 +224,32 @@ func (c *CallbackParameters) validateParameters() error {
 		return nil
 	}
 
-	for _, param := range c.Parameters {
+	for i, param := range c.Parameters {
 		if param == "" {
-			return fmt.Errorf("callback parameter must have a value")
+			return fmt.Errorf("callback parameter[%d] is empty", i)
 		}
 
 		if c.Type == CommandType {
 			if !ValidateArgument(param) {
-				return fmt.Errorf("callback parameter %s is invalid", param)
+				return fmt.Errorf("callback parameter[%d] is invalid", i)
 			}
 		}
 	}
 
 	if c.Type == ExternalType {
-		for _, param := range c.Parameters {
+		for i, param := range c.Parameters {
 			parts := strings.SplitN(param, "=", 2)
 			if len(parts) != 2 {
-				return fmt.Errorf("callback parameter must have key=value format")
+				return fmt.Errorf("callback parameter[%d] must have key=value format", i)
 			}
 
 			key, value := parts[0], parts[1]
 			if key == "" {
-				return fmt.Errorf("callback parameter must have a key")
+				return fmt.Errorf("callback parameter[%d] must have a key", i)
 			}
 
 			if value == "" {
-				return fmt.Errorf("callback parameter must have a value")
+				return fmt.Errorf("callback parameter[%d] must have a value", i)
 			}
 		}
 	}
@@ -293,7 +285,7 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 
 	defer func(resp *http.Response) {
 		if err := resp.Body.Close(); err != nil {
-			fmt.Println(err.Error())
+			slog.Error(err.Error())
 		}
 	}(resp)
 
@@ -311,11 +303,11 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 //
 // Parameters:
 //   - ctx (context.Context): The context for execution, used for cancellation and deadlines.
-//   - log (*zerolog.Logger): The logger to capture and display output from the command.
+//   - logger (BuildLogger): The logger to capture and display output from the command.
 //
 // Returns:
 //   - error: Returns an error if the command execution fails, arguments are invalid, or the context is cancelled.
-func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger) error {
+func (c *CallbackParameters) runCommand(ctx context.Context, logger BuildLogger) error {
 	_, cancelFunc := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
 	defer cancelFunc()
 
@@ -336,8 +328,8 @@ func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger
 			case <-ctx.Done():
 				return
 			case out := <-com.Stdout:
-				if log != nil {
-					log.Info().Msg(out)
+				if logger != nil {
+					logger.Info(out)
 				}
 			}
 		}
@@ -349,8 +341,8 @@ func (c *CallbackParameters) runCommand(ctx context.Context, log *zerolog.Logger
 			case <-ctx.Done():
 				return
 			case out := <-com.Stderr:
-				if log != nil {
-					log.Error().Msg(out)
+				if logger != nil {
+					logger.Error(out, nil)
 				}
 			}
 		}

@@ -42,11 +42,11 @@ func NewClient(client HTTPClient, jar http.CookieJar) *Client {
 // authentication fails or an issue occurs during the request.
 func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 	if login == "" {
-		return nil, errors.New("empty login")
+		return nil, EmptyLoginError
 	}
 
 	if password == "" {
-		return nil, errors.New("empty password")
+		return nil, EmptyPasswordError
 	}
 
 	body := url.Values{
@@ -91,7 +91,7 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 	}
 
 	if len(cookies) == 0 {
-		return nil, errors.New("authentication failed")
+		return nil, AuthenticationError
 	}
 
 	return cookies, nil
@@ -112,16 +112,16 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 //   - An error if any step fails (e.g., missing session, file errors, upload failure).
 func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 	if module == nil {
-		return errors.New("module is nil")
+		return NilModuleError
 	}
 
 	if cookies == nil {
-		return errors.New("cookies is nil")
+		return NilCookieError
 	}
 
 	session := c.SessionId(module, cookies)
 	if session == "" {
-		return errors.New("no session")
+		return EmptySessionError
 	}
 
 	path, err := module.ZipPath()

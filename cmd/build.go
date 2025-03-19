@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -97,7 +98,17 @@ func build(cmd *cobra.Command, _ []string) error {
 
 	module.LastVersion = last
 
-	if err := module.Build(); err != nil {
+	logPath := fmt.Sprintf(
+		"./%s-%s.%s.log",
+		module.Name,
+		module.GetVersion(),
+		time.Now().UTC().Format(time.RFC3339),
+	)
+	logger := internal.NewFileZeroLogger(logPath, module.LogDirectory)
+	builder := internal.NewModuleBuilder(module, logger)
+	defer builder.Cleanup()
+
+	if err := builder.Build(); err != nil {
 		return err
 	}
 
