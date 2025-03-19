@@ -29,6 +29,8 @@ For example, during one of the build stages, you can copy components and templat
 go install github.com/pixel365/bx@latest
 ```
 
+Alternatively, you can [download the latest version](https://github.com/pixel365/bx/releases/latest) for your platform.
+
 ### Usage
 
 #### Create module
@@ -139,10 +141,6 @@ bx run --cmd customCommand --name my_module
 
 ```shell
 bx version
-```
-
-```shell
-bx v
 ```
 
 #### Help
