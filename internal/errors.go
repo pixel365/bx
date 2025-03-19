@@ -39,4 +39,6 @@ var (
 	CallbackActionSchemeError     = errors.New(
 		"callback action url scheme is invalid. allowed values are 'http' or 'https'",
 	)
+	FileExcludedByIgnoreRuleError = errors.New("file excluded by ignore rule")
+	FileExcludedByFilterRuleError = errors.New("file excluded by filter rule")
 )

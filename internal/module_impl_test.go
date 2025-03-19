@@ -111,6 +111,32 @@ func TestModule_IsValid(t *testing.T) {
 				Release: []string{"test"},
 			},
 		}, false},
+		{"valid stage filter", fields{
+			Ctx:            context.Background(),
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			LogDirectory:   "tester",
+			Stages: []Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: Changelog{
+				Sort: Asc,
+			},
+			Builds: Builds{
+				Release: []string{"test"},
+			},
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

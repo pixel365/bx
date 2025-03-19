@@ -138,7 +138,17 @@ func Test_copyFromPath(t *testing.T) {
 		module := Module{Ignore: patterns}
 
 		wg.Add(1)
-		copyFromPath(context.Background(), &wg, errChan, &module, from, to, Replace, false)
+		copyFromPath(
+			context.Background(),
+			&wg,
+			errChan,
+			&module,
+			from,
+			to,
+			Replace,
+			false,
+			[]string{},
+		)
 
 		defer func() {
 			if err := os.Remove(fmt.Sprintf("%s/%s", toPath, fileName)); err != nil {
@@ -226,4 +236,39 @@ func Test_removeEmptyDirs(t *testing.T) {
 			}()
 		}
 	})
+}
+
+func Test_shouldInclude(t *testing.T) {
+	type args struct {
+		path     string
+		patterns []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"empty patterns", args{"./testing.php", []string{}}, true},
+		{"empty path", args{"", []string{"**/*.php"}}, true},
+		{"included path", args{"./testing.php", []string{"**/*.php"}}, true},
+		{"excluded json", args{"./testing.json", []string{"!**/*.json"}}, false},
+		{"included php", args{"./testing.php", []string{"!**/*.json"}}, true},
+		{
+			"excluded test file",
+			args{"./some_test.php", []string{"**/*.php", "!**/*_test.php"}},
+			false,
+		},
+		{
+			"mutually exclusive rules",
+			args{"./testing.php", []string{"**/*.php", "!**/*.php"}},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := shouldInclude(tt.args.path, tt.args.patterns); got != tt.want {
+				t.Errorf("shouldInclude() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
