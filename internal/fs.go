@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -239,12 +238,7 @@ func copyFile(
 		return
 	}
 
-	defer func(in *os.File) {
-		err := in.Close()
-		if err != nil {
-			errCh <- err
-		}
-	}(in)
+	defer Cleanup(in, errCh)
 
 	if err := CheckContext(ctx); err != nil {
 		errCh <- err
@@ -271,12 +265,7 @@ func copyFile(
 			return
 		}
 
-		defer func(out *os.File) {
-			err := out.Close()
-			if err != nil {
-				errCh <- err
-			}
-		}(out)
+		defer Cleanup(out, errCh)
 
 		if err := CheckContext(ctx); err != nil {
 			errCh <- err
@@ -450,18 +439,10 @@ func zipIt(dirPath, archivePath string) error {
 		return err
 	}
 
-	defer func(zipFile *os.File) {
-		if err := zipFile.Close(); err != nil {
-			slog.Error(err.Error())
-		}
-	}(zipFile)
+	defer Cleanup(zipFile, nil)
 
 	zipWriter := zip.NewWriter(zipFile)
-	defer func(zipWriter *zip.Writer) {
-		if err := zipWriter.Close(); err != nil {
-			slog.Error(err.Error())
-		}
-	}(zipWriter)
+	defer Cleanup(zipWriter, nil)
 
 	err = filepath.Walk(dirPath, func(filePath string, info os.FileInfo, err error) error {
 		filePath = filepath.Clean(filePath)
@@ -493,11 +474,7 @@ func zipIt(dirPath, archivePath string) error {
 			return err
 		}
 
-		defer func(srcFile *os.File) {
-			if err := srcFile.Close(); err != nil {
-				slog.Error(err.Error())
-			}
-		}(srcFile)
+		defer Cleanup(srcFile, nil)
 
 		_, err = io.Copy(fileInArchive, srcFile)
 		return err
@@ -544,12 +521,7 @@ func isEmptyDir(path string) bool {
 	if err != nil {
 		return false
 	}
-	defer func(dir *os.File) {
-		err := dir.Close()
-		if err != nil {
-			slog.Error(err.Error())
-		}
-	}(dir)
+	defer Cleanup(dir, nil)
 
 	entries, err := dir.Readdirnames(1)
 	if err != nil {
@@ -562,7 +534,7 @@ func isEmptyDir(path string) bool {
 // removeEmptyDirs recursively removes empty directories within the specified root directory.
 //
 // Parameters:
-//   - root: The path of the directory to start the cleanup.
+//   - root: The path of the directory to start the Cleanup.
 //
 // Returns:
 //   - A boolean indicating whether the directory itself is empty after processing.

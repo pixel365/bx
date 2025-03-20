@@ -23,7 +23,7 @@ func NewModuleBuilder(m *Module, logger BuildLogger) *ModuleBuilder {
 }
 
 // Build orchestrates the entire build process for the module.
-// It logs the progress of each phase, such as preparation, collection, and cleanup.
+// It logs the progress of each phase, such as preparation, collection, and Cleanup.
 // If any of these phases fails, the build will be rolled back to ensure a clean state.
 //
 // The method returns an error if any of the steps (Prepare, Collect, or Cleanup) fail.

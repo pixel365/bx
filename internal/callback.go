@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -283,11 +282,7 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 		return err
 	}
 
-	defer func(resp *http.Response) {
-		if err := resp.Body.Close(); err != nil {
-			slog.Error(err.Error())
-		}
-	}(resp)
+	defer Cleanup(resp.Body, nil)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("callback returned status code %d", resp.StatusCode)

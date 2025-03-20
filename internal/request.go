@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -72,11 +71,7 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(resp *http.Response) {
-		if err := resp.Body.Close(); err != nil {
-			fmt.Println(err.Error())
-		}
-	}(resp)
+	defer Cleanup(resp.Body, nil)
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New(resp.Status)
@@ -134,11 +129,7 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 	if err != nil {
 		panic(err)
 	}
-	defer func(file *os.File) {
-		if err := file.Close(); err != nil {
-			fmt.Println(err.Error())
-		}
-	}(file)
+	defer Cleanup(file, nil)
 
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
@@ -173,11 +164,7 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 	if err != nil {
 		return err
 	}
-	defer func(resp *http.Response) {
-		if err := resp.Body.Close(); err != nil {
-			fmt.Println(err.Error())
-		}
-	}(resp)
+	defer Cleanup(resp.Body, nil)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -215,11 +202,7 @@ func (c *Client) SessionId(module *Module, cookies []*http.Cookie) string {
 	if err != nil {
 		return ""
 	}
-	defer func(resp *http.Response) {
-		if err := resp.Body.Close(); err != nil {
-			fmt.Println(err.Error())
-		}
-	}(resp)
+	defer Cleanup(resp.Body, nil)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

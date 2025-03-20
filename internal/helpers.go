@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -494,4 +495,26 @@ func HandleStages(
 	}
 
 	return nil
+}
+
+// Cleanup closes the provided resource and handles any errors that occur during closure.
+//
+// If the resource is nil, the function returns immediately without taking any action.
+// If resource is not nil, its Close() method is called.
+// If Close() returns an error and the provided
+//
+// channel ch is not nil, the error is sent to ch.
+//
+// Parameters:
+//   - resource: an object that implements the io.Closer interface, representing the resource to be closed.
+//   - ch: a channel for reporting errors.
+//     If ch is nil, any errors from resource.Close() are ignored.
+func Cleanup(resource io.Closer, ch chan<- error) {
+	if resource == nil {
+		return
+	}
+
+	if err := resource.Close(); err != nil && ch != nil {
+		ch <- err
+	}
 }
