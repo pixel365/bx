@@ -120,7 +120,7 @@ func TestZeroLogger_Error(t *testing.T) {
 }
 
 func TestZeroLogger_Cleanup(t *testing.T) {
-	t.Run("cleanup", func(t *testing.T) {
+	t.Run("Cleanup", func(t *testing.T) {
 		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
 		filePath = filepath.Clean(filePath)
 		logger := NewFileZeroLogger(filePath, "./")

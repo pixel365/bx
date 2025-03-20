@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 )
@@ -204,6 +205,23 @@ func TestReplaceVariables(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("ReplaceVariables() got = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_Cleanup(t *testing.T) {
+	type args struct {
+		resource io.Closer
+	}
+	tests := []struct {
+		args args
+		name string
+	}{
+		{args: args{nil}, name: "nil"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Cleanup(tt.args.resource, nil)
 		})
 	}
 }
