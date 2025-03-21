@@ -6,6 +6,8 @@ import (
 	"github.com/pixel365/bx/internal"
 )
 
+var readModuleFromFlags = internal.ReadModuleFromFlags
+
 func newCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",
@@ -41,7 +43,11 @@ bx check -f module-path/config.yaml
 // Returns:
 //   - error: An error if the module configuration is invalid or any other error occurs.
 func check(cmd *cobra.Command, _ []string) error {
-	module, err := internal.ReadModuleFromFlags(cmd)
+	if cmd == nil {
+		return internal.NilCmdError
+	}
+
+	module, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}

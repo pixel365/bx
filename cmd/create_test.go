@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/pixel365/bx/internal"
 )
 
 func Test_newCreateCommand(t *testing.T) {
@@ -30,6 +33,19 @@ func Test_newCreateCommand(t *testing.T) {
 
 		if !cmd.HasFlags() {
 			t.Errorf("cmd.HasFlags() should be true")
+		}
+	})
+}
+
+func Test_create_nil(t *testing.T) {
+	t.Run("nil command", func(t *testing.T) {
+		err := create(nil, []string{})
+		if err == nil {
+			t.Errorf("err is nil")
+		}
+
+		if !errors.Is(err, internal.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
 		}
 	})
 }

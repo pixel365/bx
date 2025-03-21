@@ -2,8 +2,12 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -222,6 +226,100 @@ func Test_Cleanup(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			Cleanup(tt.args.resource, nil)
+		})
+	}
+}
+
+func TestReadModuleFromFlags(t *testing.T) {
+	t.Run("TestReadModuleFromFlags", func(t *testing.T) {
+		_, err := ReadModuleFromFlags(nil)
+		if err == nil {
+			t.Errorf("ReadModuleFromFlags() did not return an error")
+		}
+
+		if !errors.Is(err, NilCmdError) {
+			t.Errorf("err = %v, want %v", err, NilCmdError)
+		}
+	})
+}
+
+func TestChoose(t *testing.T) {
+	empty := ""
+	type args struct {
+		items *[]string
+		value *string
+		title string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"empty items", args{&[]string{}, &empty, ""}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Choose(tt.args.items, tt.args.value, tt.args.title); (err != nil) != tt.wantErr {
+				t.Errorf("Choose() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAllModules(t *testing.T) {
+	name := fmt.Sprintf("%s_%d", "testing", time.Now().Unix())
+	filePath, err := filepath.Abs(fmt.Sprintf("./%s/%s.yaml", ".", name))
+	if err != nil {
+		t.Error()
+	}
+	filePath = filepath.Clean(filePath)
+
+	err = os.WriteFile(filePath, []byte(DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	type args struct {
+		directory string
+	}
+	tests := []struct {
+		want *[]string
+		name string
+		args args
+	}{
+		{want: &[]string{"test"}, name: ".", args: args{directory: "."}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AllModules(tt.args.directory); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("AllModules() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckStages(t *testing.T) {
+	type args struct {
+		module *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{nil}, "nil module", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckStages(tt.args.module); (err != nil) != tt.wantErr {
+				t.Errorf("CheckStages() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

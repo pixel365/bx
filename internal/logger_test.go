@@ -25,6 +25,11 @@ type ErrorRecord struct {
 
 var test = "test"
 
+const (
+	l_info  = "info"
+	l_error = "error"
+)
+
 func TestNewFileZeroLogger(t *testing.T) {
 	t.Run("NewFileZeroLogger", func(t *testing.T) {
 		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
@@ -69,12 +74,48 @@ func TestZeroLogger_Info(t *testing.T) {
 			t.Errorf("json.Unmarshal() = %v", err)
 		}
 
-		if record.Level != "info" {
+		if record.Level != l_info {
 			t.Errorf("record.Level = %s, want info", record.Level)
 		}
 
 		if record.Message != test {
 			t.Errorf("record.Message = %s, want %s", record.Message, test)
+		}
+	})
+}
+
+func TestZeroLogger_Info_With_Args(t *testing.T) {
+	t.Run("info", func(t *testing.T) {
+		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
+		filePath = filepath.Clean(filePath)
+		logger := NewFileZeroLogger(filePath, "./")
+		defer logger.Cleanup()
+		defer func() {
+			err := os.Remove(filePath)
+			if err != nil {
+				return
+			}
+		}()
+
+		logger.Info("test: %s", "info")
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
+			return
+		}
+
+		var record InfoRecord
+		err = json.Unmarshal(data, &record)
+		if err != nil {
+			t.Errorf("json.Unmarshal() = %v", err)
+		}
+
+		if record.Level != l_info {
+			t.Errorf("record.Level = %s, want info", record.Level)
+		}
+
+		if record.Message != "test: info" {
+			t.Errorf("record.Message = %s, want %s", record.Message, "test: info")
 		}
 	})
 }
@@ -105,12 +146,52 @@ func TestZeroLogger_Error(t *testing.T) {
 			t.Errorf("json.Unmarshal() = %v", err)
 		}
 
-		if record.Level != "error" {
+		if record.Level != l_error {
 			t.Errorf("record.Level = %s, want info", record.Level)
 		}
 
 		if record.Message != test {
 			t.Errorf("record.Message = %s, want %s", record.Message, test)
+		}
+
+		if record.Error != test {
+			t.Errorf("record.Error = %s, want %s", record.Error, test)
+		}
+	})
+}
+
+func TestZeroLogger_Error_With_Args(t *testing.T) {
+	t.Run("error", func(t *testing.T) {
+		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
+		filePath = filepath.Clean(filePath)
+		logger := NewFileZeroLogger(filePath, "./")
+		defer logger.Cleanup()
+		defer func() {
+			err := os.Remove(filePath)
+			if err != nil {
+				return
+			}
+		}()
+
+		logger.Error("test: %s", errors.New(test), "error")
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
+			return
+		}
+
+		var record ErrorRecord
+		err = json.Unmarshal(data, &record)
+		if err != nil {
+			t.Errorf("json.Unmarshal() = %v", err)
+		}
+
+		if record.Level != l_error {
+			t.Errorf("record.Level = %s, want info", record.Level)
+		}
+
+		if record.Message != "test: error" {
+			t.Errorf("record.Message = %s, want %s", record.Message, "test: error")
 		}
 
 		if record.Error != test {

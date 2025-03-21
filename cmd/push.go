@@ -55,6 +55,10 @@ bx push --name my_module --version 1.2.3
 // Returns:
 //   - error: An error if any validation or upload step fails.
 func push(cmd *cobra.Command, _ []string) error {
+	if cmd == nil {
+		return internal.NilCmdError
+	}
+
 	module, err := internal.ReadModuleFromFlags(cmd)
 	if err != nil {
 		return err
