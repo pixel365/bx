@@ -18,3 +18,6 @@ test:
 
 build:
 	@go $@ -o ./bin/bx -ldflags="-s -w"
+
+cover:
+	go test -coverprofile=coverage.out ./... && go tool $@ -html=coverage.out

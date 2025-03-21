@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -74,4 +75,17 @@ func Test_handlePassword(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_push_nil(t *testing.T) {
+	t.Run("nil command", func(t *testing.T) {
+		err := push(nil, []string{})
+		if err == nil {
+			t.Errorf("err is nil")
+		}
+
+		if !errors.Is(err, internal.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		}
+	})
 }

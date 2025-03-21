@@ -50,13 +50,17 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 // and returns the absolute path to the directory.
 //
 // Parameters:
-//   - command (*cobra.Command): The command that called this function, used to retrieve the directory flag.
+//   - cmd (*cobra.Command): The command that called this function, used to retrieve the directory flag.
 //
 // Returns:
 //   - string: The absolute path to the root directory of the project.
 //   - error: An error if the directory cannot be created or accessed.
-func initRootDir(command *cobra.Command) (string, error) {
-	dir, err := command.Flags().GetString("directory")
+func initRootDir(cmd *cobra.Command) (string, error) {
+	if cmd == nil {
+		return "", internal.NilCmdError
+	}
+
+	dir, err := cmd.Flags().GetString("directory")
 	if err != nil {
 		return "", err
 	}

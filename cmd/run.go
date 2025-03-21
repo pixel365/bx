@@ -30,6 +30,10 @@ bx run --name my_module --cmd custom_command
 }
 
 func run(cmd *cobra.Command, _ []string) error {
+	if cmd == nil {
+		return internal.NilCmdError
+	}
+
 	command, err := cmd.Flags().GetString("cmd")
 	if err != nil {
 		return err

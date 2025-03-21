@@ -575,6 +575,10 @@ func TestValidateRun(t *testing.T) {
 			Stages: []Stage{{Name: "testing"}},
 			Run:    map[string][]string{"some key": {"testing"}}},
 		}, "key with spaces", true},
+		{args{m: &Module{
+			Stages: []Stage{{Name: "testing"}},
+			Run:    map[string][]string{}},
+		}, "empty run", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -54,6 +54,10 @@ bx build --name my_module --last
 // Returns:
 //   - error: An error if the build process encounters any issues or validation fails.
 func build(cmd *cobra.Command, _ []string) error {
+	if cmd == nil {
+		return internal.NilCmdError
+	}
+
 	module, err := internal.ReadModuleFromFlags(cmd)
 	if err != nil {
 		return err

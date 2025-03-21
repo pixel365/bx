@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"testing"
+
+	"github.com/pixel365/bx/internal"
 )
 
 func TestNewRootCmd(t *testing.T) {
@@ -39,6 +42,19 @@ func TestNewRootCmd(t *testing.T) {
 
 		if cmd.Hidden {
 			t.Errorf("cmd.Hidden = %v", cmd.Hidden)
+		}
+	})
+}
+
+func Test_initRootDir(t *testing.T) {
+	t.Run("nil command", func(t *testing.T) {
+		_, err := initRootDir(nil)
+		if err == nil {
+			t.Errorf("err is nil")
+		}
+
+		if !errors.Is(err, internal.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
 		}
 	})
 }

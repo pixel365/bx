@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -32,19 +31,19 @@ func Choose(items *[]string, value *string, title string) error {
 	}
 
 	var options []huh.Option[string]
-	for _, item := range *items {
+	for i, item := range *items {
+		if item == "" {
+			return fmt.Errorf("empty item at index %d", i)
+		}
+
 		options = append(options, huh.NewOption(item, item))
 	}
 
-	if err := huh.NewSelect[string]().
+	return huh.NewSelect[string]().
 		Title(title).
 		Options(options...).
 		Value(value).
-		Run(); err != nil {
-		return err
-	}
-
-	return nil
+		Run()
 }
 
 func CaptureOutput(f func()) string {
@@ -158,7 +157,7 @@ func AllModules(directory string) *[]string {
 
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		log.Fatal(err)
+		return &modules
 	}
 
 	for _, file := range files {
@@ -287,6 +286,10 @@ func IsDir(path string) (bool, error) {
 //   - error: Returns an error if any validation fails in any stage's paths.
 //     If no errors are found, it returns nil.
 func CheckStages(module *Module) error {
+	if module == nil {
+		return NilModuleError
+	}
+
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(module.Stages)*5)
 
@@ -426,6 +429,10 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 }
 
 func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
+	if cmd == nil {
+		return nil, NilCmdError
+	}
+
 	path := cmd.Context().Value(RootDir).(string)
 	name, err := cmd.Flags().GetString("name")
 	if err != nil {
