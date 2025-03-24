@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20250303111024-59cea25b2811
 	github.com/go-cmd/cmd v1.4.3
 	github.com/go-git/go-git/v5 v5.14.0
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/net v0.37.0
 	golang.org/x/text v0.23.0
