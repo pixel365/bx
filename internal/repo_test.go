@@ -103,6 +103,15 @@ func TestCommitFilter(t *testing.T) {
 				},
 			},
 		}, false},
+		{"exclude", args{
+			message: "fix: some fix",
+			conditions: TypeValue[ChangelogConditionType, []string]{
+				Type: Exclude,
+				Value: []string{
+					`^feat:([\W\w]+)$`,
+				},
+			},
+		}, true},
 	}
 
 	for _, tt := range tests {
@@ -197,6 +206,39 @@ func TestChangesList(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ChangesList() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestChanges_IsChangedFile(t *testing.T) {
+	type fields struct {
+		Added    []string
+		Modified []string
+		Deleted  []string
+	}
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		fields fields
+		want   bool
+	}{
+		{"added", args{path: "test.txt"}, fields{Added: []string{"test.txt"}}, true},
+		{"modified", args{path: "modified.txt"}, fields{Modified: []string{"modified.txt"}}, true},
+		{"deleted", args{path: "modified.txt"}, fields{Deleted: []string{"test.txt"}}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := &Changes{
+				Added:    tt.fields.Added,
+				Modified: tt.fields.Modified,
+				Deleted:  tt.fields.Deleted,
+			}
+			if got := o.IsChangedFile(tt.args.path); got != tt.want {
+				t.Errorf("IsChangedFile() = %v, want %v", got, tt.want)
 			}
 		})
 	}

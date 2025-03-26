@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return internal.NoCommandSpecifiedError
 	}
 
-	module, err := internal.ReadModuleFromFlags(cmd)
+	module, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(stages))
 
-	err = internal.HandleStages(stages, module, &wg, errCh, nil, true)
+	err = handleStages(stages, module, &wg, errCh, nil, true)
 
 	wg.Wait()
 	close(errCh)

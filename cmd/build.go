@@ -58,7 +58,7 @@ func build(cmd *cobra.Command, _ []string) error {
 		return internal.NilCmdError
 	}
 
-	module, err := internal.ReadModuleFromFlags(cmd)
+	module, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}

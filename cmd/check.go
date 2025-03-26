@@ -6,8 +6,6 @@ import (
 	"github.com/pixel365/bx/internal"
 )
 
-var readModuleFromFlags = internal.ReadModuleFromFlags
-
 func newCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",

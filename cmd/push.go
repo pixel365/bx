@@ -17,6 +17,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	uploadFunc = upload
+	authFunc   = auth
+)
+
 func newPushCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "push",
@@ -59,7 +64,7 @@ func push(cmd *cobra.Command, _ []string) error {
 		return internal.NilCmdError
 	}
 
-	module, err := internal.ReadModuleFromFlags(cmd)
+	module, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}
@@ -86,11 +91,53 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	httpClient, cookies, err := authFunc(module, password)
+	if err != nil {
+		return err
+	}
+
+	return uploadFunc(httpClient, module, cookies)
+}
+
+func upload(client *internal.Client, module *internal.Module, cookies []*http.Cookie) error {
+	if module == nil {
+		return internal.NilModuleError
+	}
+
+	if client == nil {
+		return internal.NilClientError
+	}
+
+	if len(cookies) == 0 {
+		return internal.NilCookieError
+	}
+
+	err := spinner.New().
+		Title("Uploading module to partners.1c-bitrix.ru...").
+		Type(spinner.Dots).
+		ActionWithErr(func(ctx context.Context) error {
+			return client.UploadZIP(module, cookies)
+		}).
+		Run()
+	return err
+}
+
+func auth(module *internal.Module, password string) (*internal.Client, []*http.Cookie, error) {
+	if module == nil {
+		return nil, nil, internal.NilModuleError
+	}
+
+	if password == "" {
+		return nil, nil, internal.EmptyPasswordError
+	}
+
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar}
 	httpClient := internal.NewClient(client, jar)
 
+	var err error
 	var cookies []*http.Cookie
+
 	err = spinner.New().
 		Title("Authorization on partners.1c-bitrix.ru...").
 		Type(spinner.Dots).
@@ -100,21 +147,10 @@ func push(cmd *cobra.Command, _ []string) error {
 		}).
 		Run()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	err = spinner.New().
-		Title("Uploading module to partners.1c-bitrix.ru...").
-		Type(spinner.Dots).
-		ActionWithErr(func(ctx context.Context) error {
-			return httpClient.UploadZIP(module, cookies)
-		}).
-		Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return httpClient, cookies, nil
 }
 
 // handlePassword manages the process of obtaining and validating the password needed for authentication.
