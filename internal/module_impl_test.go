@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -389,6 +390,24 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, true},
+		{"invalid changelog sort", Changelog{
+			From: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v1.0.0",
+			},
+			To: TypeValue[ChangelogType, string]{
+				Type:  Tag,
+				Value: "v2.0.0",
+			},
+			Condition: TypeValue[ChangelogConditionType, []string]{
+				Type: Include,
+				Value: []string{
+					`^feat: ([\W\w]+)$`,
+					`^fix: ([\W\w]+)$`,
+				},
+			},
+			Sort: "sort",
+		}, true},
 		{"fully valid", Changelog{
 			From: TypeValue[ChangelogType, string]{
 				Type:  Tag,
@@ -513,5 +532,29 @@ func TestModule_FindStage(t *testing.T) {
 				t.Errorf("FindStage() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestModule_ZipPath(t *testing.T) {
+	mod := Module{}
+	_, err := mod.ZipPath()
+	if err == nil {
+		t.Errorf("ZipPath() error = %v, wantErr %v", err, nil)
+	}
+}
+
+func TestModule_StageCallback(t *testing.T) {
+	mod := Module{}
+	_, err := mod.StageCallback("stage_1")
+	if !errors.Is(err, StageCallbackNotFoundError) {
+		t.Errorf("StageCallback() error = %v, wantErr %v", err, StageCallbackNotFoundError)
+	}
+}
+
+func TestModule_GetChanges(t *testing.T) {
+	mod := Module{}
+	changes := mod.GetChanges()
+	if changes != nil {
+		t.Errorf("GetChanges() error = %v, wantErr %v", changes, nil)
 	}
 }

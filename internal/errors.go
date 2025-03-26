@@ -42,4 +42,5 @@ var (
 	FileExcludedByIgnoreRuleError = errors.New("file excluded by ignore rule")
 	FileExcludedByFilterRuleError = errors.New("file excluded by filter rule")
 	NilCmdError                   = errors.New("cmd is nil")
+	NilClientError                = errors.New("client is nil")
 )

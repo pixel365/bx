@@ -1,4 +1,4 @@
-.PHONY: all fa fmt lint test build
+.PHONY: all fa fmt lint test build cover
 
 all: fa fmt lint test
 
