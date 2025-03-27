@@ -97,7 +97,7 @@ func Test_check_IsValid(t *testing.T) {
 	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
 		mod, err := internal.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "test"
+			mod.Account = "check_test"
 		}
 		return mod, err
 	}
@@ -109,5 +109,85 @@ func Test_check_IsValid(t *testing.T) {
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
+	}
+}
+
+func Test_check_repository(t *testing.T) {
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath = filepath.Clean(filePath)
+
+	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	originalReadModule := readModuleFromFlags
+	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
+		mod, err := internal.ReadModule(filePath, "", true)
+		if err == nil {
+			mod.Account = "check_repository"
+		}
+		return mod, err
+	}
+	defer func() {
+		readModuleFromFlags = originalReadModule
+	}()
+
+	cmd := newCheckCommand()
+	cmd.SetArgs([]string{"--repository", "."})
+	err = cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
+	}
+}
+
+func Test_check_success(t *testing.T) {
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath = filepath.Clean(filePath)
+
+	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	originalReadModule := readModuleFromFlags
+	originalCheckStages := checkStagesFunc
+
+	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
+		mod, err := internal.ReadModule(filePath, "", true)
+		if err == nil {
+			mod.Account = "test"
+		}
+		return mod, err
+	}
+	defer func() {
+		readModuleFromFlags = originalReadModule
+	}()
+
+	checkStagesFunc = func(module *internal.Module) error {
+		return nil
+	}
+	defer func() {
+		checkStagesFunc = originalCheckStages
+	}()
+
+	cmd := newCheckCommand()
+	err = cmd.Execute()
+	if err != nil {
+		t.Error(err)
 	}
 }
