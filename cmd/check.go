@@ -6,6 +6,8 @@ import (
 	"github.com/pixel365/bx/internal"
 )
 
+var checkStagesFunc = internal.CheckStages
+
 func newCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",
@@ -50,10 +52,7 @@ func check(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	repository, err := cmd.Flags().GetString("repository")
-	if err != nil {
-		return err
-	}
+	repository, _ := cmd.Flags().GetString("repository")
 
 	if repository != "" {
 		module.Repository = repository
@@ -63,7 +62,7 @@ func check(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if err := internal.CheckStages(module); err != nil {
+	if err := checkStagesFunc(module); err != nil {
 		return err
 	}
 

@@ -15,7 +15,7 @@ type ModuleBuilder struct {
 	module *Module
 }
 
-func NewModuleBuilder(m *Module, logger BuildLogger) *ModuleBuilder {
+func NewModuleBuilder(m *Module, logger BuildLogger) Builder {
 	return &ModuleBuilder{
 		logger: logger,
 		module: m,

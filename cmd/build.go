@@ -10,6 +10,11 @@ import (
 	"github.com/pixel365/bx/internal"
 )
 
+var (
+	builderFunc             = internal.NewModuleBuilder
+	validateLastVersionFunc = internal.ValidateLastVersion
+)
+
 func newBuildCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "build",
@@ -63,23 +68,17 @@ func build(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	version, err := cmd.Flags().GetString("version")
-	version = strings.TrimSpace(version)
-	if err != nil {
-		return err
-	}
+	version, _ := cmd.Flags().GetString("version")
 
 	if version != "" {
+		version = strings.TrimSpace(version)
 		if err := internal.ValidateVersion(version); err != nil {
 			return err
 		}
 		module.Version = version
 	}
 
-	repository, err := cmd.Flags().GetString("repository")
-	if err != nil {
-		return err
-	}
+	repository, _ := cmd.Flags().GetString("repository")
 
 	if repository != "" {
 		module.Repository = repository
@@ -89,13 +88,10 @@ func build(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	last, err := cmd.Flags().GetBool("last")
-	if err != nil {
-		return err
-	}
+	last, _ := cmd.Flags().GetBool("last")
 
 	if last {
-		if err := internal.ValidateLastVersion(module); err != nil {
+		if err := validateLastVersionFunc(module); err != nil {
 			return err
 		}
 	}
@@ -109,7 +105,7 @@ func build(cmd *cobra.Command, _ []string) error {
 		time.Now().UTC().Format(time.RFC3339),
 	)
 	logger := internal.NewFileZeroLogger(logPath, module.LogDirectory)
-	builder := internal.NewModuleBuilder(module, logger)
+	builder := builderFunc(module, logger)
 	defer builder.Cleanup()
 
 	if err := builder.Build(); err != nil {
