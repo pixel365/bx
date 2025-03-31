@@ -83,7 +83,7 @@ ignore:
 
 func TestGetModulesDir(t *testing.T) {
 	t.Run("TestGetModulesDir", func(t *testing.T) {
-		_, err := GetModulesDir("")
+		_, err := GetModulesDir()
 		if err != nil {
 			t.Errorf("GetModulesDir() returned an error: %s", err)
 		}
