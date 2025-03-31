@@ -58,6 +58,11 @@ func Test_makeVersionDirectory(t *testing.T) {
 		Version:        "1.0.1",
 	}
 
+	mod3 := &Module{
+		BuildDirectory: "",
+		Version:        "1.0.1",
+	}
+
 	cur, _ := os.Getwd()
 
 	type args struct {
@@ -71,6 +76,8 @@ func Test_makeVersionDirectory(t *testing.T) {
 	}{
 		{"1", args{mod1}, fmt.Sprintf("%s/testdata/1.0.0", cur), false},
 		{"2", args{mod2}, fmt.Sprintf("%s/testdata/build/1.0.1", cur), false},
+		{"nil module", args{nil}, "", true},
+		{"empty build directory", args{mod3}, "", true},
 	}
 
 	for _, tt := range tests {

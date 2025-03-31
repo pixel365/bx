@@ -388,6 +388,10 @@ func makeZipFilePath(module *Module) (string, error) {
 }
 
 func makeVersionDirectory(module *Module) (string, error) {
+	if module == nil || module.BuildDirectory == "" {
+		return "", NilModuleError
+	}
+
 	path := filepath.Join(module.BuildDirectory, module.GetVersion())
 	path, err := filepath.Abs(path)
 	if err != nil {
