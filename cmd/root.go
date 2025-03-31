@@ -10,15 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var confirm bool
-var rootPath string
+var getModulesDirFunc = internal.GetModulesDir
+var osStat = os.Stat
+var mkDir = os.Mkdir
+var initRootDirFunc = initRootDir
 
 func NewRootCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bx",
 		Short: "Command-line tool for developers of 1C-Bitrix platform modules.",
 		PersistentPreRunE: func(command *cobra.Command, _ []string) error {
-			dirPath, err := initRootDir(command)
+			dirPath, err := initRootDirFunc(command)
 			if err != nil {
 				return err
 			}
@@ -29,11 +31,6 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.PersistentFlags().
-		BoolVarP(&confirm, "yes", "y", false, "Automatically confirms all yes/no prompts")
-	cmd.PersistentFlags().
-		StringVarP(&rootPath, "directory", "d", "", "The root directory of your project")
 
 	cmd.AddCommand(newCreateCommand())
 	cmd.AddCommand(newBuildCommand())
@@ -60,19 +57,14 @@ func initRootDir(cmd *cobra.Command) (string, error) {
 		return "", internal.NilCmdError
 	}
 
-	dir, err := cmd.Flags().GetString("directory")
+	dirPath, err := getModulesDirFunc()
 	if err != nil {
 		return "", err
 	}
 
-	dirPath, err := internal.GetModulesDir(dir)
-	if err != nil {
-		return "", err
-	}
-
-	if _, err := os.Stat(dirPath); err != nil {
+	if _, err := osStat(dirPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.Mkdir(dirPath, 0750)
+			err = mkDir(dirPath, 0750)
 			if err != nil {
 				return "", err
 			}

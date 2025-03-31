@@ -72,12 +72,8 @@ func ResultMessage(format string, a ...any) {
 	}
 }
 
-func GetModulesDir(path string) (string, error) {
-	dirPath := path
-	if dirPath == "" {
-		dirPath, _ = os.Getwd()
-	}
-
+func GetModulesDir() (string, error) {
+	dirPath, _ := os.Getwd()
 	return filepath.Abs(fmt.Sprintf("%s/.bx", dirPath))
 }
 

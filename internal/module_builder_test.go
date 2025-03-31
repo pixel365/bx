@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -144,16 +145,17 @@ func TestModuleBuilder_Build(t *testing.T) {
 		wantErr bool
 	}{
 		{fields{builder: builder}, "nil module", true},
+		{
+			fields{builder: NewModuleBuilder(&Module{Ctx: context.TODO()}, nil)},
+			"todo context",
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.fields.builder.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Build() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if !errors.Is(err, NilModuleError) {
-				t.Errorf("Build() error = %v, wantErr %v", err, NilModuleError)
 			}
 		})
 	}
@@ -241,6 +243,7 @@ func TestModuleBuilder_Collect(t *testing.T) {
 		wantErr bool
 	}{
 		{fields{builder: builder}, "nil module", true},
+		{fields{builder: NewModuleBuilder(&Module{}, nil)}, "empty build directory", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -33,6 +34,16 @@ func TestOpenRepository(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOpenRepository_Ok(t *testing.T) {
+	t.Run("repository exists", func(t *testing.T) {
+		pwd, _ := filepath.Abs("../")
+		_, err := OpenRepository(pwd)
+		if err != nil {
+			t.Errorf("OpenRepository() error = %v", err)
+		}
+	})
 }
 
 func TestChangelogList(t *testing.T) {
