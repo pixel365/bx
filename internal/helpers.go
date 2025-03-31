@@ -22,12 +22,11 @@ type Cfg string
 
 const RootDir Cfg = "root_dir"
 
+var checkPathsFunc = checkPaths
+
 func Choose(items *[]string, value *string, title string) error {
-	if len(*items) == 0 {
-		switch any(items).(type) {
-		default:
-			return NoItemsError
-		}
+	if items == nil || len(*items) == 0 {
+		return NoItemsError
 	}
 
 	var options []huh.Option[string]
@@ -74,13 +73,9 @@ func ResultMessage(format string, a ...any) {
 }
 
 func GetModulesDir(path string) (string, error) {
-	var err error
 	dirPath := path
 	if dirPath == "" {
-		dirPath, err = os.Getwd()
-		if err != nil {
-			return "", err
-		}
+		dirPath, _ = os.Getwd()
 	}
 
 	return filepath.Abs(fmt.Sprintf("%s/.bx", dirPath))
@@ -157,21 +152,20 @@ func AllModules(directory string) *[]string {
 
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		return &modules
+		return nil
 	}
 
 	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
+		if !file.IsDir() {
 
-		filePath := filepath.Join(directory, file.Name())
-		module, err := ReadModule(filePath, "", true)
-		if err != nil {
-			continue
-		}
+			filePath := filepath.Join(directory, file.Name())
+			module, err := ReadModule(filePath, "", true)
+			if err != nil {
+				continue
+			}
 
-		modules = append(modules, module.Name)
+			modules = append(modules, module.Name)
+		}
 	}
 
 	return &modules
@@ -237,7 +231,7 @@ func ReadModule(path, name string, file bool) (*Module, error) {
 func CheckPath(path string) error {
 	path = filepath.Clean(path)
 	if !isValidPath(path, path) {
-		return fmt.Errorf("invalid path: %s", path)
+		return InvalidFilepathError
 	}
 
 	_, err := os.Stat(path)
@@ -265,10 +259,7 @@ func IsDir(path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	fi, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
+	fi, _ := os.Stat(path)
 
 	return fi.Mode().IsDir(), nil
 }
@@ -297,7 +288,7 @@ func CheckStages(module *Module) error {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, item Stage) {
 			defer wg.Done()
-			checkPaths(item, errCh)
+			checkPathsFunc(item, errCh)
 		}(&wg, item)
 	}
 
@@ -328,6 +319,10 @@ func CheckStages(module *Module) error {
 // Returns:
 //   - error: Returns an error if the context is done (canceled or expired), otherwise nil.
 func CheckContext(ctx context.Context) error {
+	if ctx == context.TODO() {
+		return TODOContextError
+	}
+
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context canceled: %w", ctx.Err())
@@ -353,7 +348,6 @@ func checkPaths(stage Stage, ch chan<- error) {
 		err := CheckPath(path)
 		if err != nil {
 			ch <- err
-			return
 		}
 	}
 }
@@ -376,7 +370,7 @@ func isValidPath(filePath, basePath string) bool {
 	absBasePath, _ := filepath.Abs(basePath)
 	absFilePath, _ := filepath.Abs(filePath)
 
-	if strings.Contains(absFilePath, "..") {
+	if strings.HasPrefix(absBasePath, "..") {
 		return false
 	}
 
@@ -476,9 +470,13 @@ func HandleStages(
 	logger BuildLogger,
 	customCommandMode bool,
 ) error {
-	var err error
+	if m == nil {
+		return NilModuleError
+	}
+
 	dir := ""
 
+	var err error
 	if !customCommandMode {
 		dir, err = makeVersionDirectory(m)
 		if err != nil {

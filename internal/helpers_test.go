@@ -8,9 +8,18 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
+
+type FakeBuildLogger struct{}
+
+func (l *FakeBuildLogger) Info(message string, args ...interface{}) {}
+
+func (l *FakeBuildLogger) Error(message string, err error, args ...interface{}) {}
+
+func (l *FakeBuildLogger) Cleanup() {}
 
 func TestDefaultYAML(t *testing.T) {
 	const def = `name: "test"
@@ -93,6 +102,7 @@ func TestCheckPath(t *testing.T) {
 		{"invalid symbols", args{"asdfasdfasdf2#@$@"}, true},
 		{"normal path", args{"./"}, false},
 		{"not found", args{fmt.Sprintf("./test_404_%d", time.Now().UTC().Unix())}, true},
+		{"invalid path", args{"../some-file.txt"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -149,6 +159,14 @@ func TestCheckContextDone(t *testing.T) {
 	})
 }
 
+func TestCheckContextNil(t *testing.T) {
+	t.Run("TestCheckContextNil", func(t *testing.T) {
+		if err := CheckContext(context.TODO()); err == nil {
+			t.Error("CheckContext() did not return an error")
+		}
+	})
+}
+
 func TestCaptureOutput(t *testing.T) {
 	t.Run("TestCaptureOutput", func(t *testing.T) {
 		output := CaptureOutput(func() {
@@ -156,6 +174,14 @@ func TestCaptureOutput(t *testing.T) {
 		})
 
 		if output != "ok\n" {
+			t.Errorf("CaptureOutput() = %v, want %v", output, "ok\n")
+		}
+
+		output = CaptureOutput(func() {
+			ResultMessage("%s\n", "ok string")
+		})
+
+		if output != "ok string\n" {
 			t.Errorf("CaptureOutput() = %v, want %v", output, "ok\n")
 		}
 	})
@@ -256,6 +282,7 @@ func TestChoose(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty items", args{&[]string{}, &empty, ""}, true},
+		{"empty item", args{&[]string{""}, &empty, ""}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -294,6 +321,7 @@ func TestAllModules(t *testing.T) {
 		args args
 	}{
 		{want: &[]string{"test"}, name: ".", args: args{directory: "."}},
+		{want: nil, name: "fake dir", args: args{directory: "some/fake/dir"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -305,21 +333,160 @@ func TestAllModules(t *testing.T) {
 }
 
 func TestCheckStages(t *testing.T) {
+	err := CheckStages(nil)
+	if !errors.Is(err, NilModuleError) {
+		t.Errorf("CheckStages() error = %v, want %v", err, NilModuleError)
+	}
+}
+
+func TestCheckStages_NoErrors(t *testing.T) {
+	originalCheckPaths := checkPaths
+	checkPathsFunc = func(stage Stage, errCh chan<- error) {}
+	defer func() { checkPathsFunc = originalCheckPaths }()
+
+	m := &Module{
+		Stages: []Stage{
+			{Name: "stage1"},
+			{Name: "stage2"},
+		},
+	}
+
+	err := CheckStages(m)
+	if err != nil {
+		t.Errorf("CheckStages() error = %v, want nil", err)
+	}
+}
+
+func TestCheckStages_WithErrors(t *testing.T) {
+	originalCheckPaths := checkPaths
+	checkPathsFunc = func(stage Stage, errCh chan<- error) {
+		if stage.Name == "fail" {
+			errCh <- fmt.Errorf("failed stage: %s", stage.Name)
+		}
+	}
+	defer func() { checkPathsFunc = originalCheckPaths }()
+
+	m := &Module{
+		Stages: []Stage{
+			{Name: "ok"},
+			{Name: "fail"},
+		},
+	}
+
+	err := CheckStages(m)
+	if err == nil {
+		t.Errorf("CheckStages() error = %v, want error", err)
+	} else {
+		expectedMsg := "errors: [failed stage: fail]"
+		if err.Error() != expectedMsg {
+			t.Errorf("CheckStages() error = %v, want %v", err, expectedMsg)
+		}
+	}
+}
+
+func Test_isValidPath(t *testing.T) {
 	type args struct {
-		module *Module
+		filePath string
+		basePath string
 	}
 	tests := []struct {
-		args    args
-		name    string
-		wantErr bool
+		name string
+		args args
+		want bool
 	}{
-		{args{nil}, "nil module", true},
+		{"invalid path", args{"../some-file.txt", "."}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := CheckStages(tt.args.module); (err != nil) != tt.wantErr {
-				t.Errorf("CheckStages() error = %v, wantErr %v", err, tt.wantErr)
+			if got := isValidPath(tt.args.filePath, tt.args.basePath); got != tt.want {
+				t.Errorf("isValidPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func Test_checkPaths(t *testing.T) {
+	errCh := make(chan error)
+	stage := Stage{
+		From: []string{"."},
+	}
+
+	checkPaths(stage, errCh)
+	close(errCh)
+
+	var errs []error
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+
+	if len(errs) != 0 {
+		t.Errorf("checkPaths() = %v, want %v", errs, []error{})
+	}
+}
+
+func TestHandleStages_NilModule(t *testing.T) {
+	t.Run("nil module", func(t *testing.T) {
+		err := HandleStages([]string{}, nil, nil, nil, &FakeBuildLogger{}, true)
+		if !errors.Is(err, NilModuleError) {
+			t.Errorf("HandleStages() error = %v, want %v", err, NilModuleError)
+		}
+	})
+}
+
+func TestHandleStages_NilContext(t *testing.T) {
+	m := Module{
+		Ctx: context.TODO(),
+	}
+	t.Run("todo context", func(t *testing.T) {
+		err := HandleStages([]string{"fake-stage"}, &m, nil, nil, &FakeBuildLogger{}, true)
+		if !errors.Is(err, TODOContextError) {
+			t.Errorf("HandleStages() error = %v, want %v", err, TODOContextError)
+		}
+	})
+}
+
+func TestHandleStages_StageNotFound(t *testing.T) {
+	m := Module{
+		Ctx: context.Background(),
+	}
+	var wg sync.WaitGroup
+	t.Run("nil context", func(t *testing.T) {
+		err := HandleStages([]string{"fake-stage"}, &m, &wg, nil, &FakeBuildLogger{}, true)
+		if err == nil {
+			t.Error("err is nil")
+		}
+	})
+}
+
+func TestHandleStages_NoCustomCommandMode(t *testing.T) {
+	m := &Module{
+		Ctx: context.Background(),
+		Stages: []Stage{
+			{Name: "some-fake-stage"},
+		},
+	}
+	var wg sync.WaitGroup
+	t.Run("nil context", func(t *testing.T) {
+		err := HandleStages([]string{"some-fake-stage"}, m, &wg, nil, &FakeBuildLogger{}, false)
+		if !errors.Is(err, NilModuleError) {
+			t.Errorf("HandleStages() error = %v, want %v", err, NilModuleError)
+		}
+	})
+}
+
+func TestHandleStages_Ok(t *testing.T) {
+	m := &Module{
+		Ctx:            context.Background(),
+		BuildDirectory: "./testdata",
+		Stages: []Stage{
+			{Name: "some-fake-stage"},
+		},
+	}
+	var wg sync.WaitGroup
+	t.Run("nil context", func(t *testing.T) {
+		err := HandleStages([]string{"some-fake-stage"}, m, &wg, nil, &FakeBuildLogger{}, false)
+		if err != nil {
+			t.Errorf("HandleStages() error = %v, want nil", err)
+		}
+	})
 }

@@ -43,4 +43,5 @@ var (
 	FileExcludedByFilterRuleError = errors.New("file excluded by filter rule")
 	NilCmdError                   = errors.New("cmd is nil")
 	NilClientError                = errors.New("client is nil")
+	TODOContextError              = errors.New("todo context is prohibited")
 )
