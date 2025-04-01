@@ -423,19 +423,16 @@ func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 		return nil, NilCmdError
 	}
 
-	path := cmd.Context().Value(RootDir).(string)
-	name, err := cmd.Flags().GetString("name")
-	if err != nil {
-		return nil, err
-	}
+	name, _ := cmd.Flags().GetString("name")
+	file, _ := cmd.Flags().GetString("file")
 
-	file, err := cmd.Flags().GetString("file")
 	file = strings.TrimSpace(file)
-	if err != nil {
-		return nil, err
-	}
-
 	isFile := len(file) > 0
+
+	path, ok := cmd.Context().Value(RootDir).(string)
+	if !ok {
+		return nil, InvalidRootDirError
+	}
 
 	if !isFile && name == "" {
 		err := Choose(AllModules(path), &name, "")

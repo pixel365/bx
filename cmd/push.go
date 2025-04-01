@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"os"
@@ -18,8 +17,9 @@ import (
 )
 
 var (
-	uploadFunc = upload
-	authFunc   = auth
+	uploadFunc        = upload
+	authFunc          = auth
+	inputPasswordFunc = inputPassword
 )
 
 func newPushCommand() *cobra.Command {
@@ -69,11 +69,8 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	version, err := cmd.Flags().GetString("version")
+	version, _ := cmd.Flags().GetString("version")
 	version = strings.TrimSpace(version)
-	if err != nil {
-		return err
-	}
 
 	if version != "" {
 		if err := internal.ValidateVersion(version); err != nil {
@@ -165,32 +162,22 @@ func auth(module *internal.Module, password string) (*internal.Client, []*http.C
 // - string: The validated password.
 // - error: An error if the password is invalid or the prompt fails.
 func handlePassword(cmd *cobra.Command, module *internal.Module) (string, error) {
-	password, err := cmd.Flags().GetString("password")
-	if err != nil {
-		return "", err
-	}
+	password, _ := cmd.Flags().GetString("password")
+	password = strings.TrimSpace(password)
 
 	if password == "" {
 		password = os.Getenv(module.PasswordEnv())
 	}
 
 	if password == "" {
-		if err := huh.NewInput().
-			Title("Enter Password:").
-			Prompt("> ").
-			Value(&password).
-			EchoMode(2).
-			Validate(func(input string) error {
-				return internal.ValidatePassword(input)
-			}).
-			Run(); err != nil {
+		if err := inputPasswordFunc(&password); err != nil {
 			return "", err
 		}
 	}
 
 	password = strings.TrimSpace(password)
 	if password == "" {
-		return "", fmt.Errorf("password is empty")
+		return "", internal.EmptyPasswordError
 	}
 
 	if err := internal.ValidatePassword(password); err != nil {
@@ -198,4 +185,16 @@ func handlePassword(cmd *cobra.Command, module *internal.Module) (string, error)
 	}
 
 	return password, nil
+}
+
+func inputPassword(password *string) error {
+	return huh.NewInput().
+		Title("Enter Password:").
+		Prompt("> ").
+		Value(password).
+		EchoMode(2).
+		Validate(func(input string) error {
+			return internal.ValidatePassword(input)
+		}).
+		Run()
 }

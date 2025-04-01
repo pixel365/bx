@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 type FakeBuildLogger struct{}
@@ -265,6 +267,29 @@ func TestReadModuleFromFlags(t *testing.T) {
 
 		if !errors.Is(err, NilCmdError) {
 			t.Errorf("err = %v, want %v", err, NilCmdError)
+		}
+	})
+}
+
+func TestReadModuleFromFlags_Name(t *testing.T) {
+	t.Run("TestReadModuleFromFlags_Name", func(t *testing.T) {
+		cmd := &cobra.Command{}
+		cmd.SetContext(context.WithValue(context.Background(), RootDir, RootDir))
+		_, err := ReadModuleFromFlags(cmd)
+		if err == nil {
+			t.Errorf("ReadModuleFromFlags() did not return an error")
+		}
+	})
+}
+
+func TestReadModuleFromFlags_File(t *testing.T) {
+	t.Run("TestReadModuleFromFlags_File", func(t *testing.T) {
+		cmd := &cobra.Command{}
+		cmd.SetContext(context.WithValue(context.Background(), RootDir, RootDir))
+		cmd.SetArgs([]string{"--file", "./test_files/foo"})
+		_, err := ReadModuleFromFlags(cmd)
+		if err == nil {
+			t.Errorf("ReadModuleFromFlags() did not return an error")
 		}
 	})
 }

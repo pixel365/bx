@@ -47,14 +47,13 @@ func create(cmd *cobra.Command, _ []string) error {
 		return internal.NilCmdError
 	}
 
-	name, err := cmd.Flags().GetString("name")
-	name = strings.TrimSpace(name)
-	if err != nil {
-		return err
+	directory, ok := cmd.Context().Value(internal.RootDir).(string)
+	if !ok {
+		return internal.InvalidRootDirError
 	}
 
-	directory := cmd.Context().Value(internal.RootDir).(string)
-
+	name, _ := cmd.Flags().GetString("name")
+	name = strings.TrimSpace(name)
 	if name == "" {
 		if err := huh.NewInput().
 			Title("Enter Module Name:").
