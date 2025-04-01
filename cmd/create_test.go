@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"testing"
+
+	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal"
 )
@@ -46,6 +49,32 @@ func Test_create_nil(t *testing.T) {
 
 		if !errors.Is(err, internal.NilCmdError) {
 			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		}
+	})
+}
+
+func Test_create_empty_name(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	cmd.SetArgs([]string{"--name", ""})
+
+	t.Run("empty name", func(t *testing.T) {
+		err := create(cmd, []string{})
+		if err == nil {
+			t.Errorf("err is nil")
+		}
+	})
+}
+
+func Test_create_not_empty_name(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.WithValue(context.Background(), internal.RootDir, "."))
+	cmd.SetArgs([]string{"--name", "test-module"})
+
+	t.Run("not empty name", func(t *testing.T) {
+		err := create(cmd, []string{})
+		if err == nil {
+			t.Errorf("err is nil")
 		}
 	})
 }

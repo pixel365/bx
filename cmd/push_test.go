@@ -50,34 +50,38 @@ func Test_newPushCommand(t *testing.T) {
 }
 
 func Test_handlePassword(t *testing.T) {
-	cmd := newPushCommand()
-	cmd.SetArgs([]string{"--password", "123456", "--name", "test"})
-	_ = cmd.Flags().Set("password", "123456")
-	_ = cmd.Flags().Set("name", "test")
-
 	module := &internal.Module{}
-
-	type args struct {
-		cmd    *cobra.Command
-		module *internal.Module
-	}
 	tests := []struct {
 		name    string
-		args    args
+		data    string
 		want    string
 		wantErr bool
 	}{
-		{"success", args{cmd, module}, "123456", false},
+		{"success", "123456", "123456", false},
+		{"short password", "12345", "", true},
+		{"empty password", "", "", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := handlePassword(tt.args.cmd, tt.args.module)
+			cmd := newPushCommand()
+			cmd.SetArgs([]string{"--password", tt.data, "--name", "test"})
+			_ = cmd.Flags().Set("password", tt.data)
+			_ = cmd.Flags().Set("name", "test")
+
+			if tt.data == "" {
+				origInput := inputPasswordFunc
+				defer func() { inputPasswordFunc = origInput }()
+				inputPasswordFunc = func(password *string) error {
+					return nil
+				}
+			}
+
+			res, err := handlePassword(cmd, module)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("handlePassword() error = %v, wantErr %v", err, tt.wantErr)
-				return
 			}
-			if got != tt.want {
-				t.Errorf("handlePassword() got = %v, want %v", got, tt.want)
+			if res != tt.want {
+				t.Errorf("handlePassword() = %v, want %v", res, tt.want)
 			}
 		})
 	}
