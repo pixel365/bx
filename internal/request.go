@@ -14,6 +14,8 @@ import (
 	"golang.org/x/net/html"
 )
 
+var getSessionFunc = getSession
+
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
@@ -191,6 +193,57 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 // Returns:
 //   - The session ID as a string if found, otherwise returns an empty string.
 func (c *Client) SessionId(module *Module, cookies []*http.Cookie) string {
+	return getSessionFunc(c, module, cookies)
+}
+
+// uploadResult processes the HTML content returned from the upload request
+// to check for error messages.
+//
+// The function parses the HTML content and searches for a <p> element with
+// a specific CSS class (`paragraph-15 color-red m-0`), which indicates
+// an error message. If such an element is found, the error message is
+// extracted and returned as an error.
+//
+// Parameters:
+//   - htmlContent: The HTML response body to be parsed for error messages.
+//
+// Returns:
+//   - An error if an error message is found in the HTML content or nil if
+//     no errors are present.
+func uploadResult(htmlContent string) error {
+	var err error
+
+	doc, _ := html.Parse(strings.NewReader(htmlContent))
+
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "p" {
+			hasClass := false
+			for _, attr := range n.Attr {
+				if attr.Key == "class" && attr.Val == "paragraph-15 color-red m-0" {
+					hasClass = true
+					break
+				}
+			}
+			if hasClass && n.FirstChild != nil {
+				err = errors.New(strings.TrimSpace(n.FirstChild.Data))
+				return
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+
+	return err
+}
+
+func getSession(c *Client, module *Module, cookies []*http.Cookie) string {
+	if module == nil || len(cookies) == 0 || module.Name == "" {
+		return ""
+	}
+
 	u, _ := url.Parse("https://partners.1c-bitrix.ru/personal/modules/edit.php?ID=" + module.Name)
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -239,50 +292,4 @@ func (c *Client) SessionId(module *Module, cookies []*http.Cookie) string {
 	f(doc)
 
 	return session
-}
-
-// uploadResult processes the HTML content returned from the upload request
-// to check for error messages.
-//
-// The function parses the HTML content and searches for a <p> element with
-// a specific CSS class (`paragraph-15 color-red m-0`), which indicates
-// an error message. If such an element is found, the error message is
-// extracted and returned as an error.
-//
-// Parameters:
-//   - htmlContent: The HTML response body to be parsed for error messages.
-//
-// Returns:
-//   - An error if an error message is found in the HTML content or nil if
-//     no errors are present.
-func uploadResult(htmlContent string) error {
-	var err error
-
-	doc, err := html.Parse(strings.NewReader(htmlContent))
-	if err != nil {
-		return err
-	}
-
-	var f func(*html.Node)
-	f = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "p" {
-			hasClass := false
-			for _, attr := range n.Attr {
-				if attr.Key == "class" && attr.Val == "paragraph-15 color-red m-0" {
-					hasClass = true
-					break
-				}
-			}
-			if hasClass && n.FirstChild != nil {
-				err = errors.New(strings.TrimSpace(n.FirstChild.Data))
-				return
-			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			f(c)
-		}
-	}
-	f(doc)
-
-	return err
 }

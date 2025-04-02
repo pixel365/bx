@@ -161,6 +161,36 @@ func TestModule_IsValid(t *testing.T) {
 	}
 }
 
+func TestModule_IsValid_EmptyName(t *testing.T) {
+	module := &Module{Name: ""}
+	t.Run("empty name", func(t *testing.T) {
+		err := module.IsValid()
+		if !errors.Is(err, EmptyModuleNameError) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, EmptyModuleNameError)
+		}
+	})
+}
+
+func TestModule_IsValid_SpacesInName(t *testing.T) {
+	module := &Module{Name: "some name"}
+	t.Run("spaces in name", func(t *testing.T) {
+		err := module.IsValid()
+		if !errors.Is(err, NameContainsSpaceError) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, NameContainsSpaceError)
+		}
+	})
+}
+
+func TestModule_IsValid_EmptyAccount(t *testing.T) {
+	module := &Module{Name: "name", Version: "1.0.0", Account: ""}
+	t.Run("empty account", func(t *testing.T) {
+		err := module.IsValid()
+		if !errors.Is(err, EmptyAccountNameError) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, EmptyAccountNameError)
+		}
+	})
+}
+
 func TestModule_NormalizeStages(t *testing.T) {
 	type fields struct {
 		Ctx            context.Context
