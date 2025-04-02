@@ -107,7 +107,18 @@ func TestClient_UploadZIP(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"success", client, args{module: nil, cookies: cookies}, true},
+		{"nil module", client, args{module: nil, cookies: cookies}, true},
+		{"nil cookies", client, args{module: &Module{}, cookies: nil}, true},
+		{"empty cookies", client, args{module: &Module{}, cookies: []*http.Cookie{}}, true},
+		{
+			"empty module name",
+			client,
+			args{
+				module:  &Module{},
+				cookies: []*http.Cookie{{Name: "foo", Value: "bar"}},
+			},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -116,6 +127,36 @@ func TestClient_UploadZIP(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
+	origGetSession := getSessionFunc
+	defer func() { getSessionFunc = origGetSession }()
+	getSessionFunc = func(c *Client, module *Module, cookies []*http.Cookie) string {
+		return "fake-session-id"
+	}
+
+	mockClient := &mockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
+		resp := &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader("")),
+		}
+		resp.Header.Set("Set-Cookie", "BITRIX_SM_LOGIN=testuser")
+
+		return resp, nil
+	}}
+	client := NewClient(mockClient, nil)
+
+	t.Run("", func(t *testing.T) {
+		err := client.UploadZIP(
+			&Module{Name: "fake-name"},
+			[]*http.Cookie{{Name: "foo", Value: "bar"}},
+		)
+		if err == nil {
+			t.Error("expected error")
+		}
+	})
 }
 
 func TestClient_SessionId(t *testing.T) {
