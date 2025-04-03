@@ -15,7 +15,7 @@ func main() {
 	defer stop()
 
 	root := cmd.NewRootCmd(ctx)
-	if err := root.ExecuteContext(ctx); err != nil {
+	if err := root.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
