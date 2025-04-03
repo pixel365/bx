@@ -71,14 +71,9 @@ func create(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
-	if err != nil {
-		return err
-	}
-
 	var module internal.Module
 	def := []byte(internal.DefaultYAML())
-	if err = yaml.Unmarshal(def, &module); err != nil {
+	if err := yaml.Unmarshal(def, &module); err != nil {
 		return err
 	}
 
@@ -89,6 +84,8 @@ func create(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+
+	filePath, _ := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
 
 	return os.WriteFile(filePath, out, 0600)
 }
