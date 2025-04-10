@@ -185,3 +185,19 @@ func Test_run_HandleStages(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func Test_run_readModuleFromFlags_failed(t *testing.T) {
+	originalReadModule := readModuleFromFlags
+	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
+		return nil, errors.New("error")
+	}
+	defer func() {
+		readModuleFromFlags = originalReadModule
+	}()
+
+	cmd := newRunCommand()
+	cmd.SetArgs([]string{"--cmd", "testCommand"})
+	if err := cmd.Execute(); err == nil {
+		t.Errorf("err is nil")
+	}
+}

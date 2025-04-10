@@ -34,10 +34,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return internal.NilCmdError
 	}
 
-	command, err := cmd.Flags().GetString("cmd")
-	if err != nil {
-		return err
-	}
+	command, _ := cmd.Flags().GetString("cmd")
 
 	if command == "" {
 		return internal.NoCommandSpecifiedError
