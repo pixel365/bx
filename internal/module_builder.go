@@ -413,44 +413,64 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 		return err
 	}
 
-	if builder.module.Repository != "" {
+	descriptionRu := ""
+
+	encoder := charmap.Windows1251.NewEncoder()
+
+	if builder.module.Description != "" {
+
+		encodedDescriptionRu, err := encoder.String(builder.module.Description + "\n")
+		if err != nil {
+			return fmt.Errorf("encoding description [%s]: %w", builder.module.Description, err)
+		}
+		descriptionRu = encodedDescriptionRu
+
+	} else {
+
+		if builder.module.Repository == "" {
+			return nil
+		}
+
 		commits, err := ChangelogList(builder.module.Repository, builder.module.Changelog)
 		if err != nil {
 			return err
 		}
 
-		if len(commits) > 0 {
-			descriptionPath := filepath.Join(versionDir, "description.ru")
-			descriptionPath = filepath.Clean(descriptionPath)
-
-			file, err := os.Create(descriptionPath)
-			if err != nil {
-				return fmt.Errorf(
-					"failed to create description file [%s]: %w",
-					descriptionPath,
-					err,
-				)
-			}
-
-			defer func() {
-				if err := file.Close(); err != nil && builder.logger != nil {
-					builder.logger.Error("Failed to close description file", err)
-				}
-			}()
-
-			encoder := charmap.Windows1251.NewEncoder()
-			for _, commit := range commits {
-				encodedLine, err := encoder.String(commit + "\n")
-				if err != nil {
-					return fmt.Errorf("encoding commit [%s]: %w", commit, err)
-				}
-
-				_, err = file.WriteString(encodedLine)
-				if err != nil {
-					return fmt.Errorf("failed to write commit to %s: %w", descriptionPath, err)
-				}
-			}
+		if len(commits) == 0 {
+			return nil
 		}
+
+		for _, commit := range commits {
+			encodedLine, err := encoder.String(commit + "\n")
+			if err != nil {
+				return fmt.Errorf("encoding commit [%s]: %w", commit, err)
+			}
+			descriptionRu += encodedLine
+		}
+
+	}
+
+	descriptionPath := filepath.Join(versionDir, "description.ru")
+	descriptionPath = filepath.Clean(descriptionPath)
+
+	file, err := os.Create(descriptionPath)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to create description file [%s]: %w",
+			descriptionPath,
+			err,
+		)
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil && builder.logger != nil {
+			builder.logger.Error("Failed to close description file", err)
+		}
+	}()
+
+	_, err = file.WriteString(descriptionRu)
+	if err != nil {
+		return fmt.Errorf("failed to write description to %s: %w", descriptionPath, err)
 	}
 
 	return nil
