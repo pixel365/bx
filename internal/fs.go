@@ -52,9 +52,7 @@ func copyFromPath(
 	}
 
 	if err := walk(ctx, wg, errCh, from, to, module, existsMode, convert, filterRules); err != nil {
-		if !(errors.Is(err, doublestar.SkipDir) ||
-			errors.Is(err, FileExcludedByIgnoreRuleError) ||
-			errors.Is(err, FileExcludedByFilterRuleError)) {
+		if !errors.Is(err, doublestar.SkipDir) {
 			errCh <- err
 		}
 	}
@@ -102,6 +100,13 @@ func walk(
 		changes = module.GetChanges()
 	}
 
+	skipFn := func(info os.FileInfo) error {
+		if info.IsDir() {
+			return filepath.SkipDir
+		}
+		return nil
+	}
+
 	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
 		if ctxErr := CheckContext(ctx); ctxErr != nil {
 			errCh <- ctxErr
@@ -124,17 +129,11 @@ func walk(
 		absFrom = filepath.Clean(absFrom)
 
 		if shouldSkip(relPath, &module.Ignore) {
-			if info.IsDir() {
-				return filepath.SkipDir
-			}
-			return FileExcludedByIgnoreRuleError
+			return skipFn(info)
 		}
 
 		if !shouldInclude(absFrom, filterRules) {
-			if info.IsDir() {
-				return filepath.SkipDir
-			}
-			return FileExcludedByFilterRuleError
+			return skipFn(info)
 		}
 
 		isDir, err := IsDir(absFrom)

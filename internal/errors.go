@@ -39,10 +39,8 @@ var (
 	CallbackActionSchemeError     = errors.New(
 		"callback action url scheme is invalid. allowed values are 'http' or 'https'",
 	)
-	FileExcludedByIgnoreRuleError = errors.New("file excluded by ignore rule")
-	FileExcludedByFilterRuleError = errors.New("file excluded by filter rule")
-	NilCmdError                   = errors.New("cmd is nil")
-	NilClientError                = errors.New("client is nil")
-	TODOContextError              = errors.New("todo context is prohibited")
-	InvalidRootDirError           = errors.New("invalid root directory")
+	NilCmdError         = errors.New("cmd is nil")
+	NilClientError      = errors.New("client is nil")
+	TODOContextError    = errors.New("todo context is prohibited")
+	InvalidRootDirError = errors.New("invalid root directory")
 )
