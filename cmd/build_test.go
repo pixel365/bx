@@ -147,7 +147,7 @@ func Test_build_success(t *testing.T) {
 	}()
 
 	cmd := newBuildCommand()
-	cmd.SetArgs([]string{"--last"})
+	cmd.SetArgs([]string{"--last", "--description", "some description"})
 	err = cmd.Execute()
 	if err != nil {
 		t.Error(err)
