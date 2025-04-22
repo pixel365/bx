@@ -64,6 +64,7 @@ type Module struct {
 	Version        string              `yaml:"version"`
 	Name           string              `yaml:"name"`
 	Changelog      Changelog           `yaml:"changelog,omitempty"`
+	Description    string              `yaml:"description,omitempty"`
 	Builds         Builds              `yaml:"builds"`
 	Stages         []Stage             `yaml:"stages"`
 	Ignore         []string            `yaml:"ignore"`

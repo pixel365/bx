@@ -42,6 +42,7 @@ bx build --name my_module --last
 	cmd.Flags().StringP("file", "f", "", "Path to a module")
 	cmd.Flags().StringP("version", "v", "", "Version of the module")
 	cmd.Flags().StringP("repository", "r", "", "Path to a repository")
+	cmd.Flags().StringP("description", "d", "", "Version description")
 	cmd.Flags().BoolP("last", "", false, "Build a module .last_version.zip")
 
 	return cmd
@@ -82,6 +83,12 @@ func build(cmd *cobra.Command, _ []string) error {
 
 	if repository != "" {
 		module.Repository = repository
+	}
+
+	description, _ := cmd.Flags().GetString("description")
+
+	if description != "" {
+		module.Description = description
 	}
 
 	if err := module.IsValid(); err != nil {

@@ -433,6 +433,9 @@ func zipIt(dirPath, archivePath string) error {
 		return err
 	}
 
+	// 'x.y.z' or '.last_version' folder inside the archive
+	subdir := filepath.Base(dirPath)
+
 	archivePath = filepath.Clean(archivePath)
 	zipFile, err := os.Create(archivePath)
 	if err != nil {
@@ -458,6 +461,8 @@ func zipIt(dirPath, archivePath string) error {
 		if err != nil {
 			return err
 		}
+
+		relPath = subdir + "/" + relPath
 
 		if info.IsDir() {
 			_, err := zipWriter.Create(relPath + "/")
