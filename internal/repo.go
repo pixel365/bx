@@ -19,6 +19,7 @@ type Changes struct {
 	Added    []string
 	Modified []string
 	Deleted  []string
+	Moved    []string
 }
 
 // IsChangedFile checks whether the given file path corresponds to a file that has been added or modified.
@@ -56,6 +57,12 @@ func (o *Changes) IsChangedFile(path string) bool {
 	}
 
 	for _, f := range o.Modified {
+		if strings.HasSuffix(path, f) {
+			return true
+		}
+	}
+
+	for _, f := range o.Moved {
 		if strings.HasSuffix(path, f) {
 			return true
 		}
@@ -423,12 +430,20 @@ func ChangesList(repository string, rules Changelog) (*Changes, error) {
 	for _, filePatch := range patch.FilePatches() {
 		from, to := filePatch.Files()
 
-		if from == nil {
+		if from == nil && to != nil {
 			c.Added = append(c.Added, to.Path())
-		} else if to == nil {
+		}
+
+		if from != nil && to == nil {
 			c.Deleted = append(c.Deleted, from.Path())
-		} else {
-			c.Modified = append(c.Modified, from.Path())
+		}
+
+		if from != nil && to != nil {
+			if from.Path() != to.Path() {
+				c.Moved = append(c.Moved, to.Path())
+			} else {
+				c.Modified = append(c.Modified, from.Path())
+			}
 		}
 	}
 
