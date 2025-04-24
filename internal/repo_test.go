@@ -227,6 +227,7 @@ func TestChanges_IsChangedFile(t *testing.T) {
 		Added    []string
 		Modified []string
 		Deleted  []string
+		Moved    []string
 	}
 	type args struct {
 		path string
@@ -240,6 +241,7 @@ func TestChanges_IsChangedFile(t *testing.T) {
 		{"added", args{path: "test.txt"}, fields{Added: []string{"test.txt"}}, true},
 		{"modified", args{path: "modified.txt"}, fields{Modified: []string{"modified.txt"}}, true},
 		{"deleted", args{path: "modified.txt"}, fields{Deleted: []string{"test.txt"}}, false},
+		{"moved", args{path: "modified.txt"}, fields{Moved: []string{"modified.txt"}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -247,6 +249,7 @@ func TestChanges_IsChangedFile(t *testing.T) {
 				Added:    tt.fields.Added,
 				Modified: tt.fields.Modified,
 				Deleted:  tt.fields.Deleted,
+				Moved:    tt.fields.Moved,
 			}
 			if got := o.IsChangedFile(tt.args.path); got != tt.want {
 				t.Errorf("IsChangedFile() = %v, want %v", got, tt.want)
