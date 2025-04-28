@@ -585,3 +585,62 @@ func removeEmptyDirs(root string) (bool, error) {
 
 	return empty, nil
 }
+
+func makeZipFilePath(module *Module) (string, error) {
+	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.GetVersion()))
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Clean(path)
+	return path, nil
+}
+
+func makeVersionDirectory(module *Module) (string, error) {
+	if module == nil || module.BuildDirectory == "" {
+		return "", NilModuleError
+	}
+
+	path := filepath.Join(module.BuildDirectory, module.GetVersion())
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Clean(path)
+	return path, nil
+}
+
+func whiteFileForVersion(builder *ModuleBuilder, path, content string) error {
+	versionDir, err := makeVersionDirectory(builder.module)
+	if err != nil {
+		return err
+	}
+
+	fp := filepath.Join(versionDir, path)
+	fp = filepath.Clean(fp)
+
+	dirs := strings.Split(fp, "/")
+	dirPath := strings.Join(dirs[:len(dirs)-1], "/")
+	_, err = mkdir(dirPath)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(fp)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil && builder.logger != nil {
+			builder.logger.Error("Failed to close "+path, err)
+		}
+	}()
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

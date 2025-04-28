@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/text/encoding/charmap"
 )
@@ -235,6 +237,11 @@ func (m *ModuleBuilder) Collect() error {
 		return err
 	}
 
+	err = makeVersionFile(m)
+	if err != nil {
+		m.logger.Error("Failed to create version.php", err)
+	}
+
 	_, err = removeEmptyDirs(versionDirectory)
 	if err != nil {
 		return err
@@ -377,30 +384,6 @@ func handleStage(
 	}
 }
 
-func makeZipFilePath(module *Module) (string, error) {
-	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.GetVersion()))
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	path = filepath.Clean(path)
-	return path, nil
-}
-
-func makeVersionDirectory(module *Module) (string, error) {
-	if module == nil || module.BuildDirectory == "" {
-		return "", NilModuleError
-	}
-
-	path := filepath.Join(module.BuildDirectory, module.GetVersion())
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	path = filepath.Clean(path)
-	return path, nil
-}
-
 func makeVersionDescription(builder *ModuleBuilder) error {
 	// If the full latest version is being built, then the version description file is not needed.
 	// However, it may be present when copying if specified in the configuration, at the discretion of the developer.
@@ -408,25 +391,17 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 		return nil
 	}
 
-	versionDir, err := makeVersionDirectory(builder.module)
-	if err != nil {
-		return err
-	}
-
 	descriptionRu := ""
-
 	encoder := charmap.Windows1251.NewEncoder()
 
 	if builder.module.Description != "" {
-
 		encodedDescriptionRu, err := encoder.String(builder.module.Description + "\n")
 		if err != nil {
 			return fmt.Errorf("encoding description [%s]: %w", builder.module.Description, err)
 		}
+
 		descriptionRu = encodedDescriptionRu
-
 	} else {
-
 		if builder.module.Repository == "" {
 			return nil
 		}
@@ -450,27 +425,30 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 
 	}
 
-	descriptionPath := filepath.Join(versionDir, "description.ru")
-	descriptionPath = filepath.Clean(descriptionPath)
-
-	file, err := os.Create(descriptionPath)
+	err := whiteFileForVersion(builder, "description.ru", descriptionRu)
 	if err != nil {
-		return fmt.Errorf(
-			"failed to create description file [%s]: %w",
-			descriptionPath,
-			err,
-		)
+		return fmt.Errorf("failed to make description file: %w", err)
 	}
 
-	defer func() {
-		if err := file.Close(); err != nil && builder.logger != nil {
-			builder.logger.Error("Failed to close description file", err)
-		}
-	}()
+	return nil
+}
 
-	_, err = file.WriteString(descriptionRu)
+func makeVersionFile(builder *ModuleBuilder) error {
+	if builder.module.LastVersion {
+		return nil
+	}
+
+	now := time.Now().Format(time.DateTime)
+	buf := strings.Builder{}
+	buf.WriteString("<?php\n")
+	buf.WriteString("$arModuleVersion = array(\n")
+	buf.WriteString("\t\t\"VERSION\" => \"" + builder.module.Version + "\"\n")
+	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + now + "\"\n")
+	buf.WriteString(");\n")
+
+	err := whiteFileForVersion(builder, "/install/version.php", buf.String())
 	if err != nil {
-		return fmt.Errorf("failed to write description to %s: %w", descriptionPath, err)
+		return fmt.Errorf("failed to make version.php file: %w", err)
 	}
 
 	return nil
