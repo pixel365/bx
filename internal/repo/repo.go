@@ -1,4 +1,4 @@
-package internal
+package repo
 
 import (
 	"errors"
@@ -7,69 +7,17 @@ import (
 	"slices"
 	"strings"
 
+	errors2 "github.com/pixel365/bx/internal/errors"
+
+	"github.com/pixel365/bx/internal/types"
+
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 
 	"github.com/go-git/go-git/v5"
 )
 
-type CommitFilterFunc func(string, TypeValue[ChangelogConditionType, []string]) bool
-
-type Changes struct {
-	Added    []string
-	Modified []string
-	Deleted  []string
-	Moved    []string
-}
-
-// IsChangedFile checks whether the given file path corresponds to a file that has been added or modified.
-//
-// Parameters:
-//   - path: The file path to check.
-//
-// Returns:
-//   - true if the file is in the list of added or modified files.
-//   - false otherwise.
-//
-// Behavior:
-//   - Iterates through the `Added` and `Modified` slices of the `Changes` struct.
-//   - Uses `strings.HasSuffix` to check if the provided path ends with any of the added or modified file names.
-//   - Returns true on the first match, otherwise false.
-//
-// Notes:
-//   - This method assumes that `o.Added` and `o.Modified` contain relative or base file names.
-//   - If files are stored with full paths in `o.Added` and `o.Modified`, this method may produce false negatives.
-//
-// Example:
-//
-//	changes := Changes{
-//	    Added:    []string{"file1.txt", "dir/file2.go"},
-//	    Modified: []string{"config.yaml"},
-//	}
-//	fmt.Println(changes.IsChangedFile("project/dir/file2.go")) // true
-//	fmt.Println(changes.IsChangedFile("config.yaml"))         // true
-//	fmt.Println(changes.IsChangedFile("untracked.txt"))       // false
-func (o *Changes) IsChangedFile(path string) bool {
-	for _, f := range o.Added {
-		if strings.HasSuffix(path, f) {
-			return true
-		}
-	}
-
-	for _, f := range o.Modified {
-		if strings.HasSuffix(path, f) {
-			return true
-		}
-	}
-
-	for _, f := range o.Moved {
-		if strings.HasSuffix(path, f) {
-			return true
-		}
-	}
-
-	return false
-}
+type CommitFilterFunc func(string, types.TypeValue[types.ChangelogConditionType, []string]) bool
 
 // OpenRepository opens an existing Git repository at the specified path.
 //
@@ -138,7 +86,7 @@ func OpenRepository(repository string) (*git.Repository, error) {
 //   - Sorting is applied only if `rules.Sort` is explicitly set.
 //   - Uses `listOfCommits` with a predefined `CommitFilter` function.
 //   - The function does not modify the repository; it only queries commit history.
-func ChangelogList(repository string, rules Changelog) ([]string, error) {
+func ChangelogList(repository string, rules types.Changelog) ([]string, error) {
 	if rules.From.Type == "" || rules.To.Type == "" {
 		return []string{}, nil
 	}
@@ -161,11 +109,11 @@ func ChangelogList(repository string, rules Changelog) ([]string, error) {
 		return nil, err
 	}
 
-	if rules.Sort == Asc {
+	if rules.Sort == types.Asc {
 		slices.Sort(commits)
 	}
 
-	if rules.Sort == Desc {
+	if rules.Sort == types.Desc {
 		slices.Sort(commits)
 		slices.Reverse(commits)
 	}
@@ -204,7 +152,10 @@ func ChangelogList(repository string, rules Changelog) ([]string, error) {
 //   - Regular expressions are compiled dynamically; invalid regex patterns are ignored.
 //   - If regex compilation fails, the loop breaks, and filtering may be incomplete.
 //   - Ensures `matched` is set correctly for both `Include` and `Exclude` conditions.
-func CommitFilter(message string, conditions TypeValue[ChangelogConditionType, []string]) bool {
+func CommitFilter(
+	message string,
+	conditions types.TypeValue[types.ChangelogConditionType, []string],
+) bool {
 	if len(conditions.Value) == 0 {
 		return true
 	}
@@ -217,16 +168,16 @@ func CommitFilter(message string, conditions TypeValue[ChangelogConditionType, [
 		}
 
 		if reg.MatchString(message) {
-			if conditions.Type == Include {
+			if conditions.Type == types.Include {
 				return true
 			}
 
-			if conditions.Type == Exclude {
+			if conditions.Type == types.Exclude {
 				return false
 			}
 		}
 
-		matched = !(conditions.Type == Include)
+		matched = !(conditions.Type == types.Include)
 	}
 
 	return matched
@@ -265,11 +216,11 @@ func CommitFilter(message string, conditions TypeValue[ChangelogConditionType, [
 //   - If an error occurs while iterating, it is wrapped and returned unless it's `ErrObjectNotFound`.
 func listOfCommits(
 	repository *git.Repository,
-	rules Changelog,
+	rules types.Changelog,
 	filter CommitFilterFunc,
 ) ([]string, error) {
 	if repository == nil {
-		return nil, NilRepositoryError
+		return nil, errors2.NilRepositoryError
 	}
 
 	startHash, endHash, err := hashes(repository, rules)
@@ -332,15 +283,18 @@ func listOfCommits(
 // Notes:
 //   - The function supports resolving both direct commit hashes and references (branches/tags).
 //   - Uses `repository.ResolveRevision` to translate references into commit hashes.
-func hashes(repository *git.Repository, rules Changelog) (plumbing.Hash, plumbing.Hash, error) {
+func hashes(
+	repository *git.Repository,
+	rules types.Changelog,
+) (plumbing.Hash, plumbing.Hash, error) {
 	if repository == nil {
-		return plumbing.ZeroHash, plumbing.ZeroHash, NilRepositoryError
+		return plumbing.ZeroHash, plumbing.ZeroHash, errors2.NilRepositoryError
 	}
 
 	var startHash plumbing.Hash
 	var endHash plumbing.Hash
 
-	if rules.From.Type == Commit {
+	if rules.From.Type == types.Commit {
 		startHash = plumbing.NewHash(rules.From.Value)
 	} else {
 		hash, err := repository.ResolveRevision(plumbing.Revision(rules.From.Value))
@@ -350,7 +304,7 @@ func hashes(repository *git.Repository, rules Changelog) (plumbing.Hash, plumbin
 		startHash = *hash
 	}
 
-	if rules.To.Type == Commit {
+	if rules.To.Type == types.Commit {
 		endHash = plumbing.NewHash(rules.To.Value)
 	} else {
 		hash, err := repository.ResolveRevision(plumbing.Revision(rules.To.Value))
@@ -395,14 +349,14 @@ func hashes(repository *git.Repository, rules Changelog) (plumbing.Hash, plumbin
 //   - If `to == nil`, the file was deleted.
 //   - Otherwise, the file was modified.
 //   - The function does not modify the repository; it only analyzes commit differences.
-func ChangesList(repository string, rules Changelog) (*Changes, error) {
+func ChangesList(repository string, rules types.Changelog) (*types.Changes, error) {
 	r, err := OpenRepository(repository)
 	if err != nil {
 		return nil, err
 	}
 
 	if r == nil {
-		return nil, NilRepositoryError
+		return nil, errors2.NilRepositoryError
 	}
 
 	startHash, endHash, err := hashes(r, rules)
@@ -425,7 +379,7 @@ func ChangesList(repository string, rules Changelog) (*Changes, error) {
 		return nil, fmt.Errorf("repository [%s]: %w", repository, err)
 	}
 
-	c := Changes{}
+	c := types.Changes{}
 
 	for _, filePatch := range patch.FilePatches() {
 		from, to := filePatch.Files()

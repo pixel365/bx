@@ -1,27 +1,14 @@
-package internal
+package helpers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
-	"reflect"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
+	"github.com/pixel365/bx/internal/types"
 )
-
-type FakeBuildLogger struct{}
-
-func (l *FakeBuildLogger) Info(message string, args ...interface{}) {}
-
-func (l *FakeBuildLogger) Error(message string, err error, args ...interface{}) {}
-
-func (l *FakeBuildLogger) Cleanup() {}
 
 func TestDefaultYAML(t *testing.T) {
 	const def = `name: "test"
@@ -258,42 +245,6 @@ func Test_Cleanup(t *testing.T) {
 	}
 }
 
-func TestReadModuleFromFlags(t *testing.T) {
-	t.Run("TestReadModuleFromFlags", func(t *testing.T) {
-		_, err := ReadModuleFromFlags(nil)
-		if err == nil {
-			t.Errorf("ReadModuleFromFlags() did not return an error")
-		}
-
-		if !errors.Is(err, NilCmdError) {
-			t.Errorf("err = %v, want %v", err, NilCmdError)
-		}
-	})
-}
-
-func TestReadModuleFromFlags_Name(t *testing.T) {
-	t.Run("TestReadModuleFromFlags_Name", func(t *testing.T) {
-		cmd := &cobra.Command{}
-		cmd.SetContext(context.WithValue(context.Background(), RootDir, RootDir))
-		_, err := ReadModuleFromFlags(cmd)
-		if err == nil {
-			t.Errorf("ReadModuleFromFlags() did not return an error")
-		}
-	})
-}
-
-func TestReadModuleFromFlags_File(t *testing.T) {
-	t.Run("TestReadModuleFromFlags_File", func(t *testing.T) {
-		cmd := &cobra.Command{}
-		cmd.SetContext(context.WithValue(context.Background(), RootDir, RootDir))
-		cmd.SetArgs([]string{"--file", "./test_files/foo"})
-		_, err := ReadModuleFromFlags(cmd)
-		if err == nil {
-			t.Errorf("ReadModuleFromFlags() did not return an error")
-		}
-	})
-}
-
 func TestChoose(t *testing.T) {
 	empty := ""
 	type args struct {
@@ -318,97 +269,6 @@ func TestChoose(t *testing.T) {
 	}
 }
 
-func TestAllModules(t *testing.T) {
-	name := fmt.Sprintf("%s_%d", "testing", time.Now().Unix())
-	filePath, err := filepath.Abs(fmt.Sprintf("./%s/%s.yaml", ".", name))
-	if err != nil {
-		t.Error()
-	}
-	filePath = filepath.Clean(filePath)
-
-	err = os.WriteFile(filePath, []byte(DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
-	defer func(name string) {
-		err := os.Remove(name)
-		if err != nil {
-			t.Error(err)
-		}
-	}(filePath)
-
-	type args struct {
-		directory string
-	}
-	tests := []struct {
-		want *[]string
-		name string
-		args args
-	}{
-		{want: &[]string{"test"}, name: ".", args: args{directory: "."}},
-		{want: nil, name: "fake dir", args: args{directory: "some/fake/dir"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := AllModules(tt.args.directory); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("AllModules() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCheckStages(t *testing.T) {
-	err := CheckStages(nil)
-	if !errors.Is(err, NilModuleError) {
-		t.Errorf("CheckStages() error = %v, want %v", err, NilModuleError)
-	}
-}
-
-func TestCheckStages_NoErrors(t *testing.T) {
-	originalCheckPaths := checkPaths
-	checkPathsFunc = func(stage Stage, errCh chan<- error) {}
-	defer func() { checkPathsFunc = originalCheckPaths }()
-
-	m := &Module{
-		Stages: []Stage{
-			{Name: "stage1"},
-			{Name: "stage2"},
-		},
-	}
-
-	err := CheckStages(m)
-	if err != nil {
-		t.Errorf("CheckStages() error = %v, want nil", err)
-	}
-}
-
-func TestCheckStages_WithErrors(t *testing.T) {
-	originalCheckPaths := checkPaths
-	checkPathsFunc = func(stage Stage, errCh chan<- error) {
-		if stage.Name == "fail" {
-			errCh <- fmt.Errorf("failed stage: %s", stage.Name)
-		}
-	}
-	defer func() { checkPathsFunc = originalCheckPaths }()
-
-	m := &Module{
-		Stages: []Stage{
-			{Name: "ok"},
-			{Name: "fail"},
-		},
-	}
-
-	err := CheckStages(m)
-	if err == nil {
-		t.Errorf("CheckStages() error = %v, want error", err)
-	} else {
-		expectedMsg := "errors: [failed stage: fail]"
-		if err.Error() != expectedMsg {
-			t.Errorf("CheckStages() error = %v, want %v", err, expectedMsg)
-		}
-	}
-}
-
 func Test_isValidPath(t *testing.T) {
 	type args struct {
 		filePath string
@@ -423,8 +283,8 @@ func Test_isValidPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isValidPath(tt.args.filePath, tt.args.basePath); got != tt.want {
-				t.Errorf("isValidPath() = %v, want %v", got, tt.want)
+			if got := IsValidPath(tt.args.filePath, tt.args.basePath); got != tt.want {
+				t.Errorf("IsValidPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -432,11 +292,11 @@ func Test_isValidPath(t *testing.T) {
 
 func Test_checkPaths(t *testing.T) {
 	errCh := make(chan error)
-	stage := Stage{
+	stage := types.Stage{
 		From: []string{"."},
 	}
 
-	checkPaths(stage, errCh)
+	CheckPaths(stage, errCh)
 	close(errCh)
 
 	var errs []error
@@ -445,73 +305,6 @@ func Test_checkPaths(t *testing.T) {
 	}
 
 	if len(errs) != 0 {
-		t.Errorf("checkPaths() = %v, want %v", errs, []error{})
+		t.Errorf("CheckPaths() = %v, want %v", errs, []error{})
 	}
-}
-
-func TestHandleStages_NilModule(t *testing.T) {
-	t.Run("nil module", func(t *testing.T) {
-		err := HandleStages([]string{}, nil, nil, nil, &FakeBuildLogger{}, true)
-		if !errors.Is(err, NilModuleError) {
-			t.Errorf("HandleStages() error = %v, want %v", err, NilModuleError)
-		}
-	})
-}
-
-func TestHandleStages_NilContext(t *testing.T) {
-	m := Module{
-		Ctx: context.TODO(),
-	}
-	t.Run("todo context", func(t *testing.T) {
-		err := HandleStages([]string{"fake-stage"}, &m, nil, nil, &FakeBuildLogger{}, true)
-		if !errors.Is(err, TODOContextError) {
-			t.Errorf("HandleStages() error = %v, want %v", err, TODOContextError)
-		}
-	})
-}
-
-func TestHandleStages_StageNotFound(t *testing.T) {
-	m := Module{
-		Ctx: context.Background(),
-	}
-	var wg sync.WaitGroup
-	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages([]string{"fake-stage"}, &m, &wg, nil, &FakeBuildLogger{}, true)
-		if err == nil {
-			t.Error("err is nil")
-		}
-	})
-}
-
-func TestHandleStages_NoCustomCommandMode(t *testing.T) {
-	m := &Module{
-		Ctx: context.Background(),
-		Stages: []Stage{
-			{Name: "some-fake-stage"},
-		},
-	}
-	var wg sync.WaitGroup
-	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages([]string{"some-fake-stage"}, m, &wg, nil, &FakeBuildLogger{}, false)
-		if !errors.Is(err, NilModuleError) {
-			t.Errorf("HandleStages() error = %v, want %v", err, NilModuleError)
-		}
-	})
-}
-
-func TestHandleStages_Ok(t *testing.T) {
-	m := &Module{
-		Ctx:            context.Background(),
-		BuildDirectory: "./testdata",
-		Stages: []Stage{
-			{Name: "some-fake-stage"},
-		},
-	}
-	var wg sync.WaitGroup
-	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages([]string{"some-fake-stage"}, m, &wg, nil, &FakeBuildLogger{}, false)
-		if err != nil {
-			t.Errorf("HandleStages() error = %v, want nil", err)
-		}
-	})
 }

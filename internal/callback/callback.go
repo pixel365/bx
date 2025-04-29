@@ -1,4 +1,4 @@
-package internal
+package callback
 
 import (
 	"context"
@@ -10,6 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
+	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/validators"
+
 	"github.com/go-cmd/cmd"
 )
 
@@ -17,11 +23,6 @@ const (
 	ExternalType = "external"
 	CommandType  = "command"
 )
-
-type Runnable interface {
-	PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
-	PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
-}
 
 type CallbackParameters struct {
 	Type       string   `yaml:"type"`
@@ -36,7 +37,7 @@ type Callback struct {
 	Post  CallbackParameters `yaml:"post,omitempty"`
 }
 
-func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger) {
+func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, logger interfaces.BuildLogger) {
 	defer wg.Done()
 
 	if err := c.Pre.IsValid(); err != nil {
@@ -48,7 +49,7 @@ func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLo
 	}
 }
 
-func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger) {
+func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, logger interfaces.BuildLogger) {
 	defer wg.Done()
 
 	if err := c.Post.IsValid(); err != nil {
@@ -68,11 +69,11 @@ func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildL
 //   - error: An error if validation fails, otherwise nil.
 func (c *Callback) IsValid() error {
 	if c.Stage == "" {
-		return CallbackStageError
+		return errors.CallbackStageError
 	}
 
 	if c.Pre.Type == "" && c.Post.Type == "" {
-		return CallbackPrePostError
+		return errors.CallbackPrePostError
 	}
 
 	if c.Pre.Type != "" {
@@ -125,7 +126,7 @@ func (c *CallbackParameters) IsValid() error {
 //
 // Returns:
 //   - error: Returns an error if validation fails or if execution of the callback fails.
-func (c *CallbackParameters) Run(ctx context.Context, logger BuildLogger) error {
+func (c *CallbackParameters) Run(ctx context.Context, logger interfaces.BuildLogger) error {
 	if err := c.IsValid(); err != nil {
 		return err
 	}
@@ -148,7 +149,7 @@ func (c *CallbackParameters) Run(ctx context.Context, logger BuildLogger) error 
 
 func (c *CallbackParameters) validateType() error {
 	if c.Type == "" {
-		return CallbackTypeError
+		return errors.CallbackTypeError
 	}
 
 	if c.Type != CommandType && c.Type != ExternalType {
@@ -170,7 +171,7 @@ func (c *CallbackParameters) validateType() error {
 func (c *CallbackParameters) validateMethod() error {
 	if c.Type == ExternalType {
 		if c.Method == "" {
-			return CallbackMethodError
+			return errors.CallbackMethodError
 		}
 
 		if c.Method != http.MethodGet && c.Method != http.MethodPost {
@@ -192,7 +193,7 @@ func (c *CallbackParameters) validateMethod() error {
 //   - error: An error if the action is missing or improperly formatted, otherwise nil.
 func (c *CallbackParameters) validateAction() error {
 	if c.Action == "" {
-		return CallbackActionError
+		return errors.CallbackActionError
 	}
 
 	if c.Type == ExternalType {
@@ -206,7 +207,7 @@ func (c *CallbackParameters) validateAction() error {
 		}
 
 		if u.Scheme != "http" && u.Scheme != "https" {
-			return CallbackActionSchemeError
+			return errors.CallbackActionSchemeError
 		}
 	}
 
@@ -229,7 +230,7 @@ func (c *CallbackParameters) validateParameters() error {
 		}
 
 		if c.Type == CommandType {
-			if !ValidateArgument(param) {
+			if !validators.ValidateArgument(param) {
 				return fmt.Errorf("callback parameter[%d] is invalid", i)
 			}
 		}
@@ -277,12 +278,14 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 	}
 
 	client := &http.Client{}
+
+	//nolint:bodyclose
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 
-	defer Cleanup(resp.Body, nil)
+	defer helpers.Cleanup(resp.Body, nil)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("callback returned status code %d", resp.StatusCode)
@@ -302,7 +305,7 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 //
 // Returns:
 //   - error: Returns an error if the command execution fails, arguments are invalid, or the context is cancelled.
-func (c *CallbackParameters) runCommand(ctx context.Context, logger BuildLogger) error {
+func (c *CallbackParameters) runCommand(ctx context.Context, logger interfaces.BuildLogger) error {
 	_, cancelFunc := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
 	defer cancelFunc()
 
@@ -310,7 +313,7 @@ func (c *CallbackParameters) runCommand(ctx context.Context, logger BuildLogger)
 	args := strings.Fields(rawCommand)
 
 	for _, arg := range args[1:] {
-		if !ValidateArgument(arg) {
+		if !validators.ValidateArgument(arg) {
 			return fmt.Errorf("invalid callback CommandType argument '%s'", arg)
 		}
 	}
@@ -395,4 +398,16 @@ func (c *CallbackParameters) buildUrlAndBody() (string, io.Reader) {
 	}
 
 	return fmt.Sprintf("%s %s", c.Action, strings.Join(c.Parameters, " ")), nil
+}
+
+func ValidateCallbacks(callbacks []Callback) error {
+	if len(callbacks) > 0 {
+		for index, cb := range callbacks {
+			if err := cb.IsValid(); err != nil {
+				return fmt.Errorf("callback [%d]: %w", index, err)
+			}
+		}
+	}
+
+	return nil
 }

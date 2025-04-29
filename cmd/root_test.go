@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/cobra"
+	errors2 "github.com/pixel365/bx/internal/errors"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/spf13/cobra"
 )
 
 func TestNewRootCmd(t *testing.T) {
@@ -52,8 +52,8 @@ func Test_initRootDir(t *testing.T) {
 			t.Errorf("err is nil")
 		}
 
-		if !errors.Is(err, internal.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		if !errors.Is(err, errors2.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }

@@ -1,4 +1,4 @@
-package internal
+package fs
 
 import (
 	"archive/zip"
@@ -11,12 +11,18 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
+	"github.com/pixel365/bx/internal/types"
+
 	"golang.org/x/text/encoding/charmap"
+
+	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-// copyFromPath performs the process of copying files from a source directory to a target directory.
+// CopyFromPath performs the process of copying files from a source directory to a target directory.
 //
 // The function checks if the context is valid, and if so, it invokes the `walk` function to traverse the source
 // directory and perform the copy operation. It uses a `sync.WaitGroup` to wait for completion, and reports
@@ -26,7 +32,7 @@ import (
 //   - ctx (context.Context): The context to control the execution and cancellation of the operation.
 //   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
 //   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-//   - module (*Module): Module instance
+//   - cfg (internal.ModuleConfig): Module instance
 //   - from (string): The source directory to copy from.
 //   - to (string): The destination directory to copy to.
 //   - existsMode (FileExistsAction): The action to take if the file already exists in the destination.
@@ -34,24 +40,24 @@ import (
 //   - filterRules ([]string): Filter rules for selective copying of files based on patterns.
 //
 // If any error is encountered during the execution, it is reported through the `errCh` channel.
-func copyFromPath(
+func CopyFromPath(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
-	module *Module,
+	cfg interfaces.ModuleConfig,
 	from, to string,
-	existsMode FileExistsAction,
+	existsMode types.FileExistsAction,
 	convert bool,
 	filterRules []string,
 ) {
 	defer wg.Done()
 
-	if err := CheckContext(ctx); err != nil {
+	if err := helpers.CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
 
-	if err := walk(ctx, wg, errCh, from, to, module, existsMode, convert, filterRules); err != nil {
+	if err := walk(ctx, wg, errCh, from, to, cfg, existsMode, convert, filterRules); err != nil {
 		if !errors.Is(err, doublestar.SkipDir) {
 			errCh <- err
 		}
@@ -71,7 +77,7 @@ func copyFromPath(
 //   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
 //   - from (string): The source directory to walk through.
 //   - to (string): The destination directory where files should be copied.
-//   - module (*Module): Module instance
+//   - cfg (internal.ModuleConfig): Module instance
 //   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
 //   - convert (bool): A flag to indicate whether to convert files during the copy process.
 //   - filterRules ([]string): Filter rules for selective copying of files based on patterns.
@@ -84,8 +90,8 @@ func walk(
 	wg *sync.WaitGroup,
 	errCh chan<- error,
 	from, to string,
-	module *Module,
-	existsMode FileExistsAction,
+	cfg interfaces.ModuleConfig,
+	existsMode types.FileExistsAction,
 	convert bool,
 	filterRules []string,
 ) error {
@@ -95,9 +101,9 @@ func walk(
 	var wg2 sync.WaitGroup
 	jobs := make(chan struct{}, 10)
 
-	var changes *Changes = nil
-	if !module.LastVersion {
-		changes = module.GetChanges()
+	var changes *types.Changes = nil
+	if !cfg.IsLastVersion() {
+		changes = cfg.GetChanges()
 	}
 
 	skipFn := func(info os.FileInfo) error {
@@ -108,7 +114,7 @@ func walk(
 	}
 
 	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
-		if ctxErr := CheckContext(ctx); ctxErr != nil {
+		if ctxErr := helpers.CheckContext(ctx); ctxErr != nil {
 			errCh <- ctxErr
 			return ctxErr
 		}
@@ -128,7 +134,7 @@ func walk(
 		}
 		absFrom = filepath.Clean(absFrom)
 
-		if shouldSkip(relPath, &module.Ignore) {
+		if shouldSkip(relPath, cfg.GetIgnore()) {
 			return skipFn(info)
 		}
 
@@ -136,7 +142,7 @@ func walk(
 			return skipFn(info)
 		}
 
-		isDir, err := IsDir(absFrom)
+		isDir, err := helpers.IsDir(absFrom)
 		if err != nil {
 			return err
 		}
@@ -155,7 +161,7 @@ func walk(
 			absTo = filepath.Clean(absTo)
 			toDir := filepath.Dir(absTo)
 
-			if _, err := mkdir(toDir); err != nil {
+			if _, err := MkDir(toDir); err != nil {
 				return err
 			}
 
@@ -203,12 +209,12 @@ func copyFile(
 	errCh chan<- error,
 	src, dst string,
 	jobs chan struct{},
-	existsMode FileExistsAction,
+	existsMode types.FileExistsAction,
 	convert bool,
 ) {
 	defer wg.Done()
 
-	if err := CheckContext(ctx); err != nil {
+	if err := helpers.CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
@@ -223,7 +229,7 @@ func copyFile(
 	stat, err := os.Stat(dst)
 	if err == nil {
 		existingFile = stat
-		if existsMode == Skip {
+		if existsMode == types.Skip {
 			return
 		}
 	}
@@ -237,9 +243,9 @@ func copyFile(
 		return
 	}
 
-	defer Cleanup(in, errCh)
+	defer helpers.Cleanup(in, errCh)
 
-	if err := CheckContext(ctx); err != nil {
+	if err := helpers.CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
@@ -252,7 +258,7 @@ func copyFile(
 
 	allowWrite := true
 	if existingFile != nil {
-		if existsMode == ReplaceIfNewer {
+		if existsMode == types.ReplaceIfNewer {
 			allowWrite = info.ModTime().After(existingFile.ModTime())
 		}
 	}
@@ -264,9 +270,9 @@ func copyFile(
 			return
 		}
 
-		defer Cleanup(out, errCh)
+		defer helpers.Cleanup(out, errCh)
 
-		if err := CheckContext(ctx); err != nil {
+		if err := helpers.CheckContext(ctx); err != nil {
 			errCh <- err
 			return
 		}
@@ -285,7 +291,7 @@ func copyFile(
 			return
 		}
 
-		if err := CheckContext(ctx); err != nil {
+		if err := helpers.CheckContext(ctx); err != nil {
 			errCh <- err
 			return
 		}
@@ -311,12 +317,12 @@ func copyFile(
 // Returns:
 //   - bool: Returns `true` if the path matches any of the patterns or an error occurs, indicating the path should be skipped.
 //     Returns `false` otherwise, meaning the path should not be skipped.
-func shouldSkip(path string, patterns *[]string) bool {
-	if patterns == nil || len(*patterns) == 0 {
+func shouldSkip(path string, patterns []string) bool {
+	if len(patterns) == 0 {
 		return false
 	}
 
-	for _, pattern := range *patterns {
+	for _, pattern := range patterns {
 		if ok, err := doublestar.PathMatch(pattern, path); ok || err != nil {
 			return true
 		}
@@ -380,7 +386,7 @@ func shouldInclude(path string, patterns []string) bool {
 	return allow
 }
 
-// mkdir creates a directory at the specified path, including any necessary parent directories.
+// MkDir creates a directory at the specified path, including any necessary parent directories.
 // It first ensures the provided path is an absolute and clean path, and checks whether the path is valid.
 // If the path does not exist, it will be created with permissions 0750. If the directory already exists, it does nothing.
 //
@@ -391,7 +397,7 @@ func shouldInclude(path string, patterns []string) bool {
 // Returns:
 //   - string: The absolute path of the created directory.
 //   - error: If an error occurs during path resolution or directory creation, an error is returned.
-func mkdir(path string) (string, error) {
+func MkDir(path string) (string, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return "", err
@@ -399,7 +405,7 @@ func mkdir(path string) (string, error) {
 
 	path = filepath.Clean(path)
 
-	if !isValidPath(path, path) {
+	if !helpers.IsValidPath(path, path) {
 		return "", fmt.Errorf("invalid path: %s", path)
 	}
 
@@ -413,7 +419,7 @@ func mkdir(path string) (string, error) {
 	return path, nil
 }
 
-// zipIt creates a ZIP archive from the specified directory, including all its files and subdirectories.
+// ZipIt creates a ZIP archive from the specified directory, including all its files and subdirectories.
 // It recursively walks through the directory, adding files and directories to the ZIP archive, preserving
 // the relative paths of the files.
 //
@@ -426,7 +432,7 @@ func mkdir(path string) (string, error) {
 // Returns:
 //   - error: If an error occurs during any part of the zipping process (such as file opening, writing, or walking),
 //     an error is returned.
-func zipIt(dirPath, archivePath string) error {
+func ZipIt(dirPath, archivePath string) error {
 	archivePath, err := filepath.Abs(archivePath)
 	if err != nil {
 		return err
@@ -441,10 +447,10 @@ func zipIt(dirPath, archivePath string) error {
 		return err
 	}
 
-	defer Cleanup(zipFile, nil)
+	defer helpers.Cleanup(zipFile, nil)
 
 	zipWriter := zip.NewWriter(zipFile)
-	defer Cleanup(zipWriter, nil)
+	defer helpers.Cleanup(zipWriter, nil)
 
 	err = filepath.Walk(dirPath, func(filePath string, info os.FileInfo, err error) error {
 		filePath = filepath.Clean(filePath)
@@ -478,7 +484,7 @@ func zipIt(dirPath, archivePath string) error {
 			return err
 		}
 
-		defer Cleanup(srcFile, nil)
+		defer helpers.Cleanup(srcFile, nil)
 
 		_, err = io.Copy(fileInArchive, srcFile)
 		return err
@@ -505,7 +511,7 @@ func isConvertable(path string) bool {
 		strings.HasSuffix(path, "description.ru")
 }
 
-// isEmptyDir checks whether the specified directory exists and is empty.
+// IsEmptyDir checks whether the specified directory exists and is empty.
 //
 // Parameters:
 //   - path: The path to the directory to check.
@@ -519,13 +525,13 @@ func isConvertable(path string) bool {
 //   - If an error occurs while reading directory entries, it is assumed to be empty
 //     (e.g., when the directory does not exist).
 //   - Logs an error if closing the directory fails.
-func isEmptyDir(path string) bool {
+func IsEmptyDir(path string) bool {
 	path = filepath.Clean(path)
 	dir, err := os.Open(path)
 	if err != nil {
 		return false
 	}
-	defer Cleanup(dir, nil)
+	defer helpers.Cleanup(dir, nil)
 
 	entries, err := dir.Readdirnames(1)
 	if err != nil {
@@ -535,7 +541,7 @@ func isEmptyDir(path string) bool {
 	return len(entries) == 0
 }
 
-// removeEmptyDirs recursively removes empty directories within the specified root directory.
+// RemoveEmptyDirs recursively removes empty directories within the specified root directory.
 //
 // Parameters:
 //   - root: The path of the directory to start the Cleanup.
@@ -552,11 +558,11 @@ func isEmptyDir(path string) bool {
 //
 // Example:
 //
-//	_, err := removeEmptyDirs("/path/to/root")
+//	_, err := RemoveEmptyDirs("/path/to/root")
 //	if err != nil {
 //	    log.Fatalf("Failed to remove empty directories: %v", err)
 //	}
-func removeEmptyDirs(root string) (bool, error) {
+func RemoveEmptyDirs(root string) (bool, error) {
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return false, fmt.Errorf("error reading directory %s: %w", root, err)
@@ -566,7 +572,7 @@ func removeEmptyDirs(root string) (bool, error) {
 	for _, entry := range entries {
 		if entry.IsDir() {
 			inner := filepath.Join(root, entry.Name())
-			isEmpty, err := removeEmptyDirs(inner)
+			isEmpty, err := RemoveEmptyDirs(inner)
 			if err != nil {
 				return false, fmt.Errorf("error removing empty directory %s: %w", inner, err)
 			}
@@ -584,63 +590,4 @@ func removeEmptyDirs(root string) (bool, error) {
 	}
 
 	return empty, nil
-}
-
-func makeZipFilePath(module *Module) (string, error) {
-	path := filepath.Join(module.BuildDirectory, fmt.Sprintf("%s.zip", module.GetVersion()))
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	path = filepath.Clean(path)
-	return path, nil
-}
-
-func makeVersionDirectory(module *Module) (string, error) {
-	if module == nil || module.BuildDirectory == "" {
-		return "", NilModuleError
-	}
-
-	path := filepath.Join(module.BuildDirectory, module.GetVersion())
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	path = filepath.Clean(path)
-	return path, nil
-}
-
-func whiteFileForVersion(builder *ModuleBuilder, path, content string) error {
-	versionDir, err := makeVersionDirectory(builder.module)
-	if err != nil {
-		return err
-	}
-
-	fp := filepath.Join(versionDir, path)
-	fp = filepath.Clean(fp)
-
-	dirs := strings.Split(fp, "/")
-	dirPath := strings.Join(dirs[:len(dirs)-1], "/")
-	_, err = mkdir(dirPath)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Create(fp)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil && builder.logger != nil {
-			builder.logger.Error("Failed to close "+path, err)
-		}
-	}()
-
-	_, err = file.WriteString(content)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

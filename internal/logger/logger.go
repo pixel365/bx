@@ -1,4 +1,4 @@
-package internal
+package logger
 
 import (
 	"fmt"
@@ -7,12 +7,6 @@ import (
 
 	"github.com/rs/zerolog"
 )
-
-type BuildLogger interface {
-	Info(message string, args ...interface{})
-	Error(message string, err error, args ...interface{})
-	Cleanup()
-}
 
 type ZeroLogger struct {
 	logger  zerolog.Logger

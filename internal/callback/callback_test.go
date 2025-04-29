@@ -1,11 +1,13 @@
-package internal
+package callback
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -166,6 +168,16 @@ func TestCallback_IsValid(t *testing.T) {
 				},
 			},
 			false,
+		},
+		{
+			"invalid post",
+			fields{
+				Stage: "stage name",
+				Post: CallbackParameters{
+					Type: ExternalType,
+				},
+			},
+			true,
 		},
 	}
 	for _, tt := range tests {
@@ -346,4 +358,70 @@ func TestCallbackParameters_buildUrlAndBody(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestValidateCallbacks(t *testing.T) {
+	tests := []struct {
+		name    string
+		cb      []Callback
+		wantErr bool
+	}{
+		{"empty callback list", []Callback{}, false},
+		{
+			"empty callback stage",
+			[]Callback{{Stage: ""}},
+			true,
+		},
+		{
+			"empty callback pre/post type",
+			[]Callback{{Stage: "testing"}},
+			true,
+		},
+		// TODO: we need more tests
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateCallbacks(tt.cb); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateCallbacks() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestInvalidCallbackParametersRun(t *testing.T) {
+	t.Run("invalid run", func(t *testing.T) {
+		ctx := context.TODO()
+		cbp := CallbackParameters{}
+		if err := cbp.Run(ctx, nil); err == nil {
+			t.Error("expected error")
+		}
+	})
+}
+
+func TestCallback_PreRun(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	ctx := context.TODO()
+	cb := Callback{}
+
+	t.Run("pre run", func(t *testing.T) {
+		cb.PreRun(ctx, wg, nil)
+	})
+
+	wg.Wait()
+}
+
+func TestCallback_PostRun(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	ctx := context.TODO()
+	cb := Callback{}
+
+	t.Run("post run", func(t *testing.T) {
+		cb.PostRun(ctx, wg, nil)
+	})
+
+	wg.Wait()
 }

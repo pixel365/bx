@@ -1,10 +1,14 @@
-package internal
+package module
 
 import (
 	"context"
 	"errors"
 	"os"
 	"testing"
+
+	"github.com/pixel365/bx/internal/interfaces"
+
+	errors2 "github.com/pixel365/bx/internal/errors"
 )
 
 func Test_makeVersionDescription(t *testing.T) {
@@ -73,7 +77,7 @@ func TestNewModuleBuilder(t *testing.T) {
 func TestModuleBuilder_Build(t *testing.T) {
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
-		builder Builder
+		builder interfaces.Builder
 	}
 	tests := []struct {
 		fields  fields
@@ -100,7 +104,7 @@ func TestModuleBuilder_Build(t *testing.T) {
 func TestModuleBuilder_Prepare(t *testing.T) {
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
-		builder Builder
+		builder interfaces.Builder
 	}
 	tests := []struct {
 		fields  fields
@@ -116,8 +120,8 @@ func TestModuleBuilder_Prepare(t *testing.T) {
 				t.Errorf("Prepare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !errors.Is(err, NilModuleError) {
-				t.Errorf("Prepare() error = %v, wantErr %v", err, NilModuleError)
+			if !errors.Is(err, errors2.NilModuleError) {
+				t.Errorf("Prepare() error = %v, wantErr %v", err, errors2.NilModuleError)
 			}
 		})
 	}
@@ -126,7 +130,7 @@ func TestModuleBuilder_Prepare(t *testing.T) {
 func TestModuleBuilder_Cleanup(t *testing.T) {
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
-		builder Builder
+		builder interfaces.Builder
 	}
 	tests := []struct {
 		fields  fields
@@ -145,7 +149,7 @@ func TestModuleBuilder_Cleanup(t *testing.T) {
 func TestModuleBuilder_Rollback(t *testing.T) {
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
-		builder Builder
+		builder interfaces.Builder
 	}
 	tests := []struct {
 		fields  fields
@@ -161,8 +165,8 @@ func TestModuleBuilder_Rollback(t *testing.T) {
 				t.Errorf("Rollback() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !errors.Is(err, NilModuleError) {
-				t.Errorf("Rollback() error = %v, wantErr %v", err, NilModuleError)
+			if !errors.Is(err, errors2.NilModuleError) {
+				t.Errorf("Rollback() error = %v, wantErr %v", err, errors2.NilModuleError)
 			}
 		})
 	}
@@ -171,7 +175,7 @@ func TestModuleBuilder_Rollback(t *testing.T) {
 func TestModuleBuilder_Collect(t *testing.T) {
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
-		builder Builder
+		builder interfaces.Builder
 	}
 	tests := []struct {
 		fields  fields
@@ -188,8 +192,8 @@ func TestModuleBuilder_Collect(t *testing.T) {
 				t.Errorf("Collect() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !errors.Is(err, NilModuleError) {
-				t.Errorf("Collect() error = %v, wantErr %v", err, NilModuleError)
+			if !errors.Is(err, errors2.NilModuleError) {
+				t.Errorf("Collect() error = %v, wantErr %v", err, errors2.NilModuleError)
 			}
 		})
 	}

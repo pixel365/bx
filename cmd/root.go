@@ -5,12 +5,13 @@ import (
 	"errors"
 	"os"
 
-	"github.com/pixel365/bx/internal"
+	errors2 "github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/spf13/cobra"
 )
 
-var getModulesDirFunc = internal.GetModulesDir
+var getModulesDirFunc = helpers.GetModulesDir
 var osStat = os.Stat
 var mkDir = os.Mkdir
 var initRootDirFunc = initRootDir
@@ -25,7 +26,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			ctx = context.WithValue(ctx, internal.RootDir, dirPath)
+			ctx = context.WithValue(ctx, helpers.RootDir, dirPath)
 			command.SetContext(ctx)
 
 			return nil
@@ -54,7 +55,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 //   - error: An error if the directory cannot be created or accessed.
 func initRootDir(cmd *cobra.Command) (string, error) {
 	if cmd == nil {
-		return "", internal.NilCmdError
+		return "", errors2.NilCmdError
 	}
 
 	dirPath, err := getModulesDirFunc()

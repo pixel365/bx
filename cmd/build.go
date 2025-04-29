@@ -5,14 +5,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
+	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/logger"
+	"github.com/pixel365/bx/internal/module"
+	"github.com/pixel365/bx/internal/validators"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/spf13/cobra"
 )
 
 var (
-	builderFunc             = internal.NewModuleBuilder
-	validateLastVersionFunc = internal.ValidateLastVersion
+	builderFunc             = module.NewModuleBuilder
+	validateLastVersionFunc = module.ValidateLastVersion
 )
 
 func newBuildCommand() *cobra.Command {
@@ -61,10 +64,10 @@ bx build --name my_module --last
 //   - error: An error if the build process encounters any issues or validation fails.
 func build(cmd *cobra.Command, _ []string) error {
 	if cmd == nil {
-		return internal.NilCmdError
+		return errors.NilCmdError
 	}
 
-	module, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}
@@ -73,53 +76,53 @@ func build(cmd *cobra.Command, _ []string) error {
 
 	if version != "" {
 		version = strings.TrimSpace(version)
-		if err := internal.ValidateVersion(version); err != nil {
+		if err := validators.ValidateVersion(version); err != nil {
 			return err
 		}
-		module.Version = version
+		mod.Version = version
 	}
 
 	repository, _ := cmd.Flags().GetString("repository")
 
 	if repository != "" {
-		module.Repository = repository
+		mod.Repository = repository
 	}
 
 	description, _ := cmd.Flags().GetString("description")
 
 	if description != "" {
-		module.Description = description
+		mod.Description = description
 	}
 
-	if err := module.IsValid(); err != nil {
+	if err := mod.IsValid(); err != nil {
 		return err
 	}
 
 	last, _ := cmd.Flags().GetBool("last")
 
 	if last {
-		if err := validateLastVersionFunc(module); err != nil {
+		if err := validateLastVersionFunc(mod.Builds.LastVersion, mod.FindStage); err != nil {
 			return err
 		}
 	}
 
-	module.LastVersion = last
+	mod.LastVersion = last
 
 	logPath := fmt.Sprintf(
 		"./%s-%s.%s.log",
-		module.Name,
-		module.GetVersion(),
+		mod.Name,
+		mod.GetVersion(),
 		time.Now().UTC().Format(time.RFC3339),
 	)
-	logger := internal.NewFileZeroLogger(logPath, module.LogDirectory)
-	builder := builderFunc(module, logger)
+	loggerInstance := logger.NewFileZeroLogger(logPath, mod.LogDirectory)
+	builder := builderFunc(mod, loggerInstance)
 	defer builder.Cleanup()
 
 	if err := builder.Build(); err != nil {
 		return err
 	}
 
-	fmt.Printf("Module %s successfully built. Version: %s\n", module.Name, module.Version)
+	fmt.Printf("Module %s successfully built. Version: %s\n", mod.Name, mod.Version)
 
 	return nil
 }

@@ -1,4 +1,4 @@
-package internal
+package logger
 
 import (
 	"encoding/json"
@@ -26,8 +26,8 @@ type ErrorRecord struct {
 var test = "test"
 
 const (
-	l_info  = "info"
-	l_error = "error"
+	lInfo  = "info"
+	lError = "error"
 )
 
 func TestNewFileZeroLogger(t *testing.T) {
@@ -74,7 +74,7 @@ func TestZeroLogger_Info(t *testing.T) {
 			t.Errorf("json.Unmarshal() = %v", err)
 		}
 
-		if record.Level != l_info {
+		if record.Level != lInfo {
 			t.Errorf("record.Level = %s, want info", record.Level)
 		}
 
@@ -110,7 +110,7 @@ func TestZeroLogger_Info_With_Args(t *testing.T) {
 			t.Errorf("json.Unmarshal() = %v", err)
 		}
 
-		if record.Level != l_info {
+		if record.Level != lInfo {
 			t.Errorf("record.Level = %s, want info", record.Level)
 		}
 
@@ -146,7 +146,7 @@ func TestZeroLogger_Error(t *testing.T) {
 			t.Errorf("json.Unmarshal() = %v", err)
 		}
 
-		if record.Level != l_error {
+		if record.Level != lError {
 			t.Errorf("record.Level = %s, want info", record.Level)
 		}
 
@@ -186,7 +186,7 @@ func TestZeroLogger_Error_With_Args(t *testing.T) {
 			t.Errorf("json.Unmarshal() = %v", err)
 		}
 
-		if record.Level != l_error {
+		if record.Level != lError {
 			t.Errorf("record.Level = %s, want info", record.Level)
 		}
 

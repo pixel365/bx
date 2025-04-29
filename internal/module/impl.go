@@ -1,10 +1,21 @@
-package internal
+package module
 
 import (
 	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/pixel365/bx/internal/interfaces"
+
+	"github.com/pixel365/bx/internal/errors"
+
+	"github.com/pixel365/bx/internal/types"
+
+	"github.com/pixel365/bx/internal/callback"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/repo"
+	"github.com/pixel365/bx/internal/validators"
 
 	"gopkg.in/yaml.v3"
 )
@@ -27,26 +38,26 @@ import (
 // If all validations pass, it returns nil.
 func (m *Module) IsValid() error {
 	if m.Name == "" {
-		return EmptyModuleNameError
+		return errors.EmptyModuleNameError
 	}
 
 	if strings.Contains(m.Name, " ") {
-		return NameContainsSpaceError
+		return errors.NameContainsSpaceError
 	}
 
-	if err := ValidateVersion(m.Version); err != nil {
+	if err := validators.ValidateVersion(m.Version); err != nil {
 		return err
 	}
 
 	if m.Account == "" {
-		return EmptyAccountNameError
+		return errors.EmptyAccountNameError
 	}
 
 	if err := ValidateVariables(m); err != nil {
 		return err
 	}
 
-	if err := ValidateStages(m); err != nil {
+	if err := ValidateStages(m.Stages); err != nil {
 		return err
 	}
 
@@ -58,12 +69,12 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
-	if err := ValidateCallbacks(m); err != nil {
+	if err := callback.ValidateCallbacks(m.Callbacks); err != nil {
 		return err
 	}
 
 	if m.Repository != "" {
-		if _, err := OpenRepository(m.Repository); err != nil {
+		if _, err := repo.OpenRepository(m.Repository); err != nil {
 			return err
 		}
 	}
@@ -72,8 +83,14 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
-	if err := ValidateBuilds(m); err != nil {
+	if err := ValidateRelease(m.Builds.Release, m.FindStage); err != nil {
 		return err
+	}
+
+	if len(m.Builds.LastVersion) > 0 {
+		if err := ValidateRelease(m.Builds.LastVersion, m.FindStage); err != nil {
+			return err
+		}
 	}
 
 	if err := ValidateRun(m); err != nil {
@@ -111,18 +128,18 @@ func (m *Module) NormalizeStages() error {
 	if m.Variables != nil {
 		var err error
 		for i, stage := range m.Stages {
-			m.Stages[i].Name, err = ReplaceVariables(stage.Name, m.Variables, 0)
+			m.Stages[i].Name, err = helpers.ReplaceVariables(stage.Name, m.Variables, 0)
 			if err != nil {
 				return err
 			}
 
-			m.Stages[i].To, err = ReplaceVariables(stage.To, m.Variables, 0)
+			m.Stages[i].To, err = helpers.ReplaceVariables(stage.To, m.Variables, 0)
 			if err != nil {
 				return err
 			}
 
 			for j, from := range stage.From {
-				m.Stages[i].From[j], err = ReplaceVariables(from, m.Variables, 0)
+				m.Stages[i].From[j], err = helpers.ReplaceVariables(from, m.Variables, 0)
 				if err != nil {
 					return err
 				}
@@ -151,7 +168,7 @@ func (m *Module) ZipPath() (string, error) {
 	}
 	path = filepath.Clean(path)
 
-	if err = CheckPath(path); err != nil {
+	if err = helpers.CheckPath(path); err != nil {
 		return path, err
 	}
 
@@ -181,14 +198,14 @@ func (m *Module) PasswordEnv() string {
 // Returns:
 //   - Runnable - the found callback if it exists.
 //   - error - an error if the callback is not found.
-func (m *Module) StageCallback(stageName string) (Runnable, error) {
-	for _, callback := range m.Callbacks {
-		if callback.Stage == stageName {
-			return callback, nil
+func (m *Module) StageCallback(stageName string) (interfaces.Runnable, error) {
+	for _, cb := range m.Callbacks {
+		if cb.Stage == stageName {
+			return cb, nil
 		}
 	}
 
-	return Callback{}, StageCallbackNotFoundError
+	return callback.Callback{}, errors.StageCallbackNotFoundError
 }
 
 // ValidateChangelog validates the changelog configuration of the module.
@@ -203,38 +220,39 @@ func (m *Module) StageCallback(stageName string) (Runnable, error) {
 // Returns an error detailing the first encountered validation issue, or nil if the configuration is valid.
 func (m *Module) ValidateChangelog() error {
 	if (m.Changelog.From.Type != "" || m.Changelog.To.Type != "") && m.Repository == "" {
-		return InvalidChangelogSettingsError
+		return errors.InvalidChangelogSettingsError
 	}
 
 	if m.Repository != "" {
-		if m.Changelog.From.Type != Commit && m.Changelog.From.Type != Tag {
-			return fmt.Errorf("changelog from: type must be %s or %s", Commit, Tag)
+		if m.Changelog.From.Type != types.Commit && m.Changelog.From.Type != types.Tag {
+			return fmt.Errorf("changelog from: type must be %s or %s", types.Commit, types.Tag)
 		}
 
-		if m.Changelog.To.Type != Commit && m.Changelog.To.Type != Tag {
-			return fmt.Errorf("changelog to: type must be %s or %s", Commit, Tag)
+		if m.Changelog.To.Type != types.Commit && m.Changelog.To.Type != types.Tag {
+			return fmt.Errorf("changelog to: type must be %s or %s", types.Commit, types.Tag)
 		}
 
 		if m.Changelog.From.Value == "" {
-			return ChangelogFromValueError
+			return errors.ChangelogFromValueError
 		}
 
 		if m.Changelog.To.Value == "" {
-			return ChangelogToValueError
+			return errors.ChangelogToValueError
 		}
 
 		if m.Changelog.Condition.Type != "" {
-			if m.Changelog.Condition.Type != Include && m.Changelog.Condition.Type != Exclude {
+			if m.Changelog.Condition.Type != types.Include &&
+				m.Changelog.Condition.Type != types.Exclude {
 				return fmt.Errorf(
 					"changelog [%s] condition: type must be %s or %s",
 					m.Name,
-					Include,
-					Exclude,
+					types.Include,
+					types.Exclude,
 				)
 			}
 
 			if len(m.Changelog.Condition.Value) == 0 {
-				return ChangelogConditionValueError
+				return errors.ChangelogConditionValueError
 			}
 
 			for i, condition := range m.Changelog.Condition.Value {
@@ -251,8 +269,8 @@ func (m *Module) ValidateChangelog() error {
 	}
 
 	if m.Changelog.Sort != "" {
-		if m.Changelog.Sort != Asc && m.Changelog.Sort != Desc {
-			return fmt.Errorf("changelog sort must be %s or %s", Asc, Desc)
+		if m.Changelog.Sort != types.Asc && m.Changelog.Sort != types.Desc {
+			return fmt.Errorf("changelog sort must be %s or %s", types.Asc, types.Desc)
 		}
 	}
 
@@ -269,32 +287,12 @@ func (m *Module) ValidateChangelog() error {
 // Returns:
 //   - Stage: the stage with the matching name.
 //   - error: nil if the stage is found; otherwise, an error indicating that the stage was not found.
-func (m *Module) FindStage(name string) (Stage, error) {
+func (m *Module) FindStage(name string) (types.Stage, error) {
 	for _, stage := range m.Stages {
 		if stage.Name == name {
 			return stage, nil
 		}
 	}
 
-	return Stage{}, fmt.Errorf("stage `%s` not found", name)
-}
-
-func (m *Module) GetChanges() *Changes {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if m.Repository == "" {
-		return nil
-	}
-
-	if m.changes == nil {
-		changes, err := ChangesList(m.Repository, m.Changelog)
-		if err != nil {
-			return nil
-		}
-
-		m.changes = changes
-	}
-
-	return m.changes
+	return types.Stage{}, fmt.Errorf("stage `%s` not found", name)
 }

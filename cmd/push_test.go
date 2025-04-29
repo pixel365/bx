@@ -10,9 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
+	errors2 "github.com/pixel365/bx/internal/errors"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/module"
+	"github.com/pixel365/bx/internal/request"
+
+	"github.com/spf13/cobra"
 )
 
 func Test_newPushCommand(t *testing.T) {
@@ -50,7 +54,7 @@ func Test_newPushCommand(t *testing.T) {
 }
 
 func Test_handlePassword(t *testing.T) {
-	module := &internal.Module{}
+	mod := &module.Module{}
 	tests := []struct {
 		name    string
 		data    string
@@ -76,7 +80,7 @@ func Test_handlePassword(t *testing.T) {
 				}
 			}
 
-			res, err := handlePassword(cmd, module)
+			res, err := handlePassword(cmd, mod)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("handlePassword() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -94,8 +98,8 @@ func Test_push_nil(t *testing.T) {
 			t.Errorf("err is nil")
 		}
 
-		if !errors.Is(err, internal.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		if !errors.Is(err, errors2.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }
@@ -105,7 +109,7 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -119,8 +123,8 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "ReadModuleFromFlags"
 		}
@@ -130,7 +134,7 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	authFunc = func(module *internal.Module, password string) (*internal.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -143,12 +147,12 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		t.Errorf("err is nil")
 	}
 }
-func Test_push_Version(t *testing.T) {
+func Test_push_invalid_Version(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -162,10 +166,10 @@ func Test_push_Version(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "Version"
+			mod.Account = "test account"
 		}
 		return mod, err
 	}
@@ -173,7 +177,7 @@ func Test_push_Version(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	authFunc = func(module *internal.Module, password string) (*internal.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -193,7 +197,7 @@ func Test_push_auth(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -207,8 +211,8 @@ func Test_push_auth(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "auth"
 		}
@@ -218,7 +222,7 @@ func Test_push_auth(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	authFunc = func(module *internal.Module, password string) (*internal.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -237,7 +241,7 @@ func Test_push_upload(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -252,8 +256,8 @@ func Test_push_upload(t *testing.T) {
 	originalAuthFunc := authFunc
 	originalUploadFunc := uploadFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "upload"
 		}
@@ -263,14 +267,14 @@ func Test_push_upload(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	authFunc = func(module *internal.Module, password string) (*internal.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, nil
 	}
 	defer func() {
 		authFunc = originalAuthFunc
 	}()
 
-	uploadFunc = func(client *internal.Client, module *internal.Module, cookies []*http.Cookie) error {
+	uploadFunc = func(client *request.Client, module *module.Module, cookies []*http.Cookie) error {
 		return errors.New("upload error")
 	}
 	defer func() {
@@ -286,8 +290,8 @@ func Test_push_upload(t *testing.T) {
 
 func Test_upload(t *testing.T) {
 	type args struct {
-		client  *internal.Client
-		module  *internal.Module
+		client  *request.Client
+		module  *module.Module
 		cookies []*http.Cookie
 	}
 	tests := []struct {
@@ -295,9 +299,9 @@ func Test_upload(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"nil client", args{nil, &internal.Module{}, nil}, true},
-		{"nil module", args{&internal.Client{}, nil, nil}, true},
-		{"nil cookies", args{&internal.Client{}, &internal.Module{}, nil}, true},
+		{"nil client", args{nil, &module.Module{}, nil}, true},
+		{"nil module", args{&request.Client{}, nil, nil}, true},
+		{"nil cookies", args{&request.Client{}, &module.Module{}, nil}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -310,13 +314,13 @@ func Test_upload(t *testing.T) {
 
 func Test_auth(t *testing.T) {
 	type args struct {
-		module   *internal.Module
+		module   *module.Module
 		password string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *internal.Client
+		want    *request.Client
 		want1   []*http.Cookie
 		wantErr bool
 	}{
@@ -325,7 +329,7 @@ func Test_auth(t *testing.T) {
 			password: "",
 		}, nil, nil, true},
 		{"empty password", args{
-			module:   &internal.Module{},
+			module:   &module.Module{},
 			password: "",
 		}, nil, nil, true},
 	}
@@ -343,5 +347,50 @@ func Test_auth(t *testing.T) {
 				t.Errorf("auth() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
+	}
+}
+
+func Test_push_valid_Version(t *testing.T) {
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath = filepath.Clean(filePath)
+
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	originalReadModule := readModuleFromFlags
+	originalAuthFunc := authFunc
+
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
+		if err == nil {
+			mod.Account = "Version"
+		}
+		return mod, err
+	}
+	defer func() {
+		readModuleFromFlags = originalReadModule
+	}()
+
+	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+		return nil, nil, errors.New("auth error")
+	}
+	defer func() {
+		authFunc = originalAuthFunc
+	}()
+
+	cmd := newPushCommand()
+	cmd.SetArgs([]string{"--version", "1.0.0"})
+	err = cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
 	}
 }
