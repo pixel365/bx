@@ -1,4 +1,4 @@
-package internal
+package module
 
 import (
 	"testing"

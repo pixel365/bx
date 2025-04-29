@@ -1,9 +1,11 @@
-package internal
+package repo
 
 import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/pixel365/bx/internal/types"
 
 	"github.com/go-git/go-git/v5/plumbing"
 
@@ -38,7 +40,7 @@ func TestOpenRepository(t *testing.T) {
 
 func TestOpenRepository_Ok(t *testing.T) {
 	t.Run("repository exists", func(t *testing.T) {
-		pwd, _ := filepath.Abs("../")
+		pwd, _ := filepath.Abs("../../")
 		_, err := OpenRepository(pwd)
 		if err != nil {
 			t.Errorf("OpenRepository() error = %v", err)
@@ -49,7 +51,7 @@ func TestOpenRepository_Ok(t *testing.T) {
 func TestChangelogList(t *testing.T) {
 	type args struct {
 		repository string
-		rules      Changelog
+		rules      types.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -57,18 +59,18 @@ func TestChangelogList(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{"empty changelog", args{"", Changelog{}}, []string{}, false},
-		{"empty repository", args{"", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"empty changelog", args{"", types.Changelog{}}, []string{}, false},
+		{"empty repository", args{"", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
 			Sort:      "asc",
-			Condition: TypeValue[ChangelogConditionType, []string]{},
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{},
 		}}, nil, true},
 	}
 
@@ -89,7 +91,7 @@ func TestChangelogList(t *testing.T) {
 func TestCommitFilter(t *testing.T) {
 	type args struct {
 		message    string
-		conditions TypeValue[ChangelogConditionType, []string]
+		conditions types.TypeValue[types.ChangelogConditionType, []string]
 	}
 	tests := []struct {
 		name string
@@ -98,8 +100,8 @@ func TestCommitFilter(t *testing.T) {
 	}{
 		{"allow", args{
 			message: "feat: some feature",
-			conditions: TypeValue[ChangelogConditionType, []string]{
-				Type: Include,
+			conditions: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Include,
 				Value: []string{
 					`^feat:([\W\w]+)$`,
 				},
@@ -107,8 +109,8 @@ func TestCommitFilter(t *testing.T) {
 		}, true},
 		{"not allow", args{
 			message: "fix: some fix",
-			conditions: TypeValue[ChangelogConditionType, []string]{
-				Type: Include,
+			conditions: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Include,
 				Value: []string{
 					`^feat:([\W\w]+)$`,
 				},
@@ -116,8 +118,8 @@ func TestCommitFilter(t *testing.T) {
 		}, false},
 		{"exclude", args{
 			message: "fix: some fix",
-			conditions: TypeValue[ChangelogConditionType, []string]{
-				Type: Exclude,
+			conditions: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Exclude,
 				Value: []string{
 					`^feat:([\W\w]+)$`,
 				},
@@ -138,7 +140,7 @@ func Test_listOfCommits(t *testing.T) {
 	type args struct {
 		repository *git.Repository
 		filter     CommitFilterFunc
-		rules      Changelog
+		rules      types.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -166,7 +168,7 @@ func Test_listOfCommits(t *testing.T) {
 func Test_hashes(t *testing.T) {
 	type args struct {
 		repository *git.Repository
-		rules      Changelog
+		rules      types.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -198,10 +200,10 @@ func Test_hashes(t *testing.T) {
 func TestChangesList(t *testing.T) {
 	type args struct {
 		repository string
-		rules      Changelog
+		rules      types.Changelog
 	}
 	tests := []struct {
-		want    *Changes
+		want    *types.Changes
 		name    string
 		args    args
 		wantErr bool
@@ -245,7 +247,7 @@ func TestChanges_IsChangedFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := &Changes{
+			o := &types.Changes{
 				Added:    tt.fields.Added,
 				Modified: tt.fields.Modified,
 				Deleted:  tt.fields.Deleted,

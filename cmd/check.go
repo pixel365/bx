@@ -3,10 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/module"
+
+	"github.com/pixel365/bx/internal/helpers"
 )
 
-var checkStagesFunc = internal.CheckStages
+var checkStagesFunc = module.CheckStages
 
 func newCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -44,10 +47,10 @@ bx check -f module-path/config.yaml
 //   - error: An error if the module configuration is invalid or any other error occurs.
 func check(cmd *cobra.Command, _ []string) error {
 	if cmd == nil {
-		return internal.NilCmdError
+		return errors.NilCmdError
 	}
 
-	module, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}
@@ -55,18 +58,18 @@ func check(cmd *cobra.Command, _ []string) error {
 	repository, _ := cmd.Flags().GetString("repository")
 
 	if repository != "" {
-		module.Repository = repository
+		mod.Repository = repository
 	}
 
-	if err := module.IsValid(); err != nil {
+	if err := mod.IsValid(); err != nil {
 		return err
 	}
 
-	if err := checkStagesFunc(module); err != nil {
+	if err := checkStagesFunc(mod); err != nil {
 		return err
 	}
 
-	internal.ResultMessage("ok")
+	helpers.ResultMessage("ok")
 
 	return nil
 }

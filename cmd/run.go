@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/spf13/cobra"
+	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/module"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/spf13/cobra"
 )
 
 func newRunCommand() *cobra.Command {
@@ -31,37 +32,37 @@ bx run --name my_module --cmd custom_command
 
 func run(cmd *cobra.Command, _ []string) error {
 	if cmd == nil {
-		return internal.NilCmdError
+		return errors.NilCmdError
 	}
 
 	command, _ := cmd.Flags().GetString("cmd")
 
 	if command == "" {
-		return internal.NoCommandSpecifiedError
+		return errors.NoCommandSpecifiedError
 	}
 
-	module, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}
 
-	if err := module.IsValid(); err != nil {
+	if err := mod.IsValid(); err != nil {
 		return err
 	}
 
-	if err := internal.ValidateRun(module); err != nil {
+	if err := module.ValidateRun(mod); err != nil {
 		return err
 	}
 
-	stages, ok := module.Run[command]
+	stages, ok := mod.Run[command]
 	if !ok {
-		return fmt.Errorf("command %s not found in module %s", command, module.Name)
+		return fmt.Errorf("command %s not found in mod %s", command, mod.Name)
 	}
 
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(stages))
 
-	err = handleStages(stages, module, &wg, errCh, nil, true)
+	err = handleStages(stages, mod, &wg, errCh, nil, true)
 
 	wg.Wait()
 	close(errCh)

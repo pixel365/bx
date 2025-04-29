@@ -1,10 +1,14 @@
-package internal
+package module
 
 import (
 	"context"
 	"errors"
 	"reflect"
 	"testing"
+
+	errors2 "github.com/pixel365/bx/internal/errors"
+
+	"github.com/pixel365/bx/internal/types"
 )
 
 func TestModule_IsValid(t *testing.T) {
@@ -17,10 +21,10 @@ func TestModule_IsValid(t *testing.T) {
 		Repository     string
 		BuildDirectory string
 		LogDirectory   string
-		Stages         []Stage
+		Stages         []types.Stage
 		Ignore         []string
-		Changelog      Changelog
-		Builds         Builds
+		Changelog      types.Changelog
+		Builds         types.Builds
 	}
 	tests := []struct {
 		name    string
@@ -36,16 +40,16 @@ func TestModule_IsValid(t *testing.T) {
 			Repository:     "",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "test",
 					To:                 "tester",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./tester"},
 				},
 			},
 			Ignore: []string{},
-			Builds: Builds{
+			Builds: types.Builds{
 				Release: []string{"test"},
 			},
 		}, false},
@@ -57,11 +61,11 @@ func TestModule_IsValid(t *testing.T) {
 			Repository:     "",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "test",
 					To:                 "tester",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./tester"},
 				},
 			},
@@ -77,11 +81,11 @@ func TestModule_IsValid(t *testing.T) {
 			Repository:     "repository",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "test",
 					To:                 "tester",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./tester"},
 				},
 			},
@@ -96,19 +100,19 @@ func TestModule_IsValid(t *testing.T) {
 			Repository:     "",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "test",
 					To:                 "tester",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./tester"},
 				},
 			},
 			Ignore: []string{},
-			Changelog: Changelog{
-				Sort: Asc,
+			Changelog: types.Changelog{
+				Sort: types.Asc,
 			},
-			Builds: Builds{
+			Builds: types.Builds{
 				Release: []string{"test"},
 			},
 		}, false},
@@ -121,20 +125,20 @@ func TestModule_IsValid(t *testing.T) {
 			Repository:     "",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "test",
 					To:                 "tester",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./tester"},
 					Filter:             []string{"**/*.php"},
 				},
 			},
 			Ignore: []string{},
-			Changelog: Changelog{
-				Sort: Asc,
+			Changelog: types.Changelog{
+				Sort: types.Asc,
 			},
-			Builds: Builds{
+			Builds: types.Builds{
 				Release: []string{"test"},
 			},
 		}, false},
@@ -165,8 +169,8 @@ func TestModule_IsValid_EmptyName(t *testing.T) {
 	module := &Module{Name: ""}
 	t.Run("empty name", func(t *testing.T) {
 		err := module.IsValid()
-		if !errors.Is(err, EmptyModuleNameError) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, EmptyModuleNameError)
+		if !errors.Is(err, errors2.EmptyModuleNameError) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.EmptyModuleNameError)
 		}
 	})
 }
@@ -175,8 +179,8 @@ func TestModule_IsValid_SpacesInName(t *testing.T) {
 	module := &Module{Name: "some name"}
 	t.Run("spaces in name", func(t *testing.T) {
 		err := module.IsValid()
-		if !errors.Is(err, NameContainsSpaceError) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, NameContainsSpaceError)
+		if !errors.Is(err, errors2.NameContainsSpaceError) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.NameContainsSpaceError)
 		}
 	})
 }
@@ -185,8 +189,8 @@ func TestModule_IsValid_EmptyAccount(t *testing.T) {
 	module := &Module{Name: "name", Version: "1.0.0", Account: ""}
 	t.Run("empty account", func(t *testing.T) {
 		err := module.IsValid()
-		if !errors.Is(err, EmptyAccountNameError) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, EmptyAccountNameError)
+		if !errors.Is(err, errors2.EmptyAccountNameError) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.EmptyAccountNameError)
 		}
 	})
 }
@@ -201,7 +205,7 @@ func TestModule_NormalizeStages(t *testing.T) {
 		Repository     string
 		BuildDirectory string
 		LogDirectory   string
-		Stages         []Stage
+		Stages         []types.Stage
 		Ignore         []string
 	}
 	tests := []struct {
@@ -220,11 +224,11 @@ func TestModule_NormalizeStages(t *testing.T) {
 			Repository:     "tester",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "{foo}",
 					To:                 "{foo}",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./{foo}"},
 				},
 			},
@@ -241,11 +245,11 @@ func TestModule_NormalizeStages(t *testing.T) {
 			Repository:     "tester",
 			BuildDirectory: "tester",
 			LogDirectory:   "tester",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "{foo}",
 					To:                 "{foo}",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"./{foo}"},
 				},
 			},
@@ -299,30 +303,30 @@ func TestModule_PasswordEnv(t *testing.T) {
 func TestModule_ValidateChangelog(t *testing.T) {
 	type fields struct {
 		Ctx            context.Context
-		Changelog      Changelog
+		Changelog      types.Changelog
 		Name           string
 		Version        string
 		Account        string
 		BuildDirectory string
 		LogDirectory   string
 		Repository     string
-		Stages         []Stage
+		Stages         []types.Stage
 	}
 
 	mod := fields{
 		Ctx:            context.TODO(),
-		Changelog:      Changelog{},
+		Changelog:      types.Changelog{},
 		Name:           "test",
 		Version:        "1.0.0",
 		Account:        "tester",
 		BuildDirectory: "tester",
 		LogDirectory:   "tester",
 		Repository:     ".",
-		Stages: []Stage{
+		Stages: []types.Stage{
 			{
 				Name:               "test",
 				To:                 "test",
-				ActionIfFileExists: Replace,
+				ActionIfFileExists: types.Replace,
 				From:               []string{"./tes"},
 			},
 		},
@@ -330,71 +334,71 @@ func TestModule_ValidateChangelog(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		fields  Changelog
+		fields  types.Changelog
 		wantErr bool
 	}{
-		{"empty", Changelog{}, true},
-		{"empty from type", Changelog{
-			From: TypeValue[ChangelogType, string]{
+		{"empty", types.Changelog{}, true},
+		{"empty from type", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  "",
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
 		}, true},
-		{"empty from value", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"empty from value", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
 		}, true},
-		{"empty to type", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"empty to type", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
+			To: types.TypeValue[types.ChangelogType, string]{
 				Type:  "",
 				Value: "v2.0.0",
 			},
 		}, true},
-		{"empty to value", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"empty to value", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "",
 			},
 		}, true},
-		{"valid without conditions", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"valid without conditions", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
 		}, false},
-		{"empty condition", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"empty condition", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
-			Condition: TypeValue[ChangelogConditionType, []string]{
-				Type: Include,
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Include,
 				Value: []string{
 					`^feat: ([\W\w]+)$`,
 					`^fix: ([\W\w]+)$`,
@@ -402,17 +406,17 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, true},
-		{"invalid regex in condition", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"invalid regex in condition", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
-			Condition: TypeValue[ChangelogConditionType, []string]{
-				Type: Include,
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Include,
 				Value: []string{
 					`^feat: ([\W\w]+)$`,
 					`^fix: ([\W\w]+)$`,
@@ -420,17 +424,17 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, true},
-		{"invalid changelog sort", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"invalid changelog sort", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
-			Condition: TypeValue[ChangelogConditionType, []string]{
-				Type: Include,
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Include,
 				Value: []string{
 					`^feat: ([\W\w]+)$`,
 					`^fix: ([\W\w]+)$`,
@@ -438,17 +442,17 @@ func TestModule_ValidateChangelog(t *testing.T) {
 			},
 			Sort: "sort",
 		}, true},
-		{"fully valid", Changelog{
-			From: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+		{"fully valid", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v1.0.0",
 			},
-			To: TypeValue[ChangelogType, string]{
-				Type:  Tag,
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
 				Value: "v2.0.0",
 			},
-			Condition: TypeValue[ChangelogConditionType, []string]{
-				Type: Include,
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: types.Include,
 				Value: []string{
 					`^feat: ([\W\w]+)$`,
 					`^fix: ([\W\w]+)$`,
@@ -484,7 +488,7 @@ func TestModule_FindStage(t *testing.T) {
 		Account        string
 		BuildDirectory string
 		LogDirectory   string
-		Stages         []Stage
+		Stages         []types.Stage
 	}
 	type args struct {
 		name string
@@ -493,7 +497,7 @@ func TestModule_FindStage(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    Stage
+		want    types.Stage
 		wantErr bool
 	}{
 		{"valid", fields{
@@ -503,20 +507,20 @@ func TestModule_FindStage(t *testing.T) {
 			Account:        "test",
 			BuildDirectory: "./build",
 			LogDirectory:   "./logs",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "stage_1",
 					To:                 "to",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"from"},
 				},
 			},
 		},
 			args{name: "stage_1"},
-			Stage{
+			types.Stage{
 				Name:               "stage_1",
 				To:                 "to",
-				ActionIfFileExists: Replace,
+				ActionIfFileExists: types.Replace,
 				From:               []string{"from"},
 			},
 			false,
@@ -528,17 +532,17 @@ func TestModule_FindStage(t *testing.T) {
 			Account:        "test",
 			BuildDirectory: "./build",
 			LogDirectory:   "./logs",
-			Stages: []Stage{
+			Stages: []types.Stage{
 				{
 					Name:               "stage_1",
 					To:                 "to",
-					ActionIfFileExists: Replace,
+					ActionIfFileExists: types.Replace,
 					From:               []string{"from"},
 				},
 			},
 		},
 			args{name: "stage_2"},
-			Stage{},
+			types.Stage{},
 			true,
 		},
 	}
@@ -576,15 +580,7 @@ func TestModule_ZipPath(t *testing.T) {
 func TestModule_StageCallback(t *testing.T) {
 	mod := Module{}
 	_, err := mod.StageCallback("stage_1")
-	if !errors.Is(err, StageCallbackNotFoundError) {
-		t.Errorf("StageCallback() error = %v, wantErr %v", err, StageCallbackNotFoundError)
-	}
-}
-
-func TestModule_GetChanges(t *testing.T) {
-	mod := Module{}
-	changes := mod.GetChanges()
-	if changes != nil {
-		t.Errorf("GetChanges() error = %v, wantErr %v", changes, nil)
+	if !errors.Is(err, errors2.StageCallbackNotFoundError) {
+		t.Errorf("StageCallback() error = %v, wantErr %v", err, errors2.StageCallbackNotFoundError)
 	}
 }

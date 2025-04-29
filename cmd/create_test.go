@@ -9,9 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
+	errors2 "github.com/pixel365/bx/internal/errors"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/pixel365/bx/internal/helpers"
+
+	"github.com/spf13/cobra"
 )
 
 func Test_newCreateCommand(t *testing.T) {
@@ -51,8 +53,8 @@ func Test_create_nil(t *testing.T) {
 			t.Errorf("err is nil")
 		}
 
-		if !errors.Is(err, internal.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		if !errors.Is(err, errors2.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }
@@ -72,7 +74,7 @@ func Test_create_empty_name(t *testing.T) {
 
 func Test_create_not_empty_name(t *testing.T) {
 	cmd := &cobra.Command{}
-	cmd.SetContext(context.WithValue(context.Background(), internal.RootDir, "."))
+	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", "test-module"})
 
 	t.Run("not empty name", func(t *testing.T) {
@@ -93,7 +95,7 @@ func Test_create_success(t *testing.T) {
 	}()
 
 	cmd := newCreateCommand()
-	cmd.SetContext(context.WithValue(context.Background(), internal.RootDir, "."))
+	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", moduleName})
 
 	t.Run("success", func(t *testing.T) {
@@ -110,7 +112,7 @@ func Test_create_module_exists(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -122,7 +124,7 @@ func Test_create_module_exists(t *testing.T) {
 	}(filePath)
 
 	cmd := newCreateCommand()
-	cmd.SetContext(context.WithValue(context.Background(), internal.RootDir, "."))
+	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", moduleName})
 
 	t.Run("module exists", func(t *testing.T) {

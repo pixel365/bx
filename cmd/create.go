@@ -6,12 +6,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pixel365/bx/internal/errors"
+
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/module"
+	"github.com/pixel365/bx/internal/validators"
+
 	"gopkg.in/yaml.v3"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
-
-	"github.com/pixel365/bx/internal"
 )
 
 func newCreateCommand() *cobra.Command {
@@ -44,12 +48,12 @@ bx create --name my_module
 //   - error: An error if the module name is invalid or any other error occurs during the creation process.
 func create(cmd *cobra.Command, _ []string) error {
 	if cmd == nil {
-		return internal.NilCmdError
+		return errors.NilCmdError
 	}
 
-	directory, ok := cmd.Context().Value(internal.RootDir).(string)
+	directory, ok := cmd.Context().Value(helpers.RootDir).(string)
 	if !ok {
-		return internal.InvalidRootDirError
+		return errors.InvalidRootDirError
 	}
 
 	name, _ := cmd.Flags().GetString("name")
@@ -60,30 +64,25 @@ func create(cmd *cobra.Command, _ []string) error {
 			Prompt("> ").
 			Value(&name).
 			Validate(func(input string) error {
-				return internal.ValidateModuleName(input, directory)
+				return validators.ValidateModuleName(input, directory)
 			}).
 			Run(); err != nil {
 			return err
 		}
 	} else {
-		if err := internal.ValidateModuleName(name, directory); err != nil {
+		if err := validators.ValidateModuleName(name, directory); err != nil {
 			return err
 		}
 	}
 
-	var module internal.Module
-	def := []byte(internal.DefaultYAML())
-	if err := yaml.Unmarshal(def, &module); err != nil {
-		return err
-	}
+	var mod module.Module
+	def := []byte(helpers.DefaultYAML())
+	_ = yaml.Unmarshal(def, &mod)
 
-	module.Name = name
-	module.Account = ""
+	mod.Name = name
+	mod.Account = ""
 
-	out, err := module.ToYAML()
-	if err != nil {
-		return err
-	}
+	out, _ := mod.ToYAML()
 
 	filePath, _ := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
 

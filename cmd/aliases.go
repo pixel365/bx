@@ -1,8 +1,10 @@
 package cmd
 
-import "github.com/pixel365/bx/internal"
+import (
+	"github.com/pixel365/bx/internal/module"
+)
 
 var (
-	readModuleFromFlags = internal.ReadModuleFromFlags
-	handleStages        = internal.HandleStages
+	readModuleFromFlags = module.ReadModuleFromFlags
+	handleStages        = module.HandleStages
 )

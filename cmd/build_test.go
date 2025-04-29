@@ -8,9 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
+	"github.com/pixel365/bx/internal/interfaces"
+	"github.com/pixel365/bx/internal/types"
 
-	"github.com/pixel365/bx/internal"
+	errors2 "github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/module"
+
+	"github.com/spf13/cobra"
 )
 
 type FakeSuccessBuilder struct{}
@@ -73,8 +78,8 @@ func Test_build_nil(t *testing.T) {
 			t.Errorf("err is nil")
 		}
 
-		if !errors.Is(err, internal.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		if !errors.Is(err, errors2.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }
@@ -84,7 +89,7 @@ func Test_build_IsValid(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -96,8 +101,8 @@ func Test_build_IsValid(t *testing.T) {
 	}(filePath)
 
 	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		return mod, err
 	}
 	defer func() {
@@ -116,7 +121,7 @@ func Test_build_success(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -130,8 +135,8 @@ func Test_build_success(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_success"
 		return mod, err
 	}
@@ -139,7 +144,7 @@ func Test_build_success(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	builderFunc = func(m *internal.Module, logger internal.BuildLogger) internal.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
 		return &FakeSuccessBuilder{}
 	}
 	defer func() {
@@ -159,7 +164,7 @@ func Test_build_fail(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -173,8 +178,8 @@ func Test_build_fail(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_fail"
 		return mod, err
 	}
@@ -182,7 +187,7 @@ func Test_build_fail(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	builderFunc = func(m *internal.Module, logger internal.BuildLogger) internal.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -201,7 +206,7 @@ func Test_build_invalid_version(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -215,8 +220,8 @@ func Test_build_invalid_version(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_invalid_version"
 		return mod, err
 	}
@@ -224,7 +229,7 @@ func Test_build_invalid_version(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	builderFunc = func(m *internal.Module, logger internal.BuildLogger) internal.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -244,7 +249,7 @@ func Test_build_valid_version(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -258,8 +263,8 @@ func Test_build_valid_version(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_valid_version"
 		return mod, err
 	}
@@ -267,7 +272,7 @@ func Test_build_valid_version(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	builderFunc = func(m *internal.Module, logger internal.BuildLogger) internal.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -287,7 +292,7 @@ func Test_build_repository(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -301,8 +306,8 @@ func Test_build_repository(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_repository"
 		return mod, err
 	}
@@ -310,7 +315,7 @@ func Test_build_repository(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	builderFunc = func(m *internal.Module, logger internal.BuildLogger) internal.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -330,7 +335,7 @@ func Test_build_invalid_last(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -345,8 +350,8 @@ func Test_build_invalid_last(t *testing.T) {
 	originalBuilder := builderFunc
 	originalLastFunc := validateLastVersionFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_invalid_last"
 		return mod, err
 	}
@@ -354,14 +359,14 @@ func Test_build_invalid_last(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	builderFunc = func(m *internal.Module, logger internal.BuildLogger) internal.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
 		builderFunc = originalBuilder
 	}()
 
-	validateLastVersionFunc = func(mod *internal.Module) error {
+	validateLastVersionFunc = func(steps []string, filter func(string) (types.Stage, error)) error {
 		return errors.New("invalid last version")
 	}
 	defer func() {
@@ -381,7 +386,7 @@ func Test_build_read_module_error(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -394,7 +399,7 @@ func Test_build_read_module_error(t *testing.T) {
 
 	originalReadModule := readModuleFromFlags
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
 		return nil, errors.New("read module error")
 	}
 	defer func() {

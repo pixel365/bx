@@ -1,4 +1,4 @@
-package internal
+package helpers
 
 import (
 	"bytes"
@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 
-	"github.com/spf13/cobra"
+	"github.com/pixel365/bx/internal/errors"
 
-	"gopkg.in/yaml.v3"
+	"github.com/pixel365/bx/internal/types"
 
 	"github.com/charmbracelet/huh"
 )
@@ -22,11 +21,9 @@ type Cfg string
 
 const RootDir Cfg = "root_dir"
 
-var checkPathsFunc = checkPaths
-
 func Choose(items *[]string, value *string, title string) error {
 	if items == nil || len(*items) == 0 {
-		return NoItemsError
+		return errors.NoItemsError
 	}
 
 	var options []huh.Option[string]
@@ -132,90 +129,9 @@ ignore:
 `
 }
 
-// AllModules returns a list of module names found in the specified directory.
-//
-// The function reads the directory, checks for files (skipping directories), and attempts to read
-// each file as a module using the ReadModule function. If a file can be successfully read as a
-// module, its name is added to the list.
-//
-// Parameters:
-//   - directory (string): The path to the directory to scan for modules.
-//
-// Returns:
-//   - *[]string: A pointer to a slice of strings containing the names of all successfully read modules.
-func AllModules(directory string) *[]string {
-	var modules []string
-
-	files, err := os.ReadDir(directory)
-	if err != nil {
-		return nil
-	}
-
-	for _, file := range files {
-		if !file.IsDir() {
-
-			filePath := filepath.Join(directory, file.Name())
-			module, err := ReadModule(filePath, "", true)
-			if err != nil {
-				continue
-			}
-
-			modules = append(modules, module.Name)
-		}
-	}
-
-	return &modules
-}
-
-// ReadModule reads a module from a YAML file or directory path and returns a Module object.
-//
-// This function attempts to read a module from the specified path. If the `file` flag is true,
-// the function treats `path` as the file path directly. Otherwise, it expects a YAML file with
-// the name of the module, combining the `path` and `name` parameters to form the file path.
-//
-// Parameters:
-//   - path (string): The directory or file path where the module file is located.
-//   - name (string): The name of the module. Used to construct the file path when `file` is false.
-//   - file (bool): Flag indicating whether the `path` is a direct file path or a directory where
-//     a module file should be looked for.
-//
-// Returns:
-//   - *Module: A pointer to a `Module` object if the file can be successfully read and unmarshalled.
-//   - error: An error if reading or unmarshalling the file fails.
-func ReadModule(path, name string, file bool) (*Module, error) {
-	var filePath string
-	var err error
-
-	if !file {
-		filePath, err = filepath.Abs(path + "/" + name + ".yaml")
-	} else {
-		filePath, err = filepath.Abs(path)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !isValidPath(filePath, path) {
-		return nil, InvalidFilepathError
-	}
-
-	data, err := os.ReadFile(filepath.Clean(filePath))
-	if err != nil {
-		return nil, err
-	}
-
-	var module Module
-	if err := yaml.Unmarshal(data, &module); err != nil {
-		return nil, err
-	}
-
-	return &module, nil
-}
-
 // CheckPath checks if a given path is valid and exists on the filesystem.
 //
-// This function cleans the provided path and verifies its validity using the `isValidPath` function.
+// This function cleans the provided path and verifies its validity using the `IsValidPath` function.
 // It then checks if the file or directory exists using `os.Stat`.
 // If the file or directory does not exist or is not valid, an appropriate error is returned.
 //
@@ -226,8 +142,8 @@ func ReadModule(path, name string, file bool) (*Module, error) {
 //   - error: An error if the path is invalid or does not exist, otherwise returns nil.
 func CheckPath(path string) error {
 	path = filepath.Clean(path)
-	if !isValidPath(path, path) {
-		return InvalidFilepathError
+	if !IsValidPath(path, path) {
+		return errors.InvalidFilepathError
 	}
 
 	_, err := os.Stat(path)
@@ -260,49 +176,6 @@ func IsDir(path string) (bool, error) {
 	return fi.Mode().IsDir(), nil
 }
 
-// CheckStages validates the paths in the stages of the given module.
-//
-// This function iterates over the stages in the provided module and concurrently
-// checks the paths defined in each stage using goroutines. If any errors are encountered,
-// they are collected in a channel and returned as a combined error.
-//
-// Parameters:
-//   - module (*Module): The module containing stages to be validated.
-//
-// Returns:
-//   - error: Returns an error if any validation fails in any stage's paths.
-//     If no errors are found, it returns nil.
-func CheckStages(module *Module) error {
-	if module == nil {
-		return NilModuleError
-	}
-
-	var wg sync.WaitGroup
-	errCh := make(chan error, len(module.Stages)*5)
-
-	for _, item := range module.Stages {
-		wg.Add(1)
-		go func(wg *sync.WaitGroup, item Stage) {
-			defer wg.Done()
-			checkPathsFunc(item, errCh)
-		}(&wg, item)
-	}
-
-	wg.Wait()
-	close(errCh)
-
-	var errs []error
-	for err := range errCh {
-		errs = append(errs, err)
-	}
-
-	if len(errs) > 0 {
-		return fmt.Errorf("errors: %v", errs)
-	}
-
-	return nil
-}
-
 // CheckContext checks whether the provided context has been canceled or expired.
 //
 // This function checks if the context has been canceled or the deadline exceeded.
@@ -316,7 +189,7 @@ func CheckStages(module *Module) error {
 //   - error: Returns an error if the context is done (canceled or expired), otherwise nil.
 func CheckContext(ctx context.Context) error {
 	if ctx == context.TODO() {
-		return TODOContextError
+		return errors.TODOContextError
 	}
 
 	select {
@@ -327,7 +200,7 @@ func CheckContext(ctx context.Context) error {
 	}
 }
 
-// checkPaths checks whether the paths in the "From" field of a stage are valid.
+// CheckPaths checks whether the paths in the "From" field of a stage are valid.
 //
 // This function iterates over the paths in the "From" field of the given stage and checks
 // if each path is valid by calling the CheckPath function. If any path is invalid,
@@ -339,7 +212,7 @@ func CheckContext(ctx context.Context) error {
 //
 // The function does not return any value. If an error occurs during path validation,
 // the error is sent to the provided channel.
-func checkPaths(stage Stage, ch chan<- error) {
+func CheckPaths(stage types.Stage, ch chan<- error) {
 	for _, path := range stage.From {
 		err := CheckPath(path)
 		if err != nil {
@@ -348,7 +221,7 @@ func checkPaths(stage Stage, ch chan<- error) {
 	}
 }
 
-// isValidPath checks if the given filePath is a valid path relative to the basePath.
+// IsValidPath checks if the given filePath is a valid path relative to the basePath.
 //
 // This function determines whether the absolute path of filePath is within the
 // directory specified by basePath. It ensures that the file path does not contain
@@ -362,7 +235,7 @@ func checkPaths(stage Stage, ch chan<- error) {
 // Returns:
 //   - bool: Returns true if the filePath is valid (i.e., is within the basePath directory),
 //     otherwise returns false.
-func isValidPath(filePath, basePath string) bool {
+func IsValidPath(filePath, basePath string) bool {
 	absBasePath, _ := filepath.Abs(basePath)
 	absFilePath, _ := filepath.Abs(filePath)
 
@@ -390,11 +263,11 @@ func isValidPath(filePath, basePath string) bool {
 //   - error: An error is returned if the depth exceeds 5, if the depth is negative, or if the replacement results in an empty string.
 func ReplaceVariables(input string, variables map[string]string, depth int) (string, error) {
 	if depth < 0 {
-		return "", SmallDepthError
+		return "", errors.SmallDepthError
 	}
 
 	if depth > 5 {
-		return "", LargeDepthError
+		return "", errors.LargeDepthError
 	}
 
 	variableRegex := regexp.MustCompile(`\{([a-zA-Z0-9-_]+)}`)
@@ -408,7 +281,7 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 	})
 
 	if updated == "" {
-		return "", ReplacementError
+		return "", errors.ReplacementError
 	}
 
 	if updated == input {
@@ -416,83 +289,6 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 	}
 
 	return ReplaceVariables(updated, variables, depth+1)
-}
-
-func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
-	if cmd == nil {
-		return nil, NilCmdError
-	}
-
-	name, _ := cmd.Flags().GetString("name")
-	file, _ := cmd.Flags().GetString("file")
-
-	file = strings.TrimSpace(file)
-	isFile := len(file) > 0
-
-	path, ok := cmd.Context().Value(RootDir).(string)
-	if !ok {
-		return nil, InvalidRootDirError
-	}
-
-	if !isFile && name == "" {
-		err := Choose(AllModules(path), &name, "")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if isFile {
-		path = file
-	}
-
-	module, err := ReadModule(path, name, isFile)
-	if err != nil {
-		return nil, err
-	}
-
-	module.Ctx = cmd.Context()
-
-	return module, nil
-}
-
-func HandleStages(
-	stages []string,
-	m *Module,
-	wg *sync.WaitGroup,
-	errCh chan<- error,
-	logger BuildLogger,
-	customCommandMode bool,
-) error {
-	if m == nil {
-		return NilModuleError
-	}
-
-	dir := ""
-
-	var err error
-	if !customCommandMode {
-		dir, err = makeVersionDirectory(m)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, stageName := range stages {
-		if err := CheckContext(m.Ctx); err != nil {
-			return err
-		}
-
-		stage, err := m.FindStage(stageName)
-		if err != nil {
-			return fmt.Errorf("failed to find stage: %w", err)
-		}
-
-		wg.Add(1)
-
-		go handleStage(m.Ctx, wg, errCh, logger, m, stage, dir, m.StageCallback)
-	}
-
-	return nil
 }
 
 // Cleanup closes the provided resource and handles any errors that occur during closure.

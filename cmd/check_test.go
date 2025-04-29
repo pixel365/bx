@@ -8,10 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
+	errors2 "github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/module"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/spf13/cobra"
 )
+
+var fakeError error
 
 func Test_newCheckCommand(t *testing.T) {
 	cmd := newCheckCommand()
@@ -50,16 +54,16 @@ func Test_check_nil(t *testing.T) {
 			t.Errorf("err is nil")
 		}
 
-		if !errors.Is(err, internal.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, internal.NilCmdError)
+		if !errors.Is(err, errors2.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }
 
 func Test_check_ReadModuleFromFlags(t *testing.T) {
 	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		return nil, errors.New("fake error")
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		return nil, fakeError
 	}
 	defer func() {
 		readModuleFromFlags = originalReadModule
@@ -72,7 +76,7 @@ func Test_check_ReadModuleFromFlags(t *testing.T) {
 		t.Errorf("err is nil")
 	}
 
-	if err.Error() != "fake error" {
+	if errors.Is(err, fakeError) {
 		t.Errorf("err = %v, want %v", err, "fake error")
 	}
 }
@@ -82,7 +86,7 @@ func Test_check_IsValid(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -94,8 +98,8 @@ func Test_check_IsValid(t *testing.T) {
 	}(filePath)
 
 	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "check_test"
 		}
@@ -117,7 +121,7 @@ func Test_check_repository(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -129,8 +133,8 @@ func Test_check_repository(t *testing.T) {
 	}(filePath)
 
 	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "check_repository"
 		}
@@ -153,7 +157,7 @@ func Test_check_success(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
-	err := os.WriteFile(filePath, []byte(internal.DefaultYAML()), 0600)
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
@@ -167,8 +171,8 @@ func Test_check_success(t *testing.T) {
 	originalReadModule := readModuleFromFlags
 	originalCheckStages := checkStagesFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*internal.Module, error) {
-		mod, err := internal.ReadModule(filePath, "", true)
+	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "test"
 		}
@@ -178,7 +182,7 @@ func Test_check_success(t *testing.T) {
 		readModuleFromFlags = originalReadModule
 	}()
 
-	checkStagesFunc = func(module *internal.Module) error {
+	checkStagesFunc = func(module *module.Module) error {
 		return nil
 	}
 	defer func() {

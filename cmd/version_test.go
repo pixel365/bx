@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/pixel365/bx/internal"
+	"github.com/pixel365/bx/internal/helpers"
 )
 
 func Test_newVersionCommand(t *testing.T) {
@@ -31,7 +31,7 @@ func Test_newVersionCommand(t *testing.T) {
 
 func Test_printVersion(t *testing.T) {
 	t.Run("version", func(t *testing.T) {
-		output := internal.CaptureOutput(func() {
+		output := helpers.CaptureOutput(func() {
 			printVersion()
 		})
 
@@ -51,7 +51,7 @@ func Test_printVersion(t *testing.T) {
 
 func TestNewVersionCommand_Run(t *testing.T) {
 	cmd := newVersionCommand()
-	output := internal.CaptureOutput(func() {
+	output := helpers.CaptureOutput(func() {
 		_ = cmd.Execute()
 	})
 

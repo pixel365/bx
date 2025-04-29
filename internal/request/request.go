@@ -1,4 +1,4 @@
-package internal
+package request
 
 import (
 	"bytes"
@@ -10,6 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	errors2 "github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/module"
 
 	"golang.org/x/net/html"
 )
@@ -43,11 +47,11 @@ func NewClient(client HTTPClient, jar http.CookieJar) *Client {
 // authentication fails or an issue occurs during the request.
 func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 	if login == "" {
-		return nil, EmptyLoginError
+		return nil, errors2.EmptyLoginError
 	}
 
 	if password == "" {
-		return nil, EmptyPasswordError
+		return nil, errors2.EmptyPasswordError
 	}
 
 	body := url.Values{
@@ -69,11 +73,13 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	//nolint:bodyclose
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer Cleanup(resp.Body, nil)
+
+	defer helpers.Cleanup(resp.Body, nil)
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New(resp.Status)
@@ -88,7 +94,7 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 	}
 
 	if len(cookies) == 0 {
-		return nil, AuthenticationError
+		return nil, errors2.AuthenticationError
 	}
 
 	return cookies, nil
@@ -107,18 +113,18 @@ func (c *Client) Authorization(login, password string) ([]*http.Cookie, error) {
 //
 // Returns:
 //   - An error if any step fails (e.g., missing session, file errors, upload failure).
-func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
+func (c *Client) UploadZIP(module *module.Module, cookies []*http.Cookie) error {
 	if module == nil {
-		return NilModuleError
+		return errors2.NilModuleError
 	}
 
 	if cookies == nil {
-		return NilCookieError
+		return errors2.NilCookieError
 	}
 
 	session := c.SessionId(module, cookies)
 	if session == "" {
-		return EmptySessionError
+		return errors2.EmptySessionError
 	}
 
 	path, err := module.ZipPath()
@@ -131,7 +137,7 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 	if err != nil {
 		panic(err)
 	}
-	defer Cleanup(file, nil)
+	defer helpers.Cleanup(file, nil)
 
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
@@ -162,11 +168,14 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	c.jar.SetCookies(u, cookies)
+
+	//nolint:bodyclose
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
-	defer Cleanup(resp.Body, nil)
+
+	defer helpers.Cleanup(resp.Body, nil)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -192,7 +201,7 @@ func (c *Client) UploadZIP(module *Module, cookies []*http.Cookie) error {
 //
 // Returns:
 //   - The session ID as a string if found, otherwise returns an empty string.
-func (c *Client) SessionId(module *Module, cookies []*http.Cookie) string {
+func (c *Client) SessionId(module *module.Module, cookies []*http.Cookie) string {
 	return getSessionFunc(c, module, cookies)
 }
 
@@ -239,7 +248,7 @@ func uploadResult(htmlContent string) error {
 	return err
 }
 
-func getSession(c *Client, module *Module, cookies []*http.Cookie) string {
+func getSession(c *Client, module *module.Module, cookies []*http.Cookie) string {
 	if module == nil || len(cookies) == 0 || module.Name == "" {
 		return ""
 	}
@@ -251,11 +260,14 @@ func getSession(c *Client, module *Module, cookies []*http.Cookie) string {
 	}
 
 	c.jar.SetCookies(u, cookies)
+
+	//nolint:bodyclose
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return ""
 	}
-	defer Cleanup(resp.Body, nil)
+
+	defer helpers.Cleanup(resp.Body, nil)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -1,4 +1,4 @@
-package internal
+package module
 
 import (
 	"context"
@@ -9,15 +9,24 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
+	"github.com/pixel365/bx/internal/fs"
+	"github.com/pixel365/bx/internal/types"
+
+	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/repo"
+
 	"golang.org/x/text/encoding/charmap"
 )
 
 type ModuleBuilder struct {
-	logger BuildLogger
+	logger interfaces.BuildLogger
 	module *Module
 }
 
-func NewModuleBuilder(m *Module, logger BuildLogger) Builder {
+func NewModuleBuilder(m *Module, logger interfaces.BuildLogger) interfaces.Builder {
 	return &ModuleBuilder{
 		logger: logger,
 		module: m,
@@ -31,10 +40,10 @@ func NewModuleBuilder(m *Module, logger BuildLogger) Builder {
 // The method returns an error if any of the steps (Prepare, Collect, or Cleanup) fail.
 func (m *ModuleBuilder) Build() error {
 	if m.module == nil {
-		return NilModuleError
+		return errors.NilModuleError
 	}
 
-	if err := CheckContext(m.module.Ctx); err != nil {
+	if err := helpers.CheckContext(m.module.Ctx); err != nil {
 		return err
 	}
 
@@ -70,7 +79,7 @@ func (m *ModuleBuilder) Build() error {
 // The method returns an error if the module is invalid or if directories cannot be created.
 func (m *ModuleBuilder) Prepare() error {
 	if m.module == nil {
-		return NilModuleError
+		return errors.NilModuleError
 	}
 
 	if err := m.module.IsValid(); err != nil {
@@ -95,7 +104,7 @@ func (m *ModuleBuilder) Prepare() error {
 		m.module.LogDirectory = "./log"
 	}
 
-	path, err := mkdir(m.module.BuildDirectory)
+	path, err := fs.MkDir(m.module.BuildDirectory)
 	if err != nil {
 		m.logger.Error("Prepare: failed to make build directory", err)
 		return err
@@ -105,7 +114,7 @@ func (m *ModuleBuilder) Prepare() error {
 
 	m.module.BuildDirectory = path
 
-	path, err = mkdir(m.module.LogDirectory)
+	path, err = fs.MkDir(m.module.LogDirectory)
 	if err != nil {
 		m.logger.Error("Prepare: failed to make log directory", err)
 		return err
@@ -115,7 +124,7 @@ func (m *ModuleBuilder) Prepare() error {
 
 	m.module.LogDirectory = path
 
-	path, err = mkdir(fmt.Sprintf("%s/%s", m.module.BuildDirectory, m.module.GetVersion()))
+	path, err = fs.MkDir(fmt.Sprintf("%s/%s", m.module.BuildDirectory, m.module.GetVersion()))
 	if err != nil {
 		m.logger.Info("Prepare: failed to make build version directory")
 		return err
@@ -157,7 +166,7 @@ func (m *ModuleBuilder) Cleanup() {
 // The method returns an error if the rollback process fails.
 func (m *ModuleBuilder) Rollback() error {
 	if m.module == nil {
-		return NilModuleError
+		return errors.NilModuleError
 	}
 
 	zipPath, err := makeZipFilePath(m.module)
@@ -196,7 +205,7 @@ func (m *ModuleBuilder) Rollback() error {
 // The method returns an error if any stage fails or if there are issues zipping the collected files.
 func (m *ModuleBuilder) Collect() error {
 	if m.module == nil {
-		return NilModuleError
+		return errors.NilModuleError
 	}
 
 	versionDirectory, err := makeVersionDirectory(m.module)
@@ -242,7 +251,7 @@ func (m *ModuleBuilder) Collect() error {
 		m.logger.Error("Failed to create version.php", err)
 	}
 
-	_, err = removeEmptyDirs(versionDirectory)
+	_, err = fs.RemoveEmptyDirs(versionDirectory)
 	if err != nil {
 		return err
 	}
@@ -255,8 +264,8 @@ func (m *ModuleBuilder) Collect() error {
 		return err
 	}
 
-	if isEmptyDir(versionDirectory) {
-		return NoChangesError
+	if fs.IsEmptyDir(versionDirectory) {
+		return errors.NoChangesError
 	}
 
 	zipPath, err := makeZipFilePath(m.module)
@@ -264,7 +273,7 @@ func (m *ModuleBuilder) Collect() error {
 		return err
 	}
 
-	if err := zipIt(versionDirectory, zipPath); err != nil {
+	if err := fs.ZipIt(versionDirectory, zipPath); err != nil {
 		m.logger.Error("Failed to zip build", err)
 		return err
 	}
@@ -295,25 +304,25 @@ func handleStage(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	errCh chan<- error,
-	logger BuildLogger,
+	logger interfaces.BuildLogger,
 	module *Module,
-	stage Stage,
+	stage types.Stage,
 	rootDir string,
-	cb func(string) (Runnable, error),
+	cb func(string) (interfaces.Runnable, error),
 ) {
-	callback, cbErr := cb(stage.Name)
+	_cb, cbErr := cb(stage.Name)
 
 	defer func() {
 		if cbErr == nil {
 			wg.Add(1)
-			go callback.PostRun(ctx, wg, logger)
+			go _cb.PostRun(ctx, wg, logger)
 		}
 		wg.Done()
 	}()
 
 	if cbErr == nil {
 		wg.Add(1)
-		go callback.PreRun(ctx, wg, logger)
+		go _cb.PreRun(ctx, wg, logger)
 	}
 
 	var err error
@@ -335,7 +344,7 @@ func handleStage(
 		}
 	}()
 
-	if err := CheckContext(ctx); err != nil {
+	if err := helpers.CheckContext(ctx); err != nil {
 		return
 	}
 
@@ -356,7 +365,7 @@ func handleStage(
 		return
 	}
 
-	to, err := mkdir(dirPath)
+	to, err := fs.MkDir(dirPath)
 	if err != nil {
 		if logger != nil {
 			logger.Error("Failed to make stage `to` directory", err)
@@ -365,12 +374,12 @@ func handleStage(
 	}
 
 	for _, from := range stage.From {
-		if err := CheckContext(ctx); err != nil {
+		if err := helpers.CheckContext(ctx); err != nil {
 			return
 		}
 
 		wg.Add(1)
-		go copyFromPath(
+		go fs.CopyFromPath(
 			ctx,
 			wg,
 			errCh,
@@ -406,7 +415,7 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 			return nil
 		}
 
-		commits, err := ChangelogList(builder.module.Repository, builder.module.Changelog)
+		commits, err := repo.ChangelogList(builder.module.Repository, builder.module.Changelog)
 		if err != nil {
 			return err
 		}

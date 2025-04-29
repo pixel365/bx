@@ -1,4 +1,4 @@
-package internal
+package request
 
 import (
 	"io"
@@ -6,6 +6,8 @@ import (
 	"net/http/cookiejar"
 	"strings"
 	"testing"
+
+	module2 "github.com/pixel365/bx/internal/module"
 )
 
 type mockHttpClient struct {
@@ -98,7 +100,7 @@ func TestClient_UploadZIP(t *testing.T) {
 	}
 
 	type args struct {
-		module  *Module
+		module  *module2.Module
 		cookies []*http.Cookie
 	}
 	tests := []struct {
@@ -108,13 +110,13 @@ func TestClient_UploadZIP(t *testing.T) {
 		wantErr bool
 	}{
 		{"nil module", client, args{module: nil, cookies: cookies}, true},
-		{"nil cookies", client, args{module: &Module{}, cookies: nil}, true},
-		{"empty cookies", client, args{module: &Module{}, cookies: []*http.Cookie{}}, true},
+		{"nil cookies", client, args{module: &module2.Module{}, cookies: nil}, true},
+		{"empty cookies", client, args{module: &module2.Module{}, cookies: []*http.Cookie{}}, true},
 		{
 			"empty module name",
 			client,
 			args{
-				module:  &Module{},
+				module:  &module2.Module{},
 				cookies: []*http.Cookie{{Name: "foo", Value: "bar"}},
 			},
 			true,
@@ -132,7 +134,7 @@ func TestClient_UploadZIP(t *testing.T) {
 func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
 	origGetSession := getSessionFunc
 	defer func() { getSessionFunc = origGetSession }()
-	getSessionFunc = func(c *Client, module *Module, cookies []*http.Cookie) string {
+	getSessionFunc = func(c *Client, module *module2.Module, cookies []*http.Cookie) string {
 		return "fake-session-id"
 	}
 
@@ -150,7 +152,7 @@ func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		err := client.UploadZIP(
-			&Module{Name: "fake-name"},
+			&module2.Module{Name: "fake-name"},
 			[]*http.Cookie{{Name: "foo", Value: "bar"}},
 		)
 		if err == nil {
@@ -179,11 +181,11 @@ func TestClient_SessionId(t *testing.T) {
 		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
 	}
 
-	module := &Module{}
+	module := &module2.Module{}
 	module.Name = "test"
 
 	type args struct {
-		module  *Module
+		module  *module2.Module
 		cookies []*http.Cookie
 	}
 	tests := []struct {

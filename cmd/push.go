@@ -7,11 +7,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pixel365/bx/internal/errors"
+
+	"github.com/pixel365/bx/internal/module"
+	"github.com/pixel365/bx/internal/request"
+	"github.com/pixel365/bx/internal/validators"
+
 	"github.com/charmbracelet/huh/spinner"
 
 	"github.com/charmbracelet/huh"
-
-	"github.com/pixel365/bx/internal"
 
 	"github.com/spf13/cobra"
 )
@@ -61,10 +65,10 @@ bx push --name my_module --version 1.2.3
 //   - error: An error if any validation or upload step fails.
 func push(cmd *cobra.Command, _ []string) error {
 	if cmd == nil {
-		return internal.NilCmdError
+		return errors.NilCmdError
 	}
 
-	module, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlags(cmd)
 	if err != nil {
 		return err
 	}
@@ -73,40 +77,40 @@ func push(cmd *cobra.Command, _ []string) error {
 	version = strings.TrimSpace(version)
 
 	if version != "" {
-		if err := internal.ValidateVersion(version); err != nil {
+		if err := validators.ValidateVersion(version); err != nil {
 			return err
 		}
-		module.Version = version
+		mod.Version = version
 	}
 
-	if err = module.IsValid(); err != nil {
+	if err = mod.IsValid(); err != nil {
 		return err
 	}
 
-	password, err := handlePassword(cmd, module)
+	password, err := handlePassword(cmd, mod)
 	if err != nil {
 		return err
 	}
 
-	httpClient, cookies, err := authFunc(module, password)
+	httpClient, cookies, err := authFunc(mod, password)
 	if err != nil {
 		return err
 	}
 
-	return uploadFunc(httpClient, module, cookies)
+	return uploadFunc(httpClient, mod, cookies)
 }
 
-func upload(client *internal.Client, module *internal.Module, cookies []*http.Cookie) error {
+func upload(client *request.Client, module *module.Module, cookies []*http.Cookie) error {
 	if module == nil {
-		return internal.NilModuleError
+		return errors.NilModuleError
 	}
 
 	if client == nil {
-		return internal.NilClientError
+		return errors.NilClientError
 	}
 
 	if len(cookies) == 0 {
-		return internal.NilCookieError
+		return errors.NilCookieError
 	}
 
 	err := spinner.New().
@@ -119,18 +123,18 @@ func upload(client *internal.Client, module *internal.Module, cookies []*http.Co
 	return err
 }
 
-func auth(module *internal.Module, password string) (*internal.Client, []*http.Cookie, error) {
+func auth(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
 	if module == nil {
-		return nil, nil, internal.NilModuleError
+		return nil, nil, errors.NilModuleError
 	}
 
 	if password == "" {
-		return nil, nil, internal.EmptyPasswordError
+		return nil, nil, errors.EmptyPasswordError
 	}
 
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar}
-	httpClient := internal.NewClient(client, jar)
+	httpClient := request.NewClient(client, jar)
 
 	var err error
 	var cookies []*http.Cookie
@@ -161,7 +165,7 @@ func auth(module *internal.Module, password string) (*internal.Client, []*http.C
 // Returns:
 // - string: The validated password.
 // - error: An error if the password is invalid or the prompt fails.
-func handlePassword(cmd *cobra.Command, module *internal.Module) (string, error) {
+func handlePassword(cmd *cobra.Command, module *module.Module) (string, error) {
 	password, _ := cmd.Flags().GetString("password")
 	password = strings.TrimSpace(password)
 
@@ -177,10 +181,10 @@ func handlePassword(cmd *cobra.Command, module *internal.Module) (string, error)
 
 	password = strings.TrimSpace(password)
 	if password == "" {
-		return "", internal.EmptyPasswordError
+		return "", errors.EmptyPasswordError
 	}
 
-	if err := internal.ValidatePassword(password); err != nil {
+	if err := validators.ValidatePassword(password); err != nil {
 		return "", err
 	}
 
@@ -194,7 +198,7 @@ func inputPassword(password *string) error {
 		Value(password).
 		EchoMode(2).
 		Validate(func(input string) error {
-			return internal.ValidatePassword(input)
+			return validators.ValidatePassword(input)
 		}).
 		Run()
 }
