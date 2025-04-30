@@ -26,13 +26,34 @@ func Test_newVersionCommand(t *testing.T) {
 		if cmd.Short != "Print the version information" {
 			t.Errorf("cmd short = %v, want %v", cmd.Short, "Print the version information")
 		}
+
+		if !cmd.HasFlags() {
+			t.Error("flags is missing")
+		}
 	})
 }
 
-func Test_printVersion(t *testing.T) {
-	t.Run("version", func(t *testing.T) {
+func TestNewVersionCommand(t *testing.T) {
+	t.Run("short", func(t *testing.T) {
+		cmd := NewVersionCommand()
 		output := helpers.CaptureOutput(func() {
-			printVersion()
+			_ = cmd.Execute()
+		})
+
+		want := fmt.Sprintf("%s\n", buildVersion)
+
+		if output != want {
+			t.Errorf("output = %v, want %v", output, want)
+		}
+	})
+}
+
+func TestNewVersionCommand_Verbose(t *testing.T) {
+	t.Run("verbose", func(t *testing.T) {
+		cmd := NewVersionCommand()
+		cmd.SetArgs([]string{"--verbose"})
+		output := helpers.CaptureOutput(func() {
+			_ = cmd.Execute()
 		})
 
 		want := fmt.Sprintf("Version: %s\nCommit: %s\nDate: %s\nGo: %s %s/%s\n",
@@ -47,23 +68,4 @@ func Test_printVersion(t *testing.T) {
 			t.Errorf("output = %v, want %v", output, want)
 		}
 	})
-}
-
-func TestNewVersionCommand_Run(t *testing.T) {
-	cmd := NewVersionCommand()
-	output := helpers.CaptureOutput(func() {
-		_ = cmd.Execute()
-	})
-
-	want := fmt.Sprintf("Version: %s\nCommit: %s\nDate: %s\nGo: %s %s/%s\n",
-		buildVersion,
-		buildCommit,
-		buildDate,
-		runtime.Version(),
-		runtime.GOOS,
-		runtime.GOARCH)
-
-	if output != want {
-		t.Errorf("output = %v, want %v", output, want)
-	}
 }
