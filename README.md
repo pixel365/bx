@@ -165,6 +165,8 @@ bx -h
   - `condition` – Criteria for including or excluding commits.
     - `type` – Allowed values: `include`, `exclude`.
     - `value` – Array of regular expressions for filtering commits.
+  - `sort` – Allowed values: `asc`, `desc`.
+  - `footerTemplate` – Template text (see below).
 - **stages** – Defines the file copying and processing stages.
   - `name` – Stage name (supports variables).
   - `to` – Target directory (supports variables).
@@ -211,6 +213,7 @@ The `changelog` section defines how to automatically generate a changelog from y
     - `exclude` – Excludes commits matching the specified patterns.
   - **value** – An array of regular expressions used for filtering commit messages.
 - **sort** (optional) – Sorting commits (`asc` or `desc`)
+- **footerTemplate** (optional) – Template text that will be added at the end of the version description, separated by two spaces.
 
 #### Example
 
@@ -228,6 +231,9 @@ changelog:
       - '^feat:([\\W\\w]+)$'
       - '^fix:([\\W\\w]+)$'
   sort: "asc"
+  footerTemplate: >
+    Warning: This is a template message that is added 
+    after the version description or commit list.
 ```
 
 In this example,
