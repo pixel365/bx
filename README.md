@@ -413,6 +413,9 @@ changelog:
       - '^feat:([\W\w]+)$'
       - '^fix:([\W\w]+)$'
   sort: "asc"
+  footerTemplate: >
+    Warning: This is a template message that is added 
+    after the version description or commit list.
 
 stages:
   - name: "components"
