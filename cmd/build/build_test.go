@@ -1,4 +1,4 @@
-package cmd
+package build
 
 import (
 	"errors"
@@ -34,7 +34,7 @@ func (m *FakeFailBuilder) Collect() error  { return errors.New("collect error") 
 func (m *FakeFailBuilder) Cleanup()        {}
 
 func Test_newBuildCommand(t *testing.T) {
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 
 	t.Run("parameters", func(t *testing.T) {
 		if cmd == nil {
@@ -100,16 +100,16 @@ func Test_build_IsValid(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	originalReadModule := readModuleFromFlagsFunc
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
@@ -132,16 +132,16 @@ func Test_build_success(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_success"
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
@@ -151,7 +151,7 @@ func Test_build_success(t *testing.T) {
 		builderFunc = originalBuilder
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--last", "--description", "some description"})
 	err = cmd.Execute()
 	if err != nil {
@@ -175,16 +175,16 @@ func Test_build_fail(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_fail"
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
@@ -194,7 +194,7 @@ func Test_build_fail(t *testing.T) {
 		builderFunc = originalBuilder
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
@@ -217,16 +217,16 @@ func Test_build_invalid_version(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_invalid_version"
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
@@ -236,7 +236,7 @@ func Test_build_invalid_version(t *testing.T) {
 		builderFunc = originalBuilder
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--version", " invalid module version "})
 	err = cmd.Execute()
 	if err == nil {
@@ -260,16 +260,16 @@ func Test_build_valid_version(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_valid_version"
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
@@ -279,7 +279,7 @@ func Test_build_valid_version(t *testing.T) {
 		builderFunc = originalBuilder
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--version", "1.0.0"})
 	err = cmd.Execute()
 	if err == nil {
@@ -303,16 +303,16 @@ func Test_build_repository(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalBuilder := builderFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_repository"
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
@@ -322,7 +322,7 @@ func Test_build_repository(t *testing.T) {
 		builderFunc = originalBuilder
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--repository", "."})
 	err = cmd.Execute()
 	if err == nil {
@@ -346,17 +346,17 @@ func Test_build_invalid_last(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalBuilder := builderFunc
 	originalLastFunc := validateLastVersionFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		mod.Account = "build_invalid_last"
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
@@ -373,7 +373,7 @@ func Test_build_invalid_last(t *testing.T) {
 		validateLastVersionFunc = originalLastFunc
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--last", "."})
 	err = cmd.Execute()
 	if err == nil {
@@ -397,16 +397,16 @@ func Test_build_read_module_error(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		return nil, errors.New("read module error")
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	cmd := newBuildCommand()
+	cmd := NewBuildCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")

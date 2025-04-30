@@ -1,4 +1,4 @@
-package cmd
+package create
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 )
 
 func Test_newCreateCommand(t *testing.T) {
-	cmd := newCreateCommand()
+	cmd := NewCreateCommand()
 
 	t.Run("", func(t *testing.T) {
 		if cmd == nil {
@@ -139,7 +139,7 @@ func Test_create_success(t *testing.T) {
 		}
 	}()
 
-	cmd := newCreateCommand()
+	cmd := NewCreateCommand()
 	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", moduleName})
 
@@ -157,18 +157,19 @@ func Test_create_module_exists(t *testing.T) {
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
 
+	defer func() {
+		err := os.Remove(filePath)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
 	if err != nil {
 		t.Error(err)
 	}
-	defer func(name string) {
-		err := os.Remove(name)
-		if err != nil {
-			t.Error(err)
-		}
-	}(filePath)
 
-	cmd := newCreateCommand()
+	cmd := NewCreateCommand()
 	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", moduleName})
 

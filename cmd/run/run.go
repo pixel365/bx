@@ -1,4 +1,4 @@
-package cmd
+package run
 
 import (
 	"fmt"
@@ -10,7 +10,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newRunCommand() *cobra.Command {
+var (
+	readModuleFromFlagsFunc = module.ReadModuleFromFlags
+	handleStagesFunc        = module.HandleStages
+)
+
+func NewRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
 		Short: "Run a custom command",
@@ -41,7 +46,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return errors.NoCommandSpecifiedError
 	}
 
-	mod, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
 		return err
 	}
@@ -62,7 +67,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(stages))
 
-	err = handleStages(stages, mod, &wg, errCh, nil, true)
+	err = handleStagesFunc(stages, mod, &wg, errCh, nil, true)
 
 	wg.Wait()
 	close(errCh)

@@ -1,4 +1,4 @@
-package cmd
+package version
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 func Test_newVersionCommand(t *testing.T) {
-	cmd := newVersionCommand()
+	cmd := NewVersionCommand()
 	t.Run("version", func(t *testing.T) {
 		if cmd == nil {
 			t.Error("cmd is nil")
@@ -50,7 +50,7 @@ func Test_printVersion(t *testing.T) {
 }
 
 func TestNewVersionCommand_Run(t *testing.T) {
-	cmd := newVersionCommand()
+	cmd := NewVersionCommand()
 	output := helpers.CaptureOutput(func() {
 		_ = cmd.Execute()
 	})

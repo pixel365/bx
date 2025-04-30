@@ -1,4 +1,4 @@
-package cmd
+package create
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ var (
 	newModulePromptFunc = types.NewPrompt
 )
 
-func newCreateCommand() *cobra.Command {
+func NewCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create",
 		Aliases: []string{"c"},

@@ -5,16 +5,26 @@ import (
 	"errors"
 	"os"
 
+	"github.com/pixel365/bx/cmd/build"
+	"github.com/pixel365/bx/cmd/check"
+	"github.com/pixel365/bx/cmd/create"
+	"github.com/pixel365/bx/cmd/run"
+	"github.com/pixel365/bx/cmd/version"
+
+	"github.com/pixel365/bx/cmd/push"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/spf13/cobra"
 )
 
-var getModulesDirFunc = helpers.GetModulesDir
-var osStat = os.Stat
-var mkDir = os.Mkdir
-var initRootDirFunc = initRootDir
+var (
+	osStat            = os.Stat
+	mkDir             = os.Mkdir
+	initRootDirFunc   = initRootDir
+	getModulesDirFunc = helpers.GetModulesDir
+)
 
 func NewRootCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
@@ -33,12 +43,12 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(newCreateCommand())
-	cmd.AddCommand(newBuildCommand())
-	cmd.AddCommand(newCheckCommand())
-	cmd.AddCommand(newPushCommand())
-	cmd.AddCommand(newRunCommand())
-	cmd.AddCommand(newVersionCommand())
+	cmd.AddCommand(create.NewCreateCommand())
+	cmd.AddCommand(build.NewBuildCommand())
+	cmd.AddCommand(check.NewCheckCommand())
+	cmd.AddCommand(push.NewPushCommand())
+	cmd.AddCommand(run.NewRunCommand())
+	cmd.AddCommand(version.NewVersionCommand())
 
 	return cmd
 }
