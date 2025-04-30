@@ -25,6 +25,7 @@
 vendor/
 bin/
 build/
+!cmd/build/
 .bx/
 dist/
 logs/

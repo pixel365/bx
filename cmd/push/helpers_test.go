@@ -1,4 +1,4 @@
-package cmd
+package push
 
 import (
 	"errors"
@@ -10,47 +10,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pixel365/bx/internal/interfaces"
-
 	errors2 "github.com/pixel365/bx/internal/errors"
 
+	"github.com/spf13/cobra"
+
 	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/interfaces"
 	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/request"
-
-	"github.com/spf13/cobra"
 )
 
-func Test_newPushCommand(t *testing.T) {
-	cmd := newPushCommand()
-
-	t.Run("should create new push command", func(t *testing.T) {
-		if cmd == nil {
-			t.Error("cmd is nil")
+func Test_push_nil(t *testing.T) {
+	t.Run("nil command", func(t *testing.T) {
+		err := push(nil, []string{})
+		if err == nil {
+			t.Errorf("err is nil")
 		}
 
-		if cmd.Use != "push" {
-			t.Errorf("new push command should use 'push', got '%s'", cmd.Use)
-		}
-
-		if cmd.Short != "Push module to a Marketplace" {
-			t.Errorf("cmd.Short should be 'Push module to a Marketplace' but got '%s'", cmd.Short)
-		}
-
-		if cmd.RunE == nil {
-			t.Error("cmd RunE should not be nil")
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-
-		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false")
-		}
-
-		if len(cmd.Aliases) > 0 {
-			t.Errorf("len(cmd.Aliases) should be 0 but got %d", len(cmd.Aliases))
+		if !errors.Is(err, errors2.NilCmdError) {
+			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }
@@ -69,7 +47,7 @@ func Test_handlePassword(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := newPushCommand()
+			cmd := NewPushCommand()
 			cmd.SetArgs([]string{"--password", tt.data, "--name", "test"})
 			_ = cmd.Flags().Set("password", tt.data)
 			_ = cmd.Flags().Set("name", "test")
@@ -96,19 +74,6 @@ func Test_handlePassword(t *testing.T) {
 	}
 }
 
-func Test_push_nil(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		err := push(nil, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
-		}
-	})
-}
-
 func Test_push_ReadModuleFromFlags(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
@@ -125,10 +90,10 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "ReadModuleFromFlags"
@@ -136,7 +101,7 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
@@ -155,12 +120,13 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		inputPasswordFunc = origInputPasswordFunc
 	}()
 
-	cmd := newPushCommand()
+	cmd := NewPushCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
 	}
 }
+
 func Test_push_invalid_Version(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
@@ -177,10 +143,10 @@ func Test_push_invalid_Version(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "test account"
@@ -188,7 +154,7 @@ func Test_push_invalid_Version(t *testing.T) {
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
@@ -207,7 +173,7 @@ func Test_push_invalid_Version(t *testing.T) {
 		inputPasswordFunc = origInputPasswordFunc
 	}()
 
-	cmd := newPushCommand()
+	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--version", "testingVersion"})
 	err = cmd.Execute()
 	if err == nil {
@@ -231,10 +197,10 @@ func Test_push_auth(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "auth"
@@ -242,7 +208,7 @@ func Test_push_auth(t *testing.T) {
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
@@ -261,7 +227,7 @@ func Test_push_auth(t *testing.T) {
 		inputPasswordFunc = origInputPasswordFunc
 	}()
 
-	cmd := newPushCommand()
+	cmd := NewPushCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
@@ -284,11 +250,11 @@ func Test_push_upload(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
 	originalUploadFunc := uploadFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "upload"
@@ -296,7 +262,7 @@ func Test_push_upload(t *testing.T) {
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
@@ -322,7 +288,7 @@ func Test_push_upload(t *testing.T) {
 		inputPasswordFunc = origInputPasswordFunc
 	}()
 
-	cmd := newPushCommand()
+	cmd := NewPushCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
@@ -407,10 +373,10 @@ func Test_push_valid_Version(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
+	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
 
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
 			mod.Account = "Version"
@@ -418,7 +384,7 @@ func Test_push_valid_Version(t *testing.T) {
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
 	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
@@ -437,7 +403,7 @@ func Test_push_valid_Version(t *testing.T) {
 		inputPasswordFunc = origInputPasswordFunc
 	}()
 
-	cmd := newPushCommand()
+	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--version", "1.0.0"})
 	err = cmd.Execute()
 	if err == nil {

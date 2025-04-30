@@ -1,17 +1,20 @@
-package cmd
+package check
 
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/module"
 
+	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 )
 
-var checkStagesFunc = module.CheckStages
+var (
+	readModuleFromFlagsFunc = module.ReadModuleFromFlags
+	checkStagesFunc         = module.CheckStages
+)
 
-func newCheckCommand() *cobra.Command {
+func NewCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",
 		Short: "Check the configuration of a module",
@@ -50,7 +53,7 @@ func check(cmd *cobra.Command, _ []string) error {
 		return errors.NilCmdError
 	}
 
-	mod, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
 		return err
 	}

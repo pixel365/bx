@@ -1,13 +1,14 @@
-package cmd
+package build
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/pixel365/bx/internal/module"
+
 	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/logger"
-	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/validators"
 
 	"github.com/spf13/cobra"
@@ -16,9 +17,10 @@ import (
 var (
 	builderFunc             = module.NewModuleBuilder
 	validateLastVersionFunc = module.ValidateLastVersion
+	readModuleFromFlagsFunc = module.ReadModuleFromFlags
 )
 
-func newBuildCommand() *cobra.Command {
+func NewBuildCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "build",
 		Aliases: []string{"b"},
@@ -67,7 +69,7 @@ func build(cmd *cobra.Command, _ []string) error {
 		return errors.NilCmdError
 	}
 
-	mod, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
 		return err
 	}

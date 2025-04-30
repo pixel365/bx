@@ -12,9 +12,9 @@ builds:
     binary: bx
     ldflags:
       - "-s -w"
-      - "-X github.com/pixel365/bx/cmd.buildVersion={{.Tag}}"
-      - "-X github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}"
-      - "-X github.com/pixel365/bx/cmd.buildDate={{.Date}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildVersion={{.Tag}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildCommit={{.ShortCommit}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildDate={{.Date}}"
 
   - id: linux_arm64
     goos: [linux]
@@ -22,9 +22,9 @@ builds:
     binary: bx
     ldflags:
       - "-s -w"
-      - "-X github.com/pixel365/bx/cmd.buildVersion={{.Tag}}"
-      - "-X github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}"
-      - "-X github.com/pixel365/bx/cmd.buildDate={{.Date}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildVersion={{.Tag}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildCommit={{.ShortCommit}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildDate={{.Date}}"
 
   - id: windows_amd64
     goos: [windows]
@@ -32,9 +32,9 @@ builds:
     binary: bx
     ldflags:
       - "-s -w"
-      - "-X github.com/pixel365/bx/cmd.buildVersion={{.Tag}}"
-      - "-X github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}"
-      - "-X github.com/pixel365/bx/cmd.buildDate={{.Date}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildVersion={{.Tag}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildCommit={{.ShortCommit}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildDate={{.Date}}"
 
   - id: windows_arm64
     goos: [windows]
@@ -42,9 +42,9 @@ builds:
     binary: bx
     ldflags:
       - "-s -w"
-      - "-X github.com/pixel365/bx/cmd.buildVersion={{.Tag}}"
-      - "-X github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}"
-      - "-X github.com/pixel365/bx/cmd.buildDate={{.Date}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildVersion={{.Tag}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildCommit={{.ShortCommit}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildDate={{.Date}}"
 
   - id: darwin_amd64
     goos: [darwin]
@@ -52,9 +52,9 @@ builds:
     binary: bx
     ldflags:
       - "-s -w"
-      - "-X github.com/pixel365/bx/cmd.buildVersion={{.Tag}}"
-      - "-X github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}"
-      - "-X github.com/pixel365/bx/cmd.buildDate={{.Date}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildVersion={{.Tag}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildCommit={{.ShortCommit}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildDate={{.Date}}"
 
   - id: darwin_arm64
     goos: [darwin]
@@ -62,9 +62,9 @@ builds:
     binary: bx
     ldflags:
       - "-s -w"
-      - "-X github.com/pixel365/bx/cmd.buildVersion={{.Tag}}"
-      - "-X github.com/pixel365/bx/cmd.buildCommit={{.ShortCommit}}"
-      - "-X github.com/pixel365/bx/cmd.buildDate={{.Date}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildVersion={{.Tag}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildCommit={{.ShortCommit}}"
+      - "-X github.com/pixel365/bx/cmd/version.buildDate={{.Date}}"
 
 archives:
   - id: linux_amd64

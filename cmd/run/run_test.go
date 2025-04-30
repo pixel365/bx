@@ -1,36 +1,38 @@
-package cmd
+package run
 
 import (
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
+
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 
 	"github.com/spf13/cobra"
 )
 
-var fakeError = errors.New("fake error")
+func Test_newRunCommand(t *testing.T) {
+	cmd := NewRunCommand()
 
-func Test_newCheckCommand(t *testing.T) {
-	cmd := newCheckCommand()
-
-	t.Run("parameters", func(t *testing.T) {
+	t.Run("subcommands", func(t *testing.T) {
 		if cmd == nil {
-			t.Error("cmd is nil")
+			t.Errorf("cmd is nil")
 		}
 
-		if cmd.Use != "check" {
-			t.Errorf("cmd use = %v, want %v", cmd.Use, "check")
+		if cmd.Use != "run" {
+			t.Errorf("cmd use = %v, want %v", cmd.Use, "run")
 		}
 
 		if cmd.RunE == nil {
-			t.Errorf("cmd run is nil")
+			t.Errorf("cmd.RunE is nil")
 		}
 
 		if len(cmd.Aliases) > 0 {
@@ -42,14 +44,18 @@ func Test_newCheckCommand(t *testing.T) {
 		}
 
 		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false")
+			t.Errorf("cmd.HasSubCommands() should be false but got true")
+		}
+
+		if !cmd.HasExample() {
+			t.Errorf("example is required")
 		}
 	})
 }
 
-func Test_check_nil(t *testing.T) {
+func Test_run_nil(t *testing.T) {
 	t.Run("nil command", func(t *testing.T) {
-		err := check(nil, []string{})
+		err := run(nil, []string{})
 		if err == nil {
 			t.Errorf("err is nil")
 		}
@@ -60,28 +66,7 @@ func Test_check_nil(t *testing.T) {
 	})
 }
 
-func Test_check_ReadModuleFromFlags(t *testing.T) {
-	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
-		return nil, fakeError
-	}
-	defer func() {
-		readModuleFromFlags = originalReadModule
-	}()
-
-	cmd := newCheckCommand()
-	cmd.SetArgs([]string{})
-	err := cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
-
-	if !errors.Is(err, fakeError) {
-		t.Errorf("err = %v, want %v", err, "fake error")
-	}
-}
-
-func Test_check_IsValid(t *testing.T) {
+func Test_run_NoCommandSpecifiedError(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
@@ -97,26 +82,26 @@ func Test_check_IsValid(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	originalReadModule := readModuleFromFlagsFunc
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "check_test"
+			mod.Account = "NoCommandSpecifiedError"
 		}
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	cmd := newCheckCommand()
+	cmd := NewRunCommand()
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
 	}
 }
 
-func Test_check_repository(t *testing.T) {
+func Test_run_IsValid(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
@@ -132,27 +117,27 @@ func Test_check_repository(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	originalReadModule := readModuleFromFlagsFunc
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "check_repository"
+			mod.Account = "IsValid"
 		}
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	cmd := newCheckCommand()
-	cmd.SetArgs([]string{"--repository", "."})
+	cmd := NewRunCommand()
+	cmd.SetArgs([]string{"--cmd", "testCommand"})
 	err = cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
 	}
 }
 
-func Test_check_success(t *testing.T) {
+func Test_run_HandleStages(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
 	filePath = filepath.Clean(filePath)
@@ -168,30 +153,56 @@ func Test_check_success(t *testing.T) {
 		}
 	}(filePath)
 
-	originalReadModule := readModuleFromFlags
-	originalCheckStages := checkStagesFunc
-
-	readModuleFromFlags = func(cmd *cobra.Command) (*module.Module, error) {
+	originalReadModule := readModuleFromFlagsFunc
+	originalHandleStages := handleStagesFunc
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "test"
+			mod.Account = "HandleStages"
 		}
+
+		runCfg := map[string][]string{
+			"testCommand": {
+				"components",
+			},
+		}
+
+		mod.Run = runCfg
+
 		return mod, err
 	}
 	defer func() {
-		readModuleFromFlags = originalReadModule
+		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	checkStagesFunc = func(module *module.Module) error {
+	handleStagesFunc = func(stages []string, m *module.Module, wg *sync.WaitGroup, errCh chan<- error,
+		logger interfaces.BuildLogger, customCommandMode bool) error {
 		return nil
 	}
 	defer func() {
-		checkStagesFunc = originalCheckStages
+		handleStagesFunc = originalHandleStages
 	}()
 
-	cmd := newCheckCommand()
+	cmd := NewRunCommand()
+	cmd.SetArgs([]string{"--cmd", "testCommand"})
 	err = cmd.Execute()
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func Test_run_readModuleFromFlags_failed(t *testing.T) {
+	originalReadModule := readModuleFromFlagsFunc
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		return nil, errors.New("error")
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	cmd := NewRunCommand()
+	cmd.SetArgs([]string{"--cmd", "testCommand"})
+	if err := cmd.Execute(); err == nil {
+		t.Errorf("err is nil")
 	}
 }

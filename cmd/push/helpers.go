@@ -1,4 +1,4 @@
-package cmd
+package push
 
 import (
 	"context"
@@ -7,54 +7,24 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pixel365/bx/internal/types"
-
-	"github.com/pixel365/bx/internal/helpers"
+	"github.com/charmbracelet/huh/spinner"
+	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/errors"
-
+	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/request"
+	"github.com/pixel365/bx/internal/types"
 	"github.com/pixel365/bx/internal/validators"
-
-	"github.com/charmbracelet/huh/spinner"
-
-	"github.com/spf13/cobra"
 )
 
 var (
-	uploadFunc            = upload
-	authFunc              = auth
-	inputPasswordFunc     = helpers.UserInput
-	newPasswordPromptFunc = types.NewPrompt
+	inputPasswordFunc       = helpers.UserInput
+	newPasswordPromptFunc   = types.NewPrompt
+	readModuleFromFlagsFunc = module.ReadModuleFromFlags
+	uploadFunc              = upload
+	authFunc                = auth
 )
-
-func newPushCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "push",
-		Short: "Push module to a Marketplace",
-		Example: `
-# Push module to a registry
-bx push --name my_module
-
-# Push a module by file path
-bx push -f config.yaml
-
-# Override version
-bx push --name my_module --version 1.2.3
-`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return push(cmd, args)
-		},
-	}
-
-	cmd.Flags().StringP("name", "n", "", "Name of the module")
-	cmd.Flags().StringP("file", "f", "", "Path to a module")
-	cmd.Flags().StringP("version", "v", "", "Version of the module")
-	cmd.Flags().StringP("password", "p", "", "Account password")
-
-	return cmd
-}
 
 // push handles the logic for pushing a module to the Marketplace.
 // It validates the module name, reads the module configuration, and authenticates the user.
@@ -71,7 +41,7 @@ func push(cmd *cobra.Command, _ []string) error {
 		return errors.NilCmdError
 	}
 
-	mod, err := readModuleFromFlags(cmd)
+	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
 		return err
 	}

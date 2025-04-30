@@ -1,4 +1,4 @@
-package cmd
+package version
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ var (
 	buildDate    = "unknown"
 )
 
-func newVersionCommand() *cobra.Command {
+func NewVersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:     "version",
 		Aliases: []string{"v"},
