@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
 	"github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
@@ -311,4 +313,35 @@ func Cleanup(resource io.Closer, ch chan<- error) {
 	if err := resource.Close(); err != nil && ch != nil {
 		ch <- err
 	}
+}
+
+// UserInput displays an interactive input prompt with a title and validation,
+// using the provided Prompter interface.
+//
+// The entered value is stored in the
+// given string pointer.
+// If the input fails validation or an error occurs,
+// the function returns an error.
+//
+// Parameters:
+//   - prompter: an implementation of the Prompter interface that handles input rendering and retrieval.
+//   - variable: a pointer to a string where the resulting input will be stored.
+//   - title: the title or label shown to the user for the input prompt.
+//   - validator: a function used to validate the user input.
+//
+// Returns:
+//   - error: an error if the input fails validation or the prompt fails to run; nil on success.
+func UserInput(
+	prompter interfaces.Prompter,
+	variable *string,
+	title string,
+	validator func(string) error,
+) error {
+	if err := prompter.Input(title, validator); err != nil {
+		return err
+	}
+
+	*variable = prompter.GetValue()
+
+	return nil
 }

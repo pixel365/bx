@@ -39,8 +39,9 @@ var (
 	CallbackActionSchemeError     = errors.New(
 		"callback action url scheme is invalid. allowed values are 'http' or 'https'",
 	)
-	NilCmdError         = errors.New("cmd is nil")
-	NilClientError      = errors.New("client is nil")
-	TODOContextError    = errors.New("todo context is prohibited")
-	InvalidRootDirError = errors.New("invalid root directory")
+	NilCmdError          = errors.New("cmd is nil")
+	NilClientError       = errors.New("client is nil")
+	TODOContextError     = errors.New("todo context is prohibited")
+	InvalidRootDirError  = errors.New("invalid root directory")
+	InvalidArgumentError = errors.New("invalid argument")
 )

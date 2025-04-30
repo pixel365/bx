@@ -34,3 +34,8 @@ type Runnable interface {
 	PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
 	PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
 }
+
+type Prompter interface {
+	GetValue() string
+	Input(title string, validator func(string) error) error
+}
