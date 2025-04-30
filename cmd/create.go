@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pixel365/bx/internal/types"
+
 	"github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/helpers"
@@ -14,8 +16,12 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
+)
+
+var (
+	moduleNameInputFunc = helpers.UserInput
+	newModulePromptFunc = types.NewPrompt
 )
 
 func newCreateCommand() *cobra.Command {
@@ -59,14 +65,11 @@ func create(cmd *cobra.Command, _ []string) error {
 	name, _ := cmd.Flags().GetString("name")
 	name = strings.TrimSpace(name)
 	if name == "" {
-		if err := huh.NewInput().
-			Title("Enter Module Name:").
-			Prompt("> ").
-			Value(&name).
-			Validate(func(input string) error {
-				return validators.ValidateModuleName(input, directory)
-			}).
-			Run(); err != nil {
+		prompter := newModulePromptFunc()
+		err := moduleNameInputFunc(prompter, &name, "Enter Module Name:", func(input string) error {
+			return validators.ValidateModuleName(input, directory)
+		})
+		if err != nil {
 			return err
 		}
 	} else {

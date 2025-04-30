@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/helpers"
@@ -74,8 +76,11 @@ func Test_handlePassword(t *testing.T) {
 
 			if tt.data == "" {
 				origInput := inputPasswordFunc
-				defer func() { inputPasswordFunc = origInput }()
-				inputPasswordFunc = func(password *string) error {
+				defer func() {
+					inputPasswordFunc = origInput
+				}()
+
+				inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
 					return nil
 				}
 			}
@@ -141,6 +146,15 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		authFunc = originalAuthFunc
 	}()
 
+	origInputPasswordFunc := inputPasswordFunc
+	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return errors.New("input error")
+	}
+
+	defer func() {
+		inputPasswordFunc = origInputPasswordFunc
+	}()
+
 	cmd := newPushCommand()
 	err = cmd.Execute()
 	if err == nil {
@@ -182,6 +196,15 @@ func Test_push_invalid_Version(t *testing.T) {
 	}
 	defer func() {
 		authFunc = originalAuthFunc
+	}()
+
+	origInputPasswordFunc := inputPasswordFunc
+	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return nil
+	}
+
+	defer func() {
+		inputPasswordFunc = origInputPasswordFunc
 	}()
 
 	cmd := newPushCommand()
@@ -227,6 +250,15 @@ func Test_push_auth(t *testing.T) {
 	}
 	defer func() {
 		authFunc = originalAuthFunc
+	}()
+
+	origInputPasswordFunc := inputPasswordFunc
+	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return nil
+	}
+
+	defer func() {
+		inputPasswordFunc = origInputPasswordFunc
 	}()
 
 	cmd := newPushCommand()
@@ -279,6 +311,15 @@ func Test_push_upload(t *testing.T) {
 	}
 	defer func() {
 		uploadFunc = originalUploadFunc
+	}()
+
+	origInputPasswordFunc := inputPasswordFunc
+	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return nil
+	}
+
+	defer func() {
+		inputPasswordFunc = origInputPasswordFunc
 	}()
 
 	cmd := newPushCommand()
@@ -385,6 +426,15 @@ func Test_push_valid_Version(t *testing.T) {
 	}
 	defer func() {
 		authFunc = originalAuthFunc
+	}()
+
+	origInputPasswordFunc := inputPasswordFunc
+	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return nil
+	}
+
+	defer func() {
+		inputPasswordFunc = origInputPasswordFunc
 	}()
 
 	cmd := newPushCommand()

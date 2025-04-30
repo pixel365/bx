@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pixel365/bx/internal/interfaces"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/helpers"
@@ -64,6 +66,16 @@ func Test_create_empty_name(t *testing.T) {
 	cmd.SetContext(context.Background())
 	cmd.SetArgs([]string{"--name", ""})
 
+	origModuleInputNameFunc := moduleNameInputFunc
+
+	moduleNameInputFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return errors.New("empty name")
+	}
+
+	defer func() {
+		moduleNameInputFunc = origModuleInputNameFunc
+	}()
+
 	t.Run("empty name", func(t *testing.T) {
 		err := create(cmd, []string{})
 		if err == nil {
@@ -77,10 +89,43 @@ func Test_create_not_empty_name(t *testing.T) {
 	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", "test-module"})
 
+	origModuleInputNameFunc := moduleNameInputFunc
+
+	moduleNameInputFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return nil
+	}
+
+	defer func() {
+		moduleNameInputFunc = origModuleInputNameFunc
+	}()
+
+	t.Run("not empty name", func(t *testing.T) {
+		err := create(cmd, []string{})
+		if err != nil {
+			t.Error(err)
+		}
+	})
+}
+
+func Test_create_not_empty_invalid_name(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
+	cmd.SetArgs([]string{"--name", "test-module"})
+
+	origModuleInputNameFunc := moduleNameInputFunc
+
+	moduleNameInputFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
+		return errors.New("invalid name")
+	}
+
+	defer func() {
+		moduleNameInputFunc = origModuleInputNameFunc
+	}()
+
 	t.Run("not empty name", func(t *testing.T) {
 		err := create(cmd, []string{})
 		if err == nil {
-			t.Errorf("err is nil")
+			t.Error("err is nil")
 		}
 	})
 }

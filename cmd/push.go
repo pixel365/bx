@@ -7,6 +7,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pixel365/bx/internal/types"
+
+	"github.com/pixel365/bx/internal/helpers"
+
 	"github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/module"
@@ -15,15 +19,14 @@ import (
 
 	"github.com/charmbracelet/huh/spinner"
 
-	"github.com/charmbracelet/huh"
-
 	"github.com/spf13/cobra"
 )
 
 var (
-	uploadFunc        = upload
-	authFunc          = auth
-	inputPasswordFunc = inputPassword
+	uploadFunc            = upload
+	authFunc              = auth
+	inputPasswordFunc     = helpers.UserInput
+	newPasswordPromptFunc = types.NewPrompt
 )
 
 func newPushCommand() *cobra.Command {
@@ -174,7 +177,11 @@ func handlePassword(cmd *cobra.Command, module *module.Module) (string, error) {
 	}
 
 	if password == "" {
-		if err := inputPasswordFunc(&password); err != nil {
+		prompter := newPasswordPromptFunc()
+		err := inputPasswordFunc(prompter, &password, "Enter Password:", func(input string) error {
+			return validators.ValidatePassword(input)
+		})
+		if err != nil {
 			return "", err
 		}
 	}
@@ -189,16 +196,4 @@ func handlePassword(cmd *cobra.Command, module *module.Module) (string, error) {
 	}
 
 	return password, nil
-}
-
-func inputPassword(password *string) error {
-	return huh.NewInput().
-		Title("Enter Password:").
-		Prompt("> ").
-		Value(password).
-		EchoMode(2).
-		Validate(func(input string) error {
-			return validators.ValidatePassword(input)
-		}).
-		Run()
 }

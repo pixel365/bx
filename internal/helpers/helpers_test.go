@@ -2,13 +2,26 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/pixel365/bx/internal/types"
 )
+
+type FakePromptSuccessor struct{}
+type FakePromptFailer struct{}
+
+func (p *FakePromptSuccessor) Input(_ string, _ func(string) error) error { return nil }
+func (p *FakePromptSuccessor) GetValue() string                           { return "" }
+func (p *FakePromptFailer) Input(_ string, _ func(string) error) error {
+	return errors.New("fail")
+}
+func (p *FakePromptFailer) GetValue() string { return "" }
 
 func TestDefaultYAML(t *testing.T) {
 	const def = `name: "test"
@@ -245,6 +258,37 @@ func Test_Cleanup(t *testing.T) {
 	}
 }
 
+func Test_Cleanup_chan(t *testing.T) {
+	ch := make(chan error)
+
+	t.Run("TestCleanup_chan", func(t *testing.T) {
+		fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+		filePath, _ := filepath.Abs("./" + fileName)
+		filePath = filepath.Clean(filePath)
+
+		file, err := os.Create(filePath)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer func() {
+			err := os.Remove(file.Name())
+			if err != nil {
+				return
+			}
+		}()
+
+		go func() {
+			Cleanup(file, ch)
+			close(ch)
+		}()
+	})
+
+	for e := range ch {
+		t.Errorf("TestCleanup_chan failed: %v", e)
+	}
+}
+
 func TestChoose(t *testing.T) {
 	empty := ""
 	type args struct {
@@ -307,4 +351,31 @@ func Test_checkPaths(t *testing.T) {
 	if len(errs) != 0 {
 		t.Errorf("CheckPaths() = %v, want %v", errs, []error{})
 	}
+}
+
+func TestUserInput_success(t *testing.T) {
+	t.Run("TestUserInput_success", func(t *testing.T) {
+		prompter := FakePromptSuccessor{}
+		value := ""
+		err := UserInput(&prompter, &value, "title", func(string) error { return nil })
+		if err != nil {
+			t.Errorf("UserInput() err = %v", err)
+		}
+	})
+}
+
+func TestUserInput_fail(t *testing.T) {
+	t.Run("TestUserInput_fail", func(t *testing.T) {
+		prompter := FakePromptFailer{}
+		value := ""
+		err := UserInput(
+			&prompter,
+			&value,
+			"title",
+			func(string) error { return errors.New("fake error") },
+		)
+		if err == nil {
+			t.Errorf("UserInput() err = %v", err)
+		}
+	})
 }
