@@ -1,8 +1,19 @@
 package types
 
+import "golang.org/x/text/encoding/charmap"
+
 type Changelog struct {
-	From      TypeValue[ChangelogType, string]            `yaml:"from"`
-	To        TypeValue[ChangelogType, string]            `yaml:"to"`
-	Sort      ChangelogSort                               `yaml:"sort,omitempty"`
-	Condition TypeValue[ChangelogConditionType, []string] `yaml:"condition,omitempty"`
+	From           TypeValue[ChangelogType, string]            `yaml:"from"`
+	To             TypeValue[ChangelogType, string]            `yaml:"to"`
+	Sort           ChangelogSort                               `yaml:"sort,omitempty"`
+	FooterTemplate string                                      `yaml:"footerTemplate,omitempty"`
+	Condition      TypeValue[ChangelogConditionType, []string] `yaml:"condition,omitempty"`
+}
+
+func (c *Changelog) EncodedFooter() (string, error) {
+	if c.FooterTemplate == "" {
+		return "", nil
+	}
+
+	return charmap.Windows1251.NewEncoder().String("\n" + c.FooterTemplate)
 }

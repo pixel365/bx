@@ -434,7 +434,17 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 
 	}
 
-	err := whiteFileForVersion(builder, "description.ru", descriptionRu)
+	footer, err := builder.module.Changelog.EncodedFooter()
+	if err != nil {
+		return fmt.Errorf(
+			"encoding footer template [%s]: %w",
+			builder.module.Changelog.FooterTemplate,
+			err,
+		)
+	}
+	descriptionRu += footer
+
+	err = whiteFileForVersion(builder, "description.ru", descriptionRu)
 	if err != nil {
 		return fmt.Errorf("failed to make description file: %w", err)
 	}
