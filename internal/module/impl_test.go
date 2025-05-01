@@ -6,10 +6,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pixel365/bx/internal/callback"
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
 )
+
+var fakeCondType types.ChangelogConditionType = "fake"
 
 func TestModule_IsValid(t *testing.T) {
 	type fields struct {
@@ -459,6 +462,37 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, false},
+		{"invalid condition type", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v1.0.0",
+			},
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v2.0.0",
+			},
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type: fakeCondType,
+				Value: []string{
+					`^feat: ([\W\w]+)$`,
+					`^fix: ([\W\w]+)$`,
+				},
+			},
+		}, true},
+		{"empty condition values", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v1.0.0",
+			},
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v2.0.0",
+			},
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type:  types.Include,
+				Value: []string{},
+			},
+		}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -478,6 +512,36 @@ func TestModule_ValidateChangelog(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestModule_ValidateChangelog_empty_repository(t *testing.T) {
+	t.Run("empty repository", func(t *testing.T) {
+		m := &Module{
+			Repository: "",
+			Changelog: types.Changelog{
+				From: types.TypeValue[types.ChangelogType, string]{
+					Type:  types.Tag,
+					Value: "v1.0.0",
+				},
+				To: types.TypeValue[types.ChangelogType, string]{
+					Type:  types.Tag,
+					Value: "v2.0.0",
+				},
+				Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+					Type:  types.Include,
+					Value: []string{},
+				},
+			},
+		}
+		err := m.ValidateChangelog()
+		if !errors.Is(err, errors2.InvalidChangelogSettingsError) {
+			t.Errorf(
+				"ValidateChangelog() error = %v, wantErr %v",
+				err,
+				errors2.InvalidChangelogSettingsError,
+			)
+		}
+	})
 }
 
 func TestModule_FindStage(t *testing.T) {
@@ -582,5 +646,27 @@ func TestModule_StageCallback(t *testing.T) {
 	_, err := mod.StageCallback("stage_1")
 	if !errors.Is(err, errors2.StageCallbackNotFoundError) {
 		t.Errorf("StageCallback() error = %v, wantErr %v", err, errors2.StageCallbackNotFoundError)
+	}
+}
+
+func TestModule_StageCallback_found(t *testing.T) {
+	mod := Module{
+		Stages: []types.Stage{
+			{
+				Name:               "stage_1",
+				To:                 "to",
+				ActionIfFileExists: types.Replace,
+				From:               []string{"from"},
+			},
+		},
+		Callbacks: []callback.Callback{
+			{
+				Stage: "stage_1",
+			},
+		},
+	}
+	_, err := mod.StageCallback("stage_1")
+	if err != nil {
+		t.Errorf("StageCallback() error = %v, wantErr %v", err, nil)
 	}
 }
