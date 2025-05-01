@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pixel365/bx/internal/helpers"
+
 	"github.com/rs/zerolog"
 )
 
@@ -15,41 +17,34 @@ type ZeroLogger struct {
 }
 
 func (l *ZeroLogger) Info(message string, args ...interface{}) {
-	if l.logFile == nil {
-		return
-	}
+	if l.logFile != nil {
+		if len(args) > 0 {
+			l.logger.Info().Msgf(message, args...)
+			return
+		}
 
-	if len(args) > 0 {
-		l.logger.Info().Msgf(message, args...)
-		return
+		l.logger.Info().Msg(message)
 	}
-
-	l.logger.Info().Msg(message)
 }
 
 func (l *ZeroLogger) Error(message string, err error, args ...interface{}) {
-	if l.logFile == nil {
-		return
-	}
+	if l.logFile != nil {
+		if len(args) > 0 {
+			l.logger.Error().Err(err).Msgf(message, args...)
+			return
+		}
 
-	if len(args) > 0 {
-		l.logger.Error().Err(err).Msgf(message, args...)
-		return
+		l.logger.Error().Err(err).Msg(message)
 	}
-
-	l.logger.Error().Err(err).Msg(message)
 }
 
 func (l *ZeroLogger) Cleanup() {
 	if l.logFile != nil {
-		err := l.logFile.Close()
-		if err != nil {
-			return
-		}
+		helpers.Cleanup(l.logFile, nil)
 
 		path := fmt.Sprintf("%s/%s", l.logDir, l.logFile.Name())
 		path = filepath.Clean(path)
-		err = os.Rename(l.logFile.Name(), path)
+		err := os.Rename(l.logFile.Name(), path)
 		if err != nil {
 			return
 		}

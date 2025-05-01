@@ -162,13 +162,10 @@ func (m *Module) NormalizeStages() error {
 //   - string: The absolute path of the ZIP file.
 //   - error: Any error encountered during path creation or validation, otherwise nil.
 func (m *Module) ZipPath() (string, error) {
-	path, err := filepath.Abs(fmt.Sprintf("%s/%s.zip", m.BuildDirectory, m.Version))
-	if err != nil {
-		return "", err
-	}
+	path, _ := filepath.Abs(fmt.Sprintf("%s/%s.zip", m.BuildDirectory, m.Version))
 	path = filepath.Clean(path)
 
-	if err = helpers.CheckPath(path); err != nil {
+	if err := helpers.CheckPath(path); err != nil {
 		return path, err
 	}
 

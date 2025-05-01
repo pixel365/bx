@@ -23,10 +23,7 @@ var versionRegex = regexp.MustCompile(`(?m)^(\d+\.\d+\.\d+)$`)
 //
 // Returns nil if the module name is available, otherwise returns an error.
 func ValidateModuleName(name, directory string) error {
-	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
-	if err != nil {
-		return err
-	}
+	filePath, _ := filepath.Abs(fmt.Sprintf("%s/%s.yaml", directory, name))
 
 	if _, err := os.Stat(filePath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
