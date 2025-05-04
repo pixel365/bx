@@ -21,3 +21,6 @@ build:
 
 cover:
 	go test -coverprofile=coverage.out ./... && go tool $@ -html=coverage.out
+
+doc:
+	docsify serve docs
