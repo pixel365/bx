@@ -17,6 +17,8 @@ import (
 	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/spf13/cobra"
+
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -31,6 +33,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 		Use:   "bx",
 		Short: "Command-line tool for developers of 1C-Bitrix platform modules.",
 		PersistentPreRunE: func(command *cobra.Command, _ []string) error {
+			_ = godotenv.Load()
 			dirPath, err := initRootDirFunc(command)
 			if err != nil {
 				return err
