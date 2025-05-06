@@ -28,6 +28,11 @@ func Choose(items *[]string, value *string, title string) error {
 		return errors.NoItemsError
 	}
 
+	if len(*items) == 1 && (*items)[0] != "" {
+		*value = (*items)[0]
+		return nil
+	}
+
 	var options []huh.Option[string]
 	for i, item := range *items {
 		if item == "" {
