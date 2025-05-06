@@ -288,3 +288,44 @@ func Test_shouldInclude(t *testing.T) {
 		})
 	}
 }
+
+func TestIsFileExists_true(t *testing.T) {
+	filePath := fmt.Sprintf("./%d.txt", time.Now().UTC().Unix())
+	filePath = filepath.Clean(filePath)
+	file, err := os.Create(filePath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = file.WriteString("str")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = file.Close()
+	if err != nil {
+		t.Error(err)
+	}
+
+	defer func() {
+		if err := os.Remove(filePath); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	t.Run("file exists", func(t *testing.T) {
+		ok, size := IsFileExists(filePath)
+		if !ok || size == 0 {
+			t.Errorf("IsFileExists() = %v, want %v", ok, true)
+		}
+	})
+}
+
+func TestIsFileExists_false(t *testing.T) {
+	t.Run("file exists", func(t *testing.T) {
+		ok, size := IsFileExists("./some-file.txt")
+		if ok || size > 0 {
+			t.Errorf("IsFileExists() = %v, want %v", ok, false)
+		}
+	})
+}

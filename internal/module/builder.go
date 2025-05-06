@@ -268,6 +268,13 @@ func (m *ModuleBuilder) Collect() error {
 		return errors.NoChangesError
 	}
 
+	if !m.module.LastVersion {
+		ok, size := fs.IsFileExists(versionDirectory + "/description.ru")
+		if !ok || size == 0 {
+			return errors.DescriptionDoesNotExistsError
+		}
+	}
+
 	zipPath, err := makeZipFilePath(m.module)
 	if err != nil {
 		return err
@@ -444,7 +451,7 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 	}
 	descriptionRu += footer
 
-	err = whiteFileForVersion(builder, "description.ru", descriptionRu)
+	err = writeFileForVersion(builder, "description.ru", descriptionRu)
 	if err != nil {
 		return fmt.Errorf("failed to make description file: %w", err)
 	}
@@ -465,7 +472,7 @@ func makeVersionFile(builder *ModuleBuilder) error {
 	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + now + "\"\n")
 	buf.WriteString(");\n")
 
-	err := whiteFileForVersion(builder, "/install/version.php", buf.String())
+	err := writeFileForVersion(builder, "/install/version.php", buf.String())
 	if err != nil {
 		return fmt.Errorf("failed to make version.php file: %w", err)
 	}

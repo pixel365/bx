@@ -591,3 +591,13 @@ func RemoveEmptyDirs(root string) (bool, error) {
 
 	return empty, nil
 }
+
+func IsFileExists(path string) (bool, int64) {
+	path = filepath.Clean(path)
+	file, err := os.Stat(path)
+	if err != nil {
+		return false, 0
+	}
+
+	return file.Mode().IsRegular(), file.Size()
+}
