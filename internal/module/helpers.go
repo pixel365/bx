@@ -203,7 +203,11 @@ func makeZipFilePath(module *Module) (string, error) {
 	return path, nil
 }
 
-func whiteFileForVersion(builder *ModuleBuilder, path, content string) error {
+func writeFileForVersion(builder *ModuleBuilder, path, content string) error {
+	if len(content) == 0 {
+		return nil
+	}
+
 	versionDir, err := makeVersionDirectory(builder.module)
 	if err != nil {
 		return err
