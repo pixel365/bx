@@ -195,6 +195,10 @@ func IsDir(path string) (bool, error) {
 // Returns:
 //   - error: Returns an error if the context is done (canceled or expired), otherwise nil.
 func CheckContext(ctx context.Context) error {
+	if ctx == nil {
+		return errors.NilContextError
+	}
+
 	if ctx == context.TODO() {
 		return errors.TODOContextError
 	}

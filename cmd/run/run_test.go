@@ -11,8 +11,6 @@ import (
 
 	"github.com/pixel365/bx/internal/interfaces"
 
-	errors2 "github.com/pixel365/bx/internal/errors"
-
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 
@@ -49,19 +47,6 @@ func Test_newRunCommand(t *testing.T) {
 
 		if !cmd.HasExample() {
 			t.Errorf("example is required")
-		}
-	})
-}
-
-func Test_run_nil(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		err := run(nil, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }

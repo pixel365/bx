@@ -3,7 +3,6 @@ package push
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/pixel365/bx/internal/auth"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/request"
-	"github.com/pixel365/bx/internal/validators"
 )
 
 var (
@@ -34,26 +32,8 @@ var (
 // Returns:
 //   - error: An error if any validation or upload step fails.
 func push(cmd *cobra.Command, _ []string) error {
-	if cmd == nil {
-		return errors.NilCmdError
-	}
-
 	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
-		return err
-	}
-
-	version, _ := cmd.Flags().GetString("version")
-	version = strings.TrimSpace(version)
-
-	if version != "" {
-		if err := validators.ValidateVersion(version); err != nil {
-			return err
-		}
-		mod.Version = version
-	}
-
-	if err = mod.IsValid(); err != nil {
 		return err
 	}
 

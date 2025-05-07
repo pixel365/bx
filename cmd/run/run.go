@@ -36,26 +36,17 @@ bx run --name my_module --cmd custom_command
 }
 
 func run(cmd *cobra.Command, _ []string) error {
-	if cmd == nil {
-		return errors.NilCmdError
-	}
-
-	command, _ := cmd.Flags().GetString("cmd")
-
-	if command == "" {
-		return errors.NoCommandSpecifiedError
-	}
-
 	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
 		return err
 	}
 
-	if err := mod.IsValid(); err != nil {
-		return err
+	command, _ := cmd.Flags().GetString("cmd")
+	if command == "" {
+		return errors.NoCommandSpecifiedError
 	}
 
-	if err := module.ValidateRun(mod); err != nil {
+	if err = module.ValidateRun(mod); err != nil {
 		return err
 	}
 

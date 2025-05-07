@@ -53,10 +53,6 @@ bx create --name my_module
 // Returns:
 //   - error: An error if the module name is invalid or any other error occurs during the creation process.
 func create(cmd *cobra.Command, _ []string) error {
-	if cmd == nil {
-		return errors.NilCmdError
-	}
-
 	directory, ok := cmd.Context().Value(helpers.RootDir).(string)
 	if !ok {
 		return errors.InvalidRootDirError

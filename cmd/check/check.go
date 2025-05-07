@@ -5,7 +5,6 @@ import (
 
 	"github.com/pixel365/bx/internal/module"
 
-	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 )
 
@@ -49,22 +48,8 @@ bx check -f module-path/config.yaml
 // Returns:
 //   - error: An error if the module configuration is invalid or any other error occurs.
 func check(cmd *cobra.Command, _ []string) error {
-	if cmd == nil {
-		return errors.NilCmdError
-	}
-
 	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
-		return err
-	}
-
-	repository, _ := cmd.Flags().GetString("repository")
-
-	if repository != "" {
-		mod.Repository = repository
-	}
-
-	if err := mod.IsValid(); err != nil {
 		return err
 	}
 

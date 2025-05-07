@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	errors2 "github.com/pixel365/bx/internal/errors"
+
 	"github.com/pixel365/bx/internal/types"
 )
 
@@ -161,9 +163,14 @@ func TestCheckContextDone(t *testing.T) {
 	})
 }
 
-func TestCheckContextNil(t *testing.T) {
+func TestCheckContextTodo(t *testing.T) {
 	t.Run("TestCheckContextNil", func(t *testing.T) {
-		if err := CheckContext(context.TODO()); err == nil {
+		var err error
+		if err = CheckContext(context.TODO()); err == nil {
+			t.Error("CheckContext() did not return an error")
+		}
+
+		if !errors.Is(err, errors2.TODOContextError) {
 			t.Error("CheckContext() did not return an error")
 		}
 	})

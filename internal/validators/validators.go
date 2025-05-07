@@ -43,7 +43,6 @@ func ValidateModuleName(name, directory string) error {
 //
 // Returns nil if the version is valid, otherwise returns an error.
 func ValidateVersion(version string) error {
-	version = strings.TrimSpace(version)
 	if version == "" {
 		return errors2.EmptyVersionError
 	}
