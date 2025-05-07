@@ -5,7 +5,7 @@ import "golang.org/x/text/encoding/charmap"
 type Changelog struct {
 	From           TypeValue[ChangelogType, string]            `yaml:"from"`
 	To             TypeValue[ChangelogType, string]            `yaml:"to"`
-	Sort           ChangelogSort                               `yaml:"sort,omitempty"`
+	Sort           SortingType                                 `yaml:"sort,omitempty"`
 	FooterTemplate string                                      `yaml:"footerTemplate,omitempty"`
 	Condition      TypeValue[ChangelogConditionType, []string] `yaml:"condition,omitempty"`
 }

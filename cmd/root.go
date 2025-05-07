@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 
+	"github.com/pixel365/bx/cmd/list"
+
 	"github.com/pixel365/bx/cmd/build"
 	"github.com/pixel365/bx/cmd/check"
 	"github.com/pixel365/bx/cmd/create"
@@ -52,6 +54,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(push.NewPushCommand())
 	cmd.AddCommand(run.NewRunCommand())
 	cmd.AddCommand(version.NewVersionCommand())
+	cmd.AddCommand(list.NewListCommand())
 
 	return cmd
 }
