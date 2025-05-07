@@ -3,7 +3,7 @@ package types
 type FileExistsAction string
 type ChangelogType string
 type ChangelogConditionType string
-type ChangelogSort string
+type SortingType string
 type BuildType string
 
 const (
@@ -17,8 +17,8 @@ const (
 	Include ChangelogConditionType = "include"
 	Exclude ChangelogConditionType = "exclude"
 
-	Asc  ChangelogSort = "asc"
-	Desc ChangelogSort = "desc"
+	Asc  SortingType = "asc"
+	Desc SortingType = "desc"
 )
 
 type TypeValue[T1 any, T2 any] struct {

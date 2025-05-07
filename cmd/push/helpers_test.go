@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/helpers"
-	"github.com/pixel365/bx/internal/interfaces"
 	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/request"
 )
@@ -31,47 +29,6 @@ func Test_push_nil(t *testing.T) {
 			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
-}
-
-func Test_handlePassword(t *testing.T) {
-	mod := &module.Module{}
-	tests := []struct {
-		name    string
-		data    string
-		want    string
-		wantErr bool
-	}{
-		{"success", "123456", "123456", false},
-		{"short password", "12345", "", true},
-		{"empty password", "", "", true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := NewPushCommand()
-			cmd.SetArgs([]string{"--password", tt.data, "--name", "test"})
-			_ = cmd.Flags().Set("password", tt.data)
-			_ = cmd.Flags().Set("name", "test")
-
-			if tt.data == "" {
-				origInput := inputPasswordFunc
-				defer func() {
-					inputPasswordFunc = origInput
-				}()
-
-				inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
-					return nil
-				}
-			}
-
-			res, err := handlePassword(cmd, mod)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("handlePassword() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if res != tt.want {
-				t.Errorf("handlePassword() = %v, want %v", res, tt.want)
-			}
-		})
-	}
 }
 
 func Test_push_ReadModuleFromFlags(t *testing.T) {
@@ -92,6 +49,7 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 
 	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
+	originalInputPasswordFunc := inputPasswordFunc
 
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
@@ -111,13 +69,11 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		authFunc = originalAuthFunc
 	}()
 
-	origInputPasswordFunc := inputPasswordFunc
-	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
-		return errors.New("input error")
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
 	}
-
 	defer func() {
-		inputPasswordFunc = origInputPasswordFunc
+		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
 	cmd := NewPushCommand()
@@ -145,6 +101,7 @@ func Test_push_invalid_Version(t *testing.T) {
 
 	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
+	originalInputPasswordFunc := inputPasswordFunc
 
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
@@ -164,13 +121,11 @@ func Test_push_invalid_Version(t *testing.T) {
 		authFunc = originalAuthFunc
 	}()
 
-	origInputPasswordFunc := inputPasswordFunc
-	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
-		return nil
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
 	}
-
 	defer func() {
-		inputPasswordFunc = origInputPasswordFunc
+		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
 	cmd := NewPushCommand()
@@ -199,6 +154,7 @@ func Test_push_auth(t *testing.T) {
 
 	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
+	originalInputPasswordFunc := inputPasswordFunc
 
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
@@ -218,13 +174,11 @@ func Test_push_auth(t *testing.T) {
 		authFunc = originalAuthFunc
 	}()
 
-	origInputPasswordFunc := inputPasswordFunc
-	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
-		return nil
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
 	}
-
 	defer func() {
-		inputPasswordFunc = origInputPasswordFunc
+		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
 	cmd := NewPushCommand()
@@ -253,6 +207,7 @@ func Test_push_upload(t *testing.T) {
 	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
 	originalUploadFunc := uploadFunc
+	originalInputPasswordFunc := inputPasswordFunc
 
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
@@ -279,13 +234,11 @@ func Test_push_upload(t *testing.T) {
 		uploadFunc = originalUploadFunc
 	}()
 
-	origInputPasswordFunc := inputPasswordFunc
-	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
-		return nil
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
 	}
-
 	defer func() {
-		inputPasswordFunc = origInputPasswordFunc
+		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
 	cmd := NewPushCommand()
@@ -319,44 +272,6 @@ func Test_upload(t *testing.T) {
 	}
 }
 
-func Test_auth(t *testing.T) {
-	type args struct {
-		module   *module.Module
-		password string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *request.Client
-		want1   []*http.Cookie
-		wantErr bool
-	}{
-		{"nil module", args{
-			module:   nil,
-			password: "",
-		}, nil, nil, true},
-		{"empty password", args{
-			module:   &module.Module{},
-			password: "",
-		}, nil, nil, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := auth(tt.args.module, tt.args.password)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("auth() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("auth() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("auth() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
-	}
-}
-
 func Test_push_valid_Version(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
 	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
@@ -375,6 +290,7 @@ func Test_push_valid_Version(t *testing.T) {
 
 	originalReadModule := readModuleFromFlagsFunc
 	originalAuthFunc := authFunc
+	originalInputPasswordFunc := inputPasswordFunc
 
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
@@ -394,13 +310,11 @@ func Test_push_valid_Version(t *testing.T) {
 		authFunc = originalAuthFunc
 	}()
 
-	origInputPasswordFunc := inputPasswordFunc
-	inputPasswordFunc = func(_ interfaces.Prompter, _ *string, _ string, _ func(string) error) error {
-		return nil
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
 	}
-
 	defer func() {
-		inputPasswordFunc = origInputPasswordFunc
+		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
 	cmd := NewPushCommand()

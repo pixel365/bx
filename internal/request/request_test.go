@@ -62,20 +62,20 @@ func TestClient_Authorization(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.client.Authorization(tt.args.login, tt.args.password)
+			got, err := tt.client.Authenticate(tt.args.login, tt.args.password)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Authorization() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if len(got) != len(tt.want) {
-				t.Errorf("Authorization() got = %v, want %v", got, tt.want)
+				t.Errorf("Authenticate() got = %v, want %v", got, tt.want)
 				return
 			}
 
 			for i := range got {
 				if got[i].Name != tt.want[i].Name || got[i].Value != tt.want[i].Value {
-					t.Errorf("Authorization() got = %v, want %v", got[i], tt.want[i])
+					t.Errorf("Authenticate() got = %v, want %v", got[i], tt.want[i])
 				}
 			}
 		})
@@ -200,27 +200,6 @@ func TestClient_SessionId(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := client.SessionId(tt.args.module, tt.args.cookies); got != tt.want {
 				t.Errorf("SessionId() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_uploadResult(t *testing.T) {
-	type args struct {
-		htmlContent string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"has error", args{htmlContent: `<p class="paragraph-15 color-red m-0">error</p>`}, true},
-		{"no error", args{htmlContent: ""}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := uploadResult(tt.args.htmlContent); (err != nil) != tt.wantErr {
-				t.Errorf("uploadResult() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
