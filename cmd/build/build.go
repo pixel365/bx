@@ -2,16 +2,13 @@ package build
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pixel365/bx/internal/module"
 
-	"github.com/pixel365/bx/internal/errors"
-	"github.com/pixel365/bx/internal/logger"
-	"github.com/pixel365/bx/internal/validators"
-
 	"github.com/spf13/cobra"
+
+	"github.com/pixel365/bx/internal/logger"
 )
 
 var (
@@ -65,38 +62,8 @@ bx build --name my_module --last
 // Returns:
 //   - error: An error if the build process encounters any issues or validation fails.
 func build(cmd *cobra.Command, _ []string) error {
-	if cmd == nil {
-		return errors.NilCmdError
-	}
-
 	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
-		return err
-	}
-
-	version, _ := cmd.Flags().GetString("version")
-
-	if version != "" {
-		version = strings.TrimSpace(version)
-		if err := validators.ValidateVersion(version); err != nil {
-			return err
-		}
-		mod.Version = version
-	}
-
-	repository, _ := cmd.Flags().GetString("repository")
-
-	if repository != "" {
-		mod.Repository = repository
-	}
-
-	description, _ := cmd.Flags().GetString("description")
-
-	if description != "" {
-		mod.Description = description
-	}
-
-	if err := mod.IsValid(); err != nil {
 		return err
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/pixel365/bx/internal/interfaces"
 	"github.com/pixel365/bx/internal/types"
 
-	errors2 "github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 
@@ -67,19 +66,6 @@ func Test_newBuildCommand(t *testing.T) {
 
 		if cmd.RunE == nil {
 			t.Errorf("cmd.RunE is nil")
-		}
-	})
-}
-
-func Test_build_nil(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		err := build(nil, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	errors2 "github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 
@@ -43,19 +42,6 @@ func Test_newCheckCommand(t *testing.T) {
 
 		if cmd.HasSubCommands() {
 			t.Errorf("cmd.HasSubCommands() should be false")
-		}
-	})
-}
-
-func Test_check_nil(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		err := check(nil, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }

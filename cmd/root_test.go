@@ -5,10 +5,6 @@ import (
 	"errors"
 	"os"
 	"testing"
-
-	errors2 "github.com/pixel365/bx/internal/errors"
-
-	"github.com/spf13/cobra"
 )
 
 func TestNewRootCmd(t *testing.T) {
@@ -45,19 +41,6 @@ func TestNewRootCmd(t *testing.T) {
 	})
 }
 
-func Test_initRootDir(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		_, err := initRootDir(nil)
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
-		}
-	})
-}
-
 func Test_initRootDir_GetModDir(t *testing.T) {
 	t.Run("mod dir", func(t *testing.T) {
 		origGetModulesDirFunc := getModulesDirFunc
@@ -68,8 +51,8 @@ func Test_initRootDir_GetModDir(t *testing.T) {
 			getModulesDirFunc = origGetModulesDirFunc
 		}()
 
-		cmd := NewRootCmd(context.Background())
-		_, err := initRootDir(cmd)
+		_ = NewRootCmd(context.Background())
+		_, err := initRootDir()
 		if err == nil {
 			t.Errorf("err is nil")
 		}
@@ -86,8 +69,8 @@ func Test_initRootDir_ValidDir(t *testing.T) {
 			getModulesDirFunc = origGetModulesDirFunc
 		}()
 
-		cmd := NewRootCmd(context.Background())
-		res, _ := initRootDir(cmd)
+		_ = NewRootCmd(context.Background())
+		res, _ := initRootDir()
 		if res != "." {
 			t.Errorf("res = %v, want %v", res, "/some/dir")
 		}
@@ -112,8 +95,8 @@ func Test_initRootDir_InvalidDir(t *testing.T) {
 			getModulesDirFunc = origGetModulesDirFunc
 		}()
 
-		cmd := NewRootCmd(context.Background())
-		_, err := initRootDir(cmd)
+		_ = NewRootCmd(context.Background())
+		_, err := initRootDir()
 		if err == nil {
 			t.Errorf("err is nil")
 		}
@@ -147,8 +130,8 @@ func Test_initRootDir_MkDirError(t *testing.T) {
 			mkDir = origMkDir
 		}()
 
-		cmd := NewRootCmd(context.Background())
-		_, err := initRootDir(cmd)
+		_ = NewRootCmd(context.Background())
+		_, err := initRootDir()
 		if err == nil {
 			t.Errorf("err is nil")
 		}
@@ -158,7 +141,7 @@ func Test_initRootDir_MkDirError(t *testing.T) {
 func Test_Cmd_PersistentPreRunE(t *testing.T) {
 	t.Run("invalid dir", func(t *testing.T) {
 		origInitRootDir := initRootDirFunc
-		initRootDirFunc = func(cmd *cobra.Command) (string, error) {
+		initRootDirFunc = func() (string, error) {
 			return "", nil
 		}
 		defer func() {
@@ -175,7 +158,7 @@ func Test_Cmd_PersistentPreRunE(t *testing.T) {
 func Test_Cmd_PersistentPreRunE_Err(t *testing.T) {
 	t.Run("invalid dir", func(t *testing.T) {
 		origInitRootDir := initRootDirFunc
-		initRootDirFunc = func(cmd *cobra.Command) (string, error) {
+		initRootDirFunc = func() (string, error) {
 			return "", errors.New("init root dir error")
 		}
 		defer func() {

@@ -82,13 +82,6 @@ func (m *ModuleBuilder) Prepare() error {
 		return errors.NilModuleError
 	}
 
-	if err := m.module.IsValid(); err != nil {
-		m.logger.Error("Prepare: module is invalid", err)
-		return err
-	}
-
-	m.logger.Info("Validation complete")
-
 	if err := CheckStages(m.module); err != nil {
 		m.logger.Error("Prepare: check stages failed", err)
 		return err

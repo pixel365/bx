@@ -45,16 +45,8 @@ bx list -f config.yaml
 }
 
 func list(cmd *cobra.Command, _ []string) error {
-	if cmd == nil {
-		return errors.NilCmdError
-	}
-
 	mod, err := readModuleFromFlagsFunc(cmd)
 	if err != nil {
-		return err
-	}
-
-	if err = mod.IsValid(); err != nil {
 		return err
 	}
 

@@ -15,7 +15,6 @@ import (
 
 	"github.com/pixel365/bx/cmd/push"
 
-	errors2 "github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/spf13/cobra"
@@ -36,7 +35,7 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 		Short: "Command-line tool for developers of 1C-Bitrix platform modules.",
 		PersistentPreRunE: func(command *cobra.Command, _ []string) error {
 			_ = godotenv.Load()
-			dirPath, err := initRootDirFunc(command)
+			dirPath, err := initRootDirFunc()
 			if err != nil {
 				return err
 			}
@@ -63,17 +62,10 @@ func NewRootCmd(ctx context.Context) *cobra.Command {
 // It checks if the specified root directory exists, creates it if it doesn't,
 // and returns the absolute path to the directory.
 //
-// Parameters:
-//   - cmd (*cobra.Command): The command that called this function, used to retrieve the directory flag.
-//
 // Returns:
 //   - string: The absolute path to the root directory of the project.
 //   - error: An error if the directory cannot be created or accessed.
-func initRootDir(cmd *cobra.Command) (string, error) {
-	if cmd == nil {
-		return "", errors2.NilCmdError
-	}
-
+func initRootDir() (string, error) {
 	dirPath, err := getModulesDirFunc()
 	if err != nil {
 		return "", err

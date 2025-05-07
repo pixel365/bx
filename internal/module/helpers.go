@@ -74,6 +74,10 @@ func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 
 	name, _ := cmd.Flags().GetString("name")
 	file, _ := cmd.Flags().GetString("file")
+	repository, _ := cmd.Flags().GetString("repository")
+	description, _ := cmd.Flags().GetString("description")
+	version, _ := cmd.Flags().GetString("version")
+	version = strings.TrimSpace(version)
 
 	file = strings.TrimSpace(file)
 	isFile := len(file) > 0
@@ -101,7 +105,19 @@ func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 
 	module.Ctx = cmd.Context()
 
-	return module, nil
+	if repository != "" {
+		module.Repository = repository
+	}
+
+	if version != "" {
+		module.Version = version
+	}
+
+	if description != "" {
+		module.Description = description
+	}
+
+	return module, module.IsValid()
 }
 
 // AllModules returns a list of module names found in the specified directory.

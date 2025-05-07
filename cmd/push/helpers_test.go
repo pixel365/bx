@@ -9,27 +9,12 @@ import (
 	"testing"
 	"time"
 
-	errors2 "github.com/pixel365/bx/internal/errors"
-
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/request"
 )
-
-func Test_push_nil(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		err := push(nil, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
-		}
-	})
-}
 
 func Test_push_ReadModuleFromFlags(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())

@@ -11,7 +11,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	errors2 "github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 	"github.com/pixel365/bx/internal/request"
@@ -47,19 +46,6 @@ func TestNewListCommand(t *testing.T) {
 
 		if len(cmd.Aliases) > 0 {
 			t.Errorf("len(cmd.Aliases) should be 0 but got %d", len(cmd.Aliases))
-		}
-	})
-}
-
-func Test_list_nil(t *testing.T) {
-	t.Run("nil command", func(t *testing.T) {
-		err := list(nil, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
 		}
 	})
 }
