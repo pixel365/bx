@@ -1,11 +1,11 @@
 package types
 
-type VersionFlag string
+type VersionLabel string
 
 const (
-	Alpha  VersionFlag = "alpha"
-	Beta   VersionFlag = "beta"
-	Stable VersionFlag = "stable"
+	Alpha  VersionLabel = "alpha"
+	Beta   VersionLabel = "beta"
+	Stable VersionLabel = "stable"
 )
 
-type Versions map[string]VersionFlag
+type Versions map[string]VersionLabel

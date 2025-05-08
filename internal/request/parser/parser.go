@@ -22,13 +22,13 @@ const (
 //
 // Returns:
 //   - Versions: A map where each key is a version string (e.g., "3.0.10")
-//     and the value is a VersionFlag constant (Alpha, Beta, or Stable) representing the selected flag.
+//     and the value is a VersionLabel constant (Alpha, Beta, or Stable) representing the selected flag.
 //   - error: An error if the target versions table is not found in the HTML; otherwise, nil.
 //
 // Description:
 // ParseVersions parses the given HTML content and looks for a <table> element with the class "data-table mt-3 mb-3".
 // It iterates over each <tr> row within the table's <tbody> section, extracting the version string (from the first <td>)
-// and identifying which radio input is currently checked (determining the selected VersionFlag).
+// and identifying which radio input is currently checked (determining the selected VersionLabel).
 // The results are collected into a Versions map, where keys are version identifiers and values are the selected flags.
 // If the expected table is not found, the function returns an error.
 func ParseVersions(content string) (types.Versions, error) {
@@ -36,7 +36,7 @@ func ParseVersions(content string) (types.Versions, error) {
 
 	doc, _ := html.Parse(strings.NewReader(content))
 
-	versions := make(map[string]types.VersionFlag)
+	versions := make(map[string]types.VersionLabel)
 
 	table := versionsTable(doc, "data-table mt-3 mb-3")
 	if table == nil {
@@ -49,7 +49,7 @@ func ParseVersions(content string) (types.Versions, error) {
 				if row.Type == html.ElementNode && row.Data == "tr" {
 					version, selected := versionRow(row)
 					if version != "" {
-						versions[version] = types.VersionFlag(selected)
+						versions[version] = types.VersionLabel(selected)
 					}
 				}
 			}

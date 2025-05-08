@@ -20,6 +20,7 @@ func TestModule_IsValid(t *testing.T) {
 		Variables      map[string]string
 		Name           string
 		Version        string
+		Label          types.VersionLabel
 		Account        string
 		Repository     string
 		BuildDirectory string
@@ -145,6 +146,60 @@ func TestModule_IsValid(t *testing.T) {
 				Release: []string{"test"},
 			},
 		}, false},
+		{"valid label", fields{
+			Ctx:            context.Background(),
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Label:          types.Stable,
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			LogDirectory:   "tester",
+			Stages: []types.Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: types.Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: types.Changelog{
+				Sort: types.Asc,
+			},
+			Builds: types.Builds{
+				Release: []string{"test"},
+			},
+		}, false},
+		{"invalid label", fields{
+			Ctx:            context.Background(),
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Label:          types.VersionLabel("invalid label"),
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			LogDirectory:   "tester",
+			Stages: []types.Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: types.Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: types.Changelog{
+				Sort: types.Asc,
+			},
+			Builds: types.Builds{
+				Release: []string{"test"},
+			},
+		}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -153,6 +208,7 @@ func TestModule_IsValid(t *testing.T) {
 				Variables:      nil,
 				Name:           tt.fields.Name,
 				Version:        tt.fields.Version,
+				Label:          tt.fields.Label,
 				Account:        tt.fields.Account,
 				BuildDirectory: tt.fields.BuildDirectory,
 				LogDirectory:   tt.fields.LogDirectory,

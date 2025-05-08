@@ -46,4 +46,5 @@ var (
 	InvalidRootDirError           = errors.New("invalid root directory")
 	InvalidArgumentError          = errors.New("invalid argument")
 	DescriptionDoesNotExistsError = errors.New("description does not exist")
+	InvalidLabelError             = errors.New("invalid label")
 )
