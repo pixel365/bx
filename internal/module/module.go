@@ -19,6 +19,7 @@ type Module struct {
 	BuildDirectory string              `yaml:"buildDirectory,omitempty"`
 	LogDirectory   string              `yaml:"logDirectory,omitempty"`
 	Version        string              `yaml:"version"`
+	Label          types.VersionLabel  `yaml:"label,omitempty"`
 	Name           string              `yaml:"name"`
 	Changelog      types.Changelog     `yaml:"changelog,omitempty"`
 	Description    string              `yaml:"description,omitempty"`

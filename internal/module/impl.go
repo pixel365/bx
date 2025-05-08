@@ -97,6 +97,12 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
+	switch m.Label {
+	case "", types.Alpha, types.Beta, types.Stable:
+	default:
+		return errors.InvalidLabelError
+	}
+
 	return nil
 }
 
