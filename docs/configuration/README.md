@@ -8,3 +8,5 @@
 * [Сборка](configuration/builds.md)
 * [Кастомные команды](configuration/run.md)
 * [Настройка исключений](configuration/ignore.md)
+* [Пароль в переменной окружения](configuration/password.md)
+* [Полный пример конфигурации](configuration/example.md)
