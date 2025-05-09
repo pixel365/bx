@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/charmbracelet/huh/spinner"
+
 	"github.com/pixel365/bx/internal/interfaces"
 
 	"github.com/pixel365/bx/internal/errors"
@@ -353,4 +355,12 @@ func UserInput(
 	*variable = prompter.GetValue()
 
 	return nil
+}
+
+func Spinner(title string, action func(context.Context) error) error {
+	return spinner.New().
+		Title(title).
+		Type(spinner.Dots).
+		ActionWithErr(action).
+		Run()
 }

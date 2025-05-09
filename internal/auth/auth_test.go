@@ -16,6 +16,7 @@ func Test_Authenticate(t *testing.T) {
 	type args struct {
 		module   *module.Module
 		password string
+		silent   bool
 	}
 	tests := []struct {
 		name    string
@@ -27,15 +28,17 @@ func Test_Authenticate(t *testing.T) {
 		{"nil module", args{
 			module:   nil,
 			password: "",
+			silent:   false,
 		}, nil, nil, true},
 		{"empty password", args{
 			module:   &module.Module{},
 			password: "",
+			silent:   false,
 		}, nil, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := Authenticate(tt.args.module, tt.args.password)
+			got, got1, err := Authenticate(tt.args.module, tt.args.password, tt.args.silent)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
 				return

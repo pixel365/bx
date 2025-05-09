@@ -27,6 +27,7 @@ bx push --name my_module --version 1.2.3
 	cmd.Flags().StringP("file", "f", "", "Path to a module")
 	cmd.Flags().StringP("version", "v", "", "Version of the module")
 	cmd.Flags().StringP("password", "p", "", "Account password")
+	cmd.Flags().BoolP("silent", "s", false, "Silent mode")
 
 	return cmd
 }
