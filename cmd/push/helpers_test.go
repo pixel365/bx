@@ -1,6 +1,7 @@
 package push
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -47,7 +48,7 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -99,7 +100,7 @@ func Test_push_invalid_Version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -152,7 +153,7 @@ func Test_push_auth(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -205,14 +206,14 @@ func Test_push_upload(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, nil
 	}
 	defer func() {
 		authFunc = originalAuthFunc
 	}()
 
-	uploadFunc = func(client *request.Client, module *module.Module, cookies []*http.Cookie) error {
+	uploadFunc = func(client *request.Client, module *module.Module, cookies []*http.Cookie, silent bool) error {
 		return errors.New("upload error")
 	}
 	defer func() {
@@ -238,19 +239,33 @@ func Test_upload(t *testing.T) {
 		client  *request.Client
 		module  *module.Module
 		cookies []*http.Cookie
+		silent  bool
 	}
+
+	var c []*http.Cookie
+	c = append(c, &http.Cookie{})
+
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"nil client", args{nil, &module.Module{}, nil}, true},
-		{"nil module", args{&request.Client{}, nil, nil}, true},
-		{"nil cookies", args{&request.Client{}, &module.Module{}, nil}, true},
+		{"nil client", args{nil, &module.Module{}, nil, false}, true},
+		{"nil module", args{&request.Client{}, nil, nil, false}, true},
+		{"nil cookies", args{&request.Client{}, &module.Module{}, nil, false}, true},
+		{"not silent", args{&request.Client{}, &module.Module{}, c, false}, false},
 	}
+
+	origSpinnerFunc := spinnerFunc
+	spinnerFunc = func(_ string, _ func(context.Context) error) error {
+		return nil
+	}
+
+	defer func() { spinnerFunc = origSpinnerFunc }()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := upload(tt.args.client, tt.args.module, tt.args.cookies); (err != nil) != tt.wantErr {
+			if err := upload(tt.args.client, tt.args.module, tt.args.cookies, tt.args.silent); (err != nil) != tt.wantErr {
 				t.Errorf("upload() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -288,7 +303,7 @@ func Test_push_valid_Version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {

@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/pixel365/bx/internal/helpers"
+
 	"github.com/pixel365/bx/internal/auth"
 
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/errors"
@@ -19,6 +20,7 @@ var (
 	uploadFunc              = upload
 	authFunc                = auth.Authenticate
 	inputPasswordFunc       = auth.InputPassword
+	spinnerFunc             = helpers.Spinner
 )
 
 // push handles the logic for pushing a module to the Marketplace.
@@ -42,15 +44,21 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	httpClient, cookies, err := authFunc(mod, password)
+	silent, _ := cmd.Flags().GetBool("silent")
+	httpClient, cookies, err := authFunc(mod, password, silent)
 	if err != nil {
 		return err
 	}
 
-	return uploadFunc(httpClient, mod, cookies)
+	return uploadFunc(httpClient, mod, cookies, silent)
 }
 
-func upload(client *request.Client, module *module.Module, cookies []*http.Cookie) error {
+func upload(
+	client *request.Client,
+	module *module.Module,
+	cookies []*http.Cookie,
+	silent bool,
+) error {
 	if module == nil {
 		return errors.NilModuleError
 	}
@@ -63,12 +71,14 @@ func upload(client *request.Client, module *module.Module, cookies []*http.Cooki
 		return errors.NilCookieError
 	}
 
-	err := spinner.New().
-		Title("Uploading module to partners.1c-bitrix.ru...").
-		Type(spinner.Dots).
-		ActionWithErr(func(ctx context.Context) error {
+	if silent {
+		return client.UploadZIP(module, cookies)
+	}
+
+	return spinnerFunc(
+		"Uploading module to partners.1c-bitrix.ru...",
+		func(ctx context.Context) error {
 			return client.UploadZIP(module, cookies)
-		}).
-		Run()
-	return err
+		},
+	)
 }

@@ -81,7 +81,7 @@ func Test_list_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {
@@ -133,7 +133,7 @@ func Test_list_auth(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
 		return nil, nil, errors.New("auth error")
 	}
 	defer func() {

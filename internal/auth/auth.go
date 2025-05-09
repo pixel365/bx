@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/errors"
@@ -30,6 +29,7 @@ var (
 //     If nil, the function returns errors.NilModuleError.
 //   - password (string): The password used for authentication.
 //     If empty, the function returns errors.EmptyPasswordError.
+//   - silent (bool): Skip spinner.
 //
 // Returns:
 //   - *request.Client: An HTTP client configured with a cookie jar, ready to make authenticated requests.
@@ -42,7 +42,11 @@ var (
 // Using a spinner for progress feedback, it calls httpClient.Authenticate with the module’s account and password.
 // If authentication succeeds, the function returns the configured client and cookies;
 // otherwise, it returns the encountered error.
-func Authenticate(module *module.Module, password string) (*request.Client, []*http.Cookie, error) {
+func Authenticate(
+	module *module.Module,
+	password string,
+	silent bool,
+) (*request.Client, []*http.Cookie, error) {
 	if module == nil {
 		return nil, nil, errors.NilModuleError
 	}
@@ -58,14 +62,16 @@ func Authenticate(module *module.Module, password string) (*request.Client, []*h
 	var err error
 	var cookies []*http.Cookie
 
-	err = spinner.New().
-		Title("Authenticate on partners.1c-bitrix.ru...").
-		Type(spinner.Dots).
-		ActionWithErr(func(ctx context.Context) error {
-			cookies, err = httpClient.Authenticate(module.Account, password)
-			return err
-		}).
-		Run()
+	if silent {
+		cookies, err = httpClient.Authenticate(module.Account, password)
+	} else {
+		err = helpers.Spinner("Authenticate on partners.1c-bitrix.ru...",
+			func(ctx context.Context) error {
+				cookies, err = httpClient.Authenticate(module.Account, password)
+				return err
+			})
+	}
+
 	if err != nil {
 		return nil, nil, err
 	}

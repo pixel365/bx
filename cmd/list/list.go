@@ -40,6 +40,7 @@ bx list -f config.yaml
 	cmd.Flags().StringP("password", "p", "", "Account password")
 	cmd.Flags().BoolP("head", "", false, "Show last module version")
 	cmd.Flags().StringP("sort", "", "", "Sort module versions by name")
+	cmd.Flags().BoolP("silent", "s", false, "Silent mode")
 
 	return cmd
 }
@@ -55,7 +56,8 @@ func list(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	httpClient, cookies, err := authFunc(mod, password)
+	silent, _ := cmd.Flags().GetBool("silent")
+	httpClient, cookies, err := authFunc(mod, password, silent)
 	if err != nil {
 		return err
 	}
