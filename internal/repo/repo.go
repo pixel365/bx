@@ -17,6 +17,12 @@ import (
 	"github.com/go-git/go-git/v5"
 )
 
+var (
+	listOfCommitsFunc  = listOfCommits
+	openRepositoryFunc = OpenRepository
+	hashesFunc         = hashes
+)
+
 type CommitFilterFunc func(string, types.TypeValue[types.ChangelogConditionType, []string]) bool
 
 // OpenRepository opens an existing Git repository at the specified path.
@@ -95,12 +101,12 @@ func ChangelogList(repository string, rules types.Changelog) ([]string, error) {
 		return []string{}, nil
 	}
 
-	r, err := OpenRepository(repository)
+	r, err := openRepositoryFunc(repository)
 	if err != nil {
 		return nil, err
 	}
 
-	commits, err := listOfCommits(
+	commits, err := listOfCommitsFunc(
 		r,
 		rules,
 		CommitFilter,
@@ -234,7 +240,7 @@ func listOfCommits(
 	}
 	defer iter.Close()
 
-	result := make([]string, 0)
+	var result []string
 	err = iter.ForEach(func(c *object.Commit) error {
 		if c.Hash == startHash {
 			return plumbing.ErrObjectNotFound
@@ -350,7 +356,7 @@ func hashes(
 //   - Otherwise, the file was modified.
 //   - The function does not modify the repository; it only analyzes commit differences.
 func ChangesList(repository string, rules types.Changelog) (*types.Changes, error) {
-	r, err := OpenRepository(repository)
+	r, err := openRepositoryFunc(repository)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +365,7 @@ func ChangesList(repository string, rules types.Changelog) (*types.Changes, erro
 		return nil, errors2.NilRepositoryError
 	}
 
-	startHash, endHash, err := hashes(r, rules)
+	startHash, endHash, err := hashesFunc(r, rules)
 	if err != nil {
 		return nil, fmt.Errorf("repository [%s]: %w", repository, err)
 	}

@@ -74,6 +74,28 @@ func TestModule_GetChanges(t *testing.T) {
 	})
 }
 
+func TestModule_GetChanges2(t *testing.T) {
+	t.Run("TestModule_GetChanges", func(t *testing.T) {
+		mod := Module{
+			Repository: "../../",
+		}
+
+		origChangesListFunc := changesListFunc
+		defer func() {
+			changesListFunc = origChangesListFunc
+		}()
+
+		changesListFunc = func(_ string, _ types.Changelog) (*types.Changes, error) {
+			return &types.Changes{}, nil
+		}
+
+		changes := mod.GetChanges()
+		if changes == nil {
+			t.Errorf("GetChanges() error = %v, wantErr %v", changes, nil)
+		}
+	})
+}
+
 func TestGetChanges_empty_repository(t *testing.T) {
 	t.Run("GetChanges", func(t *testing.T) {
 		mod := Module{}

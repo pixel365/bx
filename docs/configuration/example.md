@@ -3,6 +3,7 @@
 ```yaml
 name: "test"
 version: "1.0.0"
+label: "stable"
 account: "test"
 buildDirectory: "./dist/test"
 logDirectory: "./logs/test"
