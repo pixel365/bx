@@ -5,6 +5,8 @@ import (
 	"github.com/pixel365/bx/internal/types"
 )
 
+var changesListFunc = repo.ChangesList
+
 func (m *Module) GetVariables() map[string]string {
 	return m.Variables
 }
@@ -30,7 +32,7 @@ func (m *Module) GetChanges() *types.Changes {
 	}
 
 	if m.changes == nil {
-		changes, err := repo.ChangesList(m.Repository, m.Changelog)
+		changes, err := changesListFunc(m.Repository, m.Changelog)
 		if err != nil {
 			return nil
 		}

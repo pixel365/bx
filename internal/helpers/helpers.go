@@ -30,18 +30,19 @@ func Choose(items *[]string, value *string, title string) error {
 		return errors.NoItemsError
 	}
 
-	if len(*items) == 1 && (*items)[0] != "" {
+	n := len(*items)
+	if n == 1 && (*items)[0] != "" {
 		*value = (*items)[0]
 		return nil
 	}
 
-	var options []huh.Option[string]
+	options := make([]huh.Option[string], n)
 	for i, item := range *items {
 		if item == "" {
 			return fmt.Errorf("empty item at index %d", i)
 		}
 
-		options = append(options, huh.NewOption(item, item))
+		options[i] = huh.NewOption(item, item)
 	}
 
 	return huh.NewSelect[string]().
@@ -251,10 +252,6 @@ func CheckPaths(stage types.Stage, ch chan<- error) {
 func IsValidPath(filePath, basePath string) bool {
 	absBasePath, _ := filepath.Abs(basePath)
 	absFilePath, _ := filepath.Abs(filePath)
-
-	if strings.HasPrefix(absBasePath, "..") {
-		return false
-	}
 
 	return strings.HasPrefix(absFilePath, absBasePath)
 }

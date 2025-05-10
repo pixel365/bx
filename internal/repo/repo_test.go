@@ -1,9 +1,13 @@
 package repo
 
 import (
+	"errors"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
 
@@ -72,6 +76,18 @@ func TestChangelogList(t *testing.T) {
 			Sort:      "asc",
 			Condition: types.TypeValue[types.ChangelogConditionType, []string]{},
 		}}, nil, true},
+		{"empty from values", args{"", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "",
+			},
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "",
+			},
+			Sort:      "asc",
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{},
+		}}, []string{}, false},
 	}
 
 	for _, tt := range tests {
@@ -86,6 +102,121 @@ func TestChangelogList(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChangelogList_listOfCommits_Fail(t *testing.T) {
+	origListOfCommits := listOfCommitsFunc
+	origOpenRepository := openRepositoryFunc
+	defer func() {
+		listOfCommitsFunc = origListOfCommits
+	}()
+	defer func() {
+		openRepositoryFunc = origOpenRepository
+	}()
+
+	listOfCommitsFunc = func(_ *git.Repository, _ types.Changelog, _ CommitFilterFunc) ([]string, error) {
+		return nil, errors.New("fail")
+	}
+
+	openRepositoryFunc = func(_ string) (*git.Repository, error) {
+		return &git.Repository{}, nil
+	}
+
+	t.Run("commits fail", func(t *testing.T) {
+		_, err := ChangelogList("", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v1.0.0",
+			},
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v2.0.0",
+			},
+		})
+		if err == nil {
+			t.Errorf("ChangelogList() error = %v, wantErr %v", err, errors.New("fail"))
+		}
+	})
+}
+
+func TestChangelogList_listOfCommits_Ok_Asc(t *testing.T) {
+	origListOfCommits := listOfCommitsFunc
+	origOpenRepository := openRepositoryFunc
+	defer func() {
+		listOfCommitsFunc = origListOfCommits
+	}()
+	defer func() {
+		openRepositoryFunc = origOpenRepository
+	}()
+
+	listOfCommitsFunc = func(_ *git.Repository, _ types.Changelog, _ CommitFilterFunc) ([]string, error) {
+		return []string{"commit 2", "commit 1"}, nil
+	}
+
+	openRepositoryFunc = func(_ string) (*git.Repository, error) {
+		return &git.Repository{}, nil
+	}
+
+	t.Run("commits fail", func(t *testing.T) {
+		commits, err := ChangelogList("", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v1.0.0",
+			},
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v2.0.0",
+			},
+			Sort: types.Asc,
+		})
+		if err != nil {
+			t.Errorf("ChangelogList() error = %v", err)
+		}
+
+		if commits[0] != "commit 1" {
+			t.Errorf("ChangelogList() got = %v, want %v", commits[0], "commit 1")
+		}
+	})
+}
+
+func TestChangelogList_listOfCommits_Ok_Desc(t *testing.T) {
+	origListOfCommits := listOfCommitsFunc
+	origOpenRepository := openRepositoryFunc
+	defer func() {
+		listOfCommitsFunc = origListOfCommits
+	}()
+	defer func() {
+		openRepositoryFunc = origOpenRepository
+	}()
+
+	listOfCommitsFunc = func(_ *git.Repository, _ types.Changelog, _ CommitFilterFunc) ([]string, error) {
+		return []string{"commit 1", "commit 2"}, nil
+	}
+
+	openRepositoryFunc = func(_ string) (*git.Repository, error) {
+		return &git.Repository{}, nil
+	}
+
+	t.Run("commits fail", func(t *testing.T) {
+		commits, err := ChangelogList("", types.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v1.0.0",
+			},
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v2.0.0",
+			},
+			Sort: types.Desc,
+		})
+		if err != nil {
+			t.Errorf("ChangelogList() error = %v", err)
+		}
+
+		if commits[0] != "commit 2" {
+			t.Errorf("ChangelogList() got = %v, want %v", commits[0], "commit 2")
+		}
+	})
 }
 
 func TestCommitFilter(t *testing.T) {
@@ -222,6 +353,45 @@ func TestChangesList(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChangesList_nil_repository(t *testing.T) {
+	t.Run("nil repository", func(t *testing.T) {
+		origOpenRepositoryFunc := openRepositoryFunc
+		defer func() { openRepositoryFunc = origOpenRepositoryFunc }()
+
+		openRepositoryFunc = func(_ string) (*git.Repository, error) {
+			return nil, nil
+		}
+
+		_, err := ChangesList("", types.Changelog{})
+		if !errors.Is(err, errors2.NilRepositoryError) {
+			t.Errorf("ChangesList() error = %v, wantErr %v", err, errors2.NilRepositoryError)
+		}
+	})
+}
+
+func TestChangesList_hashes_fail(t *testing.T) {
+	t.Run("hashes fail", func(t *testing.T) {
+		origOpenRepositoryFunc := openRepositoryFunc
+		origHashesFunc := hashesFunc
+		defer func() { openRepositoryFunc = origOpenRepositoryFunc }()
+		defer func() { hashesFunc = origHashesFunc }()
+
+		openRepositoryFunc = func(_ string) (*git.Repository, error) {
+			return &git.Repository{}, nil
+		}
+
+		hashesFunc = func(_ *git.Repository, _ types.Changelog) (plumbing.Hash, plumbing.Hash, error) {
+			return plumbing.ZeroHash, plumbing.ZeroHash, errors.New("some error")
+		}
+
+		_, err := ChangesList("repo", types.Changelog{})
+		e := fmt.Errorf("repository [%s]: %w", "repo", errors.New("some error")).Error()
+		if err.Error() != e {
+			t.Errorf("ChangesList() error = %v, want %v", e, err)
+		}
+	})
 }
 
 func TestChanges_IsChangedFile(t *testing.T) {
