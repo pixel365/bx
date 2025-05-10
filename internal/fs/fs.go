@@ -467,7 +467,7 @@ func ZipIt(dirPath, archivePath string) error {
 			return err
 		}
 
-		relPath = subdir + "/" + relPath
+		relPath = filepath.ToSlash(subdir + "/" + relPath)
 
 		if info.IsDir() {
 			_, err := zipWriter.Create(relPath + "/")
@@ -484,9 +484,9 @@ func ZipIt(dirPath, archivePath string) error {
 			return err
 		}
 
-		defer helpers.Cleanup(srcFile, nil)
-
 		_, err = io.Copy(fileInArchive, srcFile)
+		helpers.Cleanup(srcFile, nil)
+
 		return err
 	})
 	return err
