@@ -24,6 +24,13 @@ const (
 	CommandType  = "command"
 )
 
+// CallbackParameters defines the details of a callback action.
+//
+// Fields:
+//   - Type:     The type of callback (e.g., "http").
+//   - Action:   The action to be triggered (e.g., a URL or command name).
+//   - Method:   Optional HTTP method or execution method (e.g., "GET", "POST").
+//   - Parameters: Optional list of arguments or parameters to pass during callback execution.
 type CallbackParameters struct {
 	Type       string   `yaml:"type"`
 	Action     string   `yaml:"action"`
@@ -31,6 +38,15 @@ type CallbackParameters struct {
 	Parameters []string `yaml:"parameters,omitempty"`
 }
 
+// Callback represents a stage-specific callback definition.
+//
+// A callback can define separate `pre` and `post` actions to be executed before or after
+// a specific stage.
+//
+// Fields:
+//   - Stage: The name of the stage where the callback applies.
+//   - Pre:   Parameters for the action to be executed before the stage.
+//   - Post:  Parameters for the action to be executed after the stage.
 type Callback struct {
 	Stage string             `yaml:"stage"`
 	Pre   CallbackParameters `yaml:"pre,omitempty"`
@@ -400,6 +416,17 @@ func (c *CallbackParameters) buildUrlAndBody() (string, io.Reader) {
 	return fmt.Sprintf("%s %s", c.Action, strings.Join(c.Parameters, " ")), nil
 }
 
+// ValidateCallbacks validates a list of Callback objects by invoking their IsValid method.
+//
+// Iterates through the slice of callbacks and calls IsValid on each one. If any callback
+// returns a validation error, the function wraps it with the callback index for context
+// and returns immediately. If all callbacks are valid or the slice is empty, returns nil.
+//
+// Parameters:
+//   - callbacks: A slice of Callback instances to validate.
+//
+// Returns:
+//   - error: An error if any callback fails validation, wrapped with its index; otherwise nil.
 func ValidateCallbacks(callbacks []Callback) error {
 	if len(callbacks) > 0 {
 		for index, cb := range callbacks {
