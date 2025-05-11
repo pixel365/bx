@@ -592,6 +592,17 @@ func RemoveEmptyDirs(root string) (bool, error) {
 	return empty, nil
 }
 
+// IsFileExists checks whether the given path exists and points to a regular file.
+//
+// The function first cleans the input path using filepath.Clean. It then checks
+// if the file exists and is a regular file (not a directory, symlink, etc.).
+//
+// Parameters:
+//   - path: The filesystem path to check.
+//
+// Returns:
+//   - bool: true if the file exists and is a regular file; false otherwise.
+//   - int64: The size of the file in bytes if it exists, or 0 if it does not.
 func IsFileExists(path string) (bool, int64) {
 	path = filepath.Clean(path)
 	file, err := os.Stat(path)

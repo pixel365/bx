@@ -1,9 +1,15 @@
+// Package errors provides predefined error variables used throughout the application
+// to represent common failure conditions.
+//
+// These errors allow for consistent comparisons using errors.Is and improve clarity
+// across boundaries such as services, handlers, and utilities.
 package errors
 
 import (
 	"errors"
 )
 
+// Predefined application-level errors used for consistent error handling.
 var (
 	NilModuleError                = errors.New("module is nil")
 	NoItemsError                  = errors.New("no items")
