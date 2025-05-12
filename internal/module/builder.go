@@ -400,7 +400,7 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 		return nil
 	}
 
-	descriptionRu := ""
+	descriptionRu := strings.Builder{}
 	encoder := charmap.Windows1251.NewEncoder()
 
 	if builder.module.Description != "" {
@@ -409,7 +409,7 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 			return fmt.Errorf("encoding description [%s]: %w", builder.module.Description, err)
 		}
 
-		descriptionRu = encodedDescriptionRu
+		_, _ = descriptionRu.WriteString(encodedDescriptionRu)
 	} else {
 		if builder.module.Repository == "" {
 			return nil
@@ -429,9 +429,8 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 			if err != nil {
 				return fmt.Errorf("encoding commit [%s]: %w", commit, err)
 			}
-			descriptionRu += encodedLine
+			_, _ = descriptionRu.WriteString(encodedLine)
 		}
-
 	}
 
 	footer, err := builder.module.Changelog.EncodedFooter()
@@ -442,9 +441,9 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 			err,
 		)
 	}
-	descriptionRu += footer
+	_, _ = descriptionRu.WriteString(footer)
 
-	err = writeFileForVersion(builder, "description.ru", descriptionRu)
+	err = writeFileForVersion(builder, "description.ru", descriptionRu.String())
 	if err != nil {
 		return fmt.Errorf("failed to make description file: %w", err)
 	}
