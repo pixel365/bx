@@ -27,7 +27,8 @@ const (
 //
 // Description:
 // ParseVersions parses the given HTML content and looks for a <table> element with the class "data-table mt-3 mb-3".
-// It iterates over each <tr> row within the table's <tbody> section, extracting the version string (from the first <td>)
+// It iterates over each <tr> row within the table's <tbody> section,
+// extracting the version string (from the first <td>)
 // and identifying which radio input is currently checked (determining the selected VersionLabel).
 // The results are collected into a Versions map, where keys are version identifiers and values are the selected flags.
 // If the expected table is not found, the function returns an error.

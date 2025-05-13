@@ -1,6 +1,7 @@
 package run
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -160,7 +161,7 @@ func Test_run_HandleStages(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	handleStagesFunc = func(stages []string, m *module.Module, wg *sync.WaitGroup, errCh chan<- error,
+	handleStagesFunc = func(ctx context.Context, stages []string, m *module.Module, wg *sync.WaitGroup, errCh chan<- error,
 		logger interfaces.BuildLogger, customCommandMode bool) error {
 		return nil
 	}

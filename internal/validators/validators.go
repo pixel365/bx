@@ -44,7 +44,7 @@ func ValidateModuleName(name, directory string) error {
 // Returns nil if the version is valid, otherwise returns an error.
 func ValidateVersion(version string) error {
 	if version == "" {
-		return errors2.EmptyVersionError
+		return errors2.ErrEmptyVersion
 	}
 
 	for range versionRegex.FindAllString(version, -1) {
@@ -65,11 +65,11 @@ func ValidateVersion(version string) error {
 func ValidatePassword(password string) error {
 	password = strings.TrimSpace(password)
 	if password == "" {
-		return errors2.EmptyPasswordError
+		return errors2.ErrEmptyPassword
 	}
 
 	if len(password) < 6 {
-		return errors2.PasswordTooShortError
+		return errors2.ErrPasswordTooShort
 	}
 
 	return nil

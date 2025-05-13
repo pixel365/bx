@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, _ []string) error {
 
 	command, _ := cmd.Flags().GetString("cmd")
 	if command == "" {
-		return errors.NoCommandSpecifiedError
+		return errors.ErrNoCommandSpecified
 	}
 
 	if err = module.ValidateRun(mod); err != nil {
@@ -58,7 +58,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(stages))
 
-	err = handleStagesFunc(stages, mod, &wg, errCh, nil, true)
+	err = handleStagesFunc(cmd.Context(), stages, mod, &wg, errCh, nil, true)
 
 	wg.Wait()
 	close(errCh)

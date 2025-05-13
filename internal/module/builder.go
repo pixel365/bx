@@ -38,12 +38,12 @@ func NewModuleBuilder(m *Module, logger interfaces.BuildLogger) interfaces.Build
 // If any of these phases fails, the build will be rolled back to ensure a clean state.
 //
 // The method returns an error if any of the steps (Prepare, Collect, or Cleanup) fail.
-func (m *ModuleBuilder) Build() error {
+func (m *ModuleBuilder) Build(ctx context.Context) error {
 	if m.module == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
-	if err := helpers.CheckContext(m.module.Ctx); err != nil {
+	if err := helpers.CheckContext(ctx); err != nil {
 		return err
 	}
 
@@ -59,7 +59,7 @@ func (m *ModuleBuilder) Build() error {
 
 	m.logger.Info("Prepare complete")
 
-	if err := m.Collect(); err != nil {
+	if err := m.Collect(ctx); err != nil {
 		m.logger.Error("Failed to collect build", err)
 		if rollbackErr := m.Rollback(); rollbackErr != nil {
 			m.logger.Error("Failed to rollback", rollbackErr)
@@ -79,7 +79,7 @@ func (m *ModuleBuilder) Build() error {
 // The method returns an error if the module is invalid or if directories cannot be created.
 func (m *ModuleBuilder) Prepare() error {
 	if m.module == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
 	if err := CheckStages(m.module); err != nil {
@@ -159,7 +159,7 @@ func (m *ModuleBuilder) Cleanup() {
 // The method returns an error if the rollback process fails.
 func (m *ModuleBuilder) Rollback() error {
 	if m.module == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
 	zipPath, err := makeZipFilePath(m.module)
@@ -196,9 +196,9 @@ func (m *ModuleBuilder) Rollback() error {
 // The function creates the necessary directories for each stage and copies files as defined in the stage configuration.
 //
 // The method returns an error if any stage fails or if there are issues zipping the collected files.
-func (m *ModuleBuilder) Collect() error {
+func (m *ModuleBuilder) Collect(ctx context.Context) error {
 	if m.module == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
 	versionDirectory, err := makeVersionDirectory(m.module)
@@ -214,7 +214,7 @@ func (m *ModuleBuilder) Collect() error {
 		stages = m.module.Builds.LastVersion
 	}
 
-	if err := HandleStages(stages, m.module, &wg, errCh, m.logger, false); err != nil {
+	if err := HandleStages(ctx, stages, m.module, &wg, errCh, m.logger, false); err != nil {
 		m.logger.Error("Collect: handle stages failed", err)
 	}
 
@@ -258,13 +258,13 @@ func (m *ModuleBuilder) Collect() error {
 	}
 
 	if fs.IsEmptyDir(versionDirectory) {
-		return errors.NoChangesError
+		return errors.ErrNoChanges
 	}
 
 	if !m.module.LastVersion {
 		ok, size := fs.IsFileExists(versionDirectory + "/description.ru")
 		if !ok || size == 0 {
-			return errors.DescriptionDoesNotExistsError
+			return errors.ErrDescriptionDoesNotExists
 		}
 	}
 

@@ -365,8 +365,8 @@ func TestChangesList_nil_repository(t *testing.T) {
 		}
 
 		_, err := ChangesList("", types.Changelog{})
-		if !errors.Is(err, errors2.NilRepositoryError) {
-			t.Errorf("ChangesList() error = %v, wantErr %v", err, errors2.NilRepositoryError)
+		if !errors.Is(err, errors2.ErrNilRepository) {
+			t.Errorf("ChangesList() error = %v, wantErr %v", err, errors2.ErrNilRepository)
 		}
 	})
 }

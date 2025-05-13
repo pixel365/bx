@@ -1,7 +1,6 @@
 package module
 
 import (
-	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -16,7 +15,6 @@ var fakeCondType types.ChangelogConditionType = "fake"
 
 func TestModule_IsValid(t *testing.T) {
 	type fields struct {
-		Ctx            context.Context
 		Variables      map[string]string
 		Name           string
 		Version        string
@@ -36,7 +34,6 @@ func TestModule_IsValid(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid", fields{
-			Ctx:            context.Background(),
 			Variables:      nil,
 			Name:           "test",
 			Version:        "1.0.0",
@@ -58,7 +55,6 @@ func TestModule_IsValid(t *testing.T) {
 			},
 		}, false},
 		{"invalid", fields{
-			Ctx:            context.Background(),
 			Name:           "test",
 			Version:        "",
 			Account:        "tester",
@@ -77,7 +73,6 @@ func TestModule_IsValid(t *testing.T) {
 			Variables: nil,
 		}, true},
 		{"repository does not exists", fields{
-			Ctx:            context.Background(),
 			Variables:      nil,
 			Name:           "test",
 			Version:        "1.0.0",
@@ -96,7 +91,6 @@ func TestModule_IsValid(t *testing.T) {
 			Ignore: []string{},
 		}, true},
 		{"valid sort value", fields{
-			Ctx:            context.Background(),
 			Variables:      nil,
 			Name:           "test",
 			Version:        "1.0.0",
@@ -121,7 +115,6 @@ func TestModule_IsValid(t *testing.T) {
 			},
 		}, false},
 		{"valid stage filter", fields{
-			Ctx:            context.Background(),
 			Variables:      nil,
 			Name:           "test",
 			Version:        "1.0.0",
@@ -147,7 +140,6 @@ func TestModule_IsValid(t *testing.T) {
 			},
 		}, false},
 		{"valid label", fields{
-			Ctx:            context.Background(),
 			Variables:      nil,
 			Name:           "test",
 			Version:        "1.0.0",
@@ -174,7 +166,6 @@ func TestModule_IsValid(t *testing.T) {
 			},
 		}, false},
 		{"invalid label", fields{
-			Ctx:            context.Background(),
 			Variables:      nil,
 			Name:           "test",
 			Version:        "1.0.0",
@@ -204,7 +195,6 @@ func TestModule_IsValid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				Ctx:            tt.fields.Ctx,
 				Variables:      nil,
 				Name:           tt.fields.Name,
 				Version:        tt.fields.Version,
@@ -228,8 +218,8 @@ func TestModule_IsValid_EmptyName(t *testing.T) {
 	module := &Module{Name: ""}
 	t.Run("empty name", func(t *testing.T) {
 		err := module.IsValid()
-		if !errors.Is(err, errors2.EmptyModuleNameError) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.EmptyModuleNameError)
+		if !errors.Is(err, errors2.ErrEmptyModuleName) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.ErrEmptyModuleName)
 		}
 	})
 }
@@ -238,8 +228,8 @@ func TestModule_IsValid_SpacesInName(t *testing.T) {
 	module := &Module{Name: "some name"}
 	t.Run("spaces in name", func(t *testing.T) {
 		err := module.IsValid()
-		if !errors.Is(err, errors2.NameContainsSpaceError) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.NameContainsSpaceError)
+		if !errors.Is(err, errors2.ErrNameContainsSpace) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.ErrNameContainsSpace)
 		}
 	})
 }
@@ -248,15 +238,14 @@ func TestModule_IsValid_EmptyAccount(t *testing.T) {
 	module := &Module{Name: "name", Version: "1.0.0", Account: ""}
 	t.Run("empty account", func(t *testing.T) {
 		err := module.IsValid()
-		if !errors.Is(err, errors2.EmptyAccountNameError) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.EmptyAccountNameError)
+		if !errors.Is(err, errors2.ErrEmptyAccountName) {
+			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.ErrEmptyAccountName)
 		}
 	})
 }
 
 func TestModule_NormalizeStages(t *testing.T) {
 	type fields struct {
-		Ctx            context.Context
 		Variables      map[string]string
 		Name           string
 		Version        string
@@ -273,7 +262,6 @@ func TestModule_NormalizeStages(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid", fields{
-			Ctx: context.Background(),
 			Variables: map[string]string{
 				"foo": "bar",
 			},
@@ -294,7 +282,6 @@ func TestModule_NormalizeStages(t *testing.T) {
 			Ignore: []string{},
 		}, false},
 		{"invalid", fields{
-			Ctx: context.Background(),
 			Variables: map[string]string{
 				"": "bar",
 			},
@@ -318,7 +305,6 @@ func TestModule_NormalizeStages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				Ctx:            tt.fields.Ctx,
 				Variables:      tt.fields.Variables,
 				Name:           tt.fields.Name,
 				Version:        tt.fields.Version,
@@ -361,7 +347,6 @@ func TestModule_PasswordEnv(t *testing.T) {
 
 func TestModule_ValidateChangelog(t *testing.T) {
 	type fields struct {
-		Ctx            context.Context
 		Changelog      types.Changelog
 		Name           string
 		Version        string
@@ -373,7 +358,6 @@ func TestModule_ValidateChangelog(t *testing.T) {
 	}
 
 	mod := fields{
-		Ctx:            context.TODO(),
 		Changelog:      types.Changelog{},
 		Name:           "test",
 		Version:        "1.0.0",
@@ -553,7 +537,6 @@ func TestModule_ValidateChangelog(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				Ctx:            mod.Ctx,
 				Changelog:      tt.fields,
 				Name:           mod.Name,
 				Version:        mod.Version,
@@ -590,11 +573,11 @@ func TestModule_ValidateChangelog_empty_repository(t *testing.T) {
 			},
 		}
 		err := m.ValidateChangelog()
-		if !errors.Is(err, errors2.InvalidChangelogSettingsError) {
+		if !errors.Is(err, errors2.ErrInvalidChangelogSettings) {
 			t.Errorf(
 				"ValidateChangelog() error = %v, wantErr %v",
 				err,
-				errors2.InvalidChangelogSettingsError,
+				errors2.ErrInvalidChangelogSettings,
 			)
 		}
 	})
@@ -602,7 +585,6 @@ func TestModule_ValidateChangelog_empty_repository(t *testing.T) {
 
 func TestModule_FindStage(t *testing.T) {
 	type fields struct {
-		Ctx            context.Context
 		Name           string
 		Version        string
 		Account        string
@@ -621,7 +603,6 @@ func TestModule_FindStage(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid", fields{
-			Ctx:            context.TODO(),
 			Name:           "test",
 			Version:        "1.0.0",
 			Account:        "test",
@@ -646,7 +627,6 @@ func TestModule_FindStage(t *testing.T) {
 			false,
 		},
 		{"invalid", fields{
-			Ctx:            context.TODO(),
 			Name:           "test",
 			Version:        "1.0.0",
 			Account:        "test",
@@ -669,7 +649,6 @@ func TestModule_FindStage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				Ctx:            tt.fields.Ctx,
 				BuildDirectory: tt.fields.BuildDirectory,
 				Version:        tt.fields.Version,
 				Account:        tt.fields.Account,
@@ -700,8 +679,8 @@ func TestModule_ZipPath(t *testing.T) {
 func TestModule_StageCallback(t *testing.T) {
 	mod := Module{}
 	_, err := mod.StageCallback("stage_1")
-	if !errors.Is(err, errors2.StageCallbackNotFoundError) {
-		t.Errorf("StageCallback() error = %v, wantErr %v", err, errors2.StageCallbackNotFoundError)
+	if !errors.Is(err, errors2.ErrStageCallbackNotFound) {
+		t.Errorf("StageCallback() error = %v, wantErr %v", err, errors2.ErrStageCallbackNotFound)
 	}
 }
 

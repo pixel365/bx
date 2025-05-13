@@ -213,7 +213,8 @@ func Test_push_upload(t *testing.T) {
 		authFunc = originalAuthFunc
 	}()
 
-	uploadFunc = func(client *request.Client, module *module.Module, cookies []*http.Cookie, silent bool) error {
+	uploadFunc = func(ctx context.Context, client *request.Client, module *module.Module,
+		cookies []*http.Cookie, silent bool) error {
 		return errors.New("upload error")
 	}
 	defer func() {
@@ -235,6 +236,7 @@ func Test_push_upload(t *testing.T) {
 }
 
 func Test_upload(t *testing.T) {
+	ctx := context.Background()
 	type args struct {
 		client  *request.Client
 		module  *module.Module
@@ -265,7 +267,7 @@ func Test_upload(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := upload(tt.args.client, tt.args.module, tt.args.cookies, tt.args.silent); (err != nil) != tt.wantErr {
+			if err := upload(ctx, tt.args.client, tt.args.module, tt.args.cookies, tt.args.silent); (err != nil) != tt.wantErr {
 				t.Errorf("upload() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

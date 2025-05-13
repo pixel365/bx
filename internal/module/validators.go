@@ -11,7 +11,7 @@ import (
 
 func ValidateStages(stages []types.Stage) error {
 	if len(stages) == 0 {
-		return errors.InvalidStagesError
+		return errors.ErrInvalidStages
 	}
 
 	for index, stage := range stages {
@@ -85,7 +85,7 @@ func ValidateRun(m *Module) error {
 	}
 
 	if len(m.Run) == 0 {
-		return errors.InvalidRunError
+		return errors.ErrInvalidRun
 	}
 
 	for key, stages := range m.Run {

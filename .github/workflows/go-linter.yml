@@ -16,11 +16,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.24.3'
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://github.com/golangci/golangci-lint/releases/download/v1.64.7/golangci-lint-1.64.7-linux-amd64.tar.gz | tar -xzv -C /tmp
+          curl -sSfL https://github.com/golangci/golangci-lint/releases/download/v2.1.6/golangci-lint-2.1.6-linux-amd64.tar.gz | tar -xzv -C /tmp
           mv /tmp/golangci-lint-*/golangci-lint /usr/local/bin/
 
       - name: Run golangci-lint

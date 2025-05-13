@@ -170,7 +170,7 @@ func TestCheckContextTodo(t *testing.T) {
 			t.Error("CheckContext() did not return an error")
 		}
 
-		if !errors.Is(err, errors2.TODOContextError) {
+		if !errors.Is(err, errors2.ErrTODOContext) {
 			t.Error("CheckContext() did not return an error")
 		}
 	})

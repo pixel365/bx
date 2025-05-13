@@ -85,11 +85,11 @@ func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, logger interf
 //   - error: An error if validation fails, otherwise nil.
 func (c *Callback) IsValid() error {
 	if c.Stage == "" {
-		return errors.CallbackStageError
+		return errors.ErrCallbackStage
 	}
 
 	if c.Pre.Type == "" && c.Post.Type == "" {
-		return errors.CallbackPrePostError
+		return errors.ErrCallbackPrePost
 	}
 
 	if c.Pre.Type != "" {
@@ -165,7 +165,7 @@ func (c *CallbackParameters) Run(ctx context.Context, logger interfaces.BuildLog
 
 func (c *CallbackParameters) validateType() error {
 	if c.Type == "" {
-		return errors.CallbackTypeError
+		return errors.ErrCallbackType
 	}
 
 	if c.Type != CommandType && c.Type != ExternalType {
@@ -187,7 +187,7 @@ func (c *CallbackParameters) validateType() error {
 func (c *CallbackParameters) validateMethod() error {
 	if c.Type == ExternalType {
 		if c.Method == "" {
-			return errors.CallbackMethodError
+			return errors.ErrCallbackMethod
 		}
 
 		if c.Method != http.MethodGet && c.Method != http.MethodPost {
@@ -209,7 +209,7 @@ func (c *CallbackParameters) validateMethod() error {
 //   - error: An error if the action is missing or improperly formatted, otherwise nil.
 func (c *CallbackParameters) validateAction() error {
 	if c.Action == "" {
-		return errors.CallbackActionError
+		return errors.ErrCallbackAction
 	}
 
 	if c.Type == ExternalType {
@@ -223,7 +223,7 @@ func (c *CallbackParameters) validateAction() error {
 		}
 
 		if u.Scheme != "http" && u.Scheme != "https" {
-			return errors.CallbackActionSchemeError
+			return errors.ErrCallbackActionScheme
 		}
 	}
 
@@ -379,7 +379,8 @@ func (c *CallbackParameters) runCommand(ctx context.Context, logger interfaces.B
 }
 
 // buildUrlAndBody constructs the URL and the body for the callback based on its type and parameters.
-// If there are parameters, they are appended to the action URL for `GET` requests or included in the body for other HTTP methods.
+// If there are parameters, they are appended to the action URL for `GET` requests or included in the body
+// for other HTTP methods.
 // For `CommandType`, the action and parameters are combined into a command string.
 //
 // Returns:

@@ -1,6 +1,7 @@
 package module
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ func ReadModule(path, name string, file bool) (*Module, error) {
 	}
 
 	if !helpers.IsValidPath(filePath, path) {
-		return nil, errors.InvalidFilepathError
+		return nil, errors.ErrInvalidFilepath
 	}
 
 	data, err := os.ReadFile(filepath.Clean(filePath))
@@ -69,7 +70,7 @@ func ReadModule(path, name string, file bool) (*Module, error) {
 
 func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 	if cmd == nil {
-		return nil, errors.NilCmdError
+		return nil, errors.ErrNilCmd
 	}
 
 	name, _ := cmd.Flags().GetString("name")
@@ -84,7 +85,7 @@ func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 
 	path, ok := cmd.Context().Value(helpers.RootDir).(string)
 	if !ok {
-		return nil, errors.InvalidRootDirError
+		return nil, errors.ErrInvalidRootDir
 	}
 
 	if !isFile && name == "" {
@@ -102,8 +103,6 @@ func ReadModuleFromFlags(cmd *cobra.Command) (*Module, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	module.Ctx = cmd.Context()
 
 	if repository != "" {
 		module.Repository = repository
@@ -141,7 +140,6 @@ func AllModules(directory string) *[]string {
 
 	for _, file := range files {
 		if !file.IsDir() {
-
 			filePath := filepath.Join(directory, file.Name())
 			module, err := ReadModule(filePath, "", true)
 			if err != nil {
@@ -156,6 +154,7 @@ func AllModules(directory string) *[]string {
 }
 
 func HandleStages(
+	ctx context.Context,
 	stages []string,
 	m *Module,
 	wg *sync.WaitGroup,
@@ -164,7 +163,7 @@ func HandleStages(
 	customCommandMode bool,
 ) error {
 	if m == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
 	dir := ""
@@ -178,7 +177,7 @@ func HandleStages(
 	}
 
 	for _, stageName := range stages {
-		if err := helpers.CheckContext(m.Ctx); err != nil {
+		if err := helpers.CheckContext(ctx); err != nil {
 			return err
 		}
 
@@ -189,7 +188,7 @@ func HandleStages(
 
 		wg.Add(1)
 
-		go handleStage(m.Ctx, wg, errCh, logger, m, stage, dir, m.StageCallback)
+		go handleStage(ctx, wg, errCh, logger, m, stage, dir, m.StageCallback)
 	}
 
 	return nil
@@ -197,7 +196,7 @@ func HandleStages(
 
 func makeVersionDirectory(module *Module) (string, error) {
 	if module == nil || module.BuildDirectory == "" {
-		return "", errors.NilModuleError
+		return "", errors.ErrNilModule
 	}
 
 	path := filepath.Join(module.BuildDirectory, module.GetVersion())
@@ -272,7 +271,7 @@ func writeFileForVersion(builder *ModuleBuilder, path, content string) error {
 //     If no errors are found, it returns nil.
 func CheckStages(module *Module) error {
 	if module == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
 	var wg sync.WaitGroup

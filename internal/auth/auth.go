@@ -22,18 +22,20 @@ var (
 	newPasswordPromptFunc = types.NewPrompt
 )
 
-// Authenticate performs authentication against the partners.1c-bitrix.ru service using the provided module and password.
+// Authenticate performs authentication against the partners.1c-bitrix.ru service
+// using the provided module and password.
 //
 // Parameters:
 //   - module (*module.Module): The module object.
-//     If nil, the function returns errors.NilModuleError.
+//     If nil, the function returns errors.ErrNilModule.
 //   - password (string): The password used for authentication.
-//     If empty, the function returns errors.EmptyPasswordError.
+//     If empty, the function returns errors.ErrEmptyPassword.
 //   - silent (bool): Skip spinner.
 //
 // Returns:
 //   - *request.Client: An HTTP client configured with a cookie jar, ready to make authenticated requests.
-//   - []*http.Cookie: A slice of cookies obtained from the authentication response, typically used for session management.
+//   - []*http.Cookie: A slice of cookies obtained from the authentication response, typically used for
+//     session management.
 //   - error: Any error encountered during parameter validation or the authentication process.
 //
 // Description:
@@ -48,11 +50,11 @@ func Authenticate(
 	silent bool,
 ) (*request.Client, []*http.Cookie, error) {
 	if module == nil {
-		return nil, nil, errors.NilModuleError
+		return nil, nil, errors.ErrNilModule
 	}
 
 	if password == "" {
-		return nil, nil, errors.EmptyPasswordError
+		return nil, nil, errors.ErrEmptyPassword
 	}
 
 	jar, _ := cookiejar.New(nil)
@@ -110,7 +112,7 @@ func InputPassword(cmd *cobra.Command, module *module.Module) (string, error) {
 
 	password = strings.TrimSpace(password)
 	if password == "" {
-		return "", errors.EmptyPasswordError
+		return "", errors.ErrEmptyPassword
 	}
 
 	if err := validators.ValidatePassword(password); err != nil {
