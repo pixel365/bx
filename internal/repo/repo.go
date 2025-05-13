@@ -183,7 +183,7 @@ func CommitFilter(
 			}
 		}
 
-		matched = !(conditions.Type == types.Include)
+		matched = conditions.Type != types.Include
 	}
 
 	return matched
@@ -226,7 +226,7 @@ func listOfCommits(
 	filter CommitFilterFunc,
 ) ([]string, error) {
 	if repository == nil {
-		return nil, errors2.NilRepositoryError
+		return nil, errors2.ErrNilRepository
 	}
 
 	startHash, endHash, err := hashes(repository, rules)
@@ -294,7 +294,7 @@ func hashes(
 	rules types.Changelog,
 ) (plumbing.Hash, plumbing.Hash, error) {
 	if repository == nil {
-		return plumbing.ZeroHash, plumbing.ZeroHash, errors2.NilRepositoryError
+		return plumbing.ZeroHash, plumbing.ZeroHash, errors2.ErrNilRepository
 	}
 
 	var startHash plumbing.Hash
@@ -362,7 +362,7 @@ func ChangesList(repository string, rules types.Changelog) (*types.Changes, erro
 	}
 
 	if r == nil {
-		return nil, errors2.NilRepositoryError
+		return nil, errors2.ErrNilRepository
 	}
 
 	startHash, endHash, err := hashesFunc(r, rules)

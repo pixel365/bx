@@ -22,5 +22,9 @@ build:
 cover:
 	go test -coverprofile=coverage.out ./... && go tool $@ -html=coverage.out
 
+coverfn:
+	go test -coverprofile=coverage.out ./... && \
+	go tool cover -func=coverage.out
+
 doc:
 	docsify serve docs

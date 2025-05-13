@@ -62,7 +62,7 @@ func list(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	versions, err := httpClient.Versions(mod, cookies)
+	versions, err := httpClient.Versions(cmd.Context(), mod, cookies)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func list(cmd *cobra.Command, _ []string) error {
 		case string(types.Asc), string(types.Desc):
 			sorting = types.SortingType(s)
 		default:
-			return errors.InvalidArgumentError
+			return errors.ErrInvalidArgument
 		}
 	}
 

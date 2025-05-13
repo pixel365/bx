@@ -1,6 +1,7 @@
 package request
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -83,6 +84,7 @@ func TestClient_Authorization(t *testing.T) {
 }
 
 func TestClient_UploadZIP(t *testing.T) {
+	ctx := context.Background()
 	mockClient := &mockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
@@ -124,7 +126,7 @@ func TestClient_UploadZIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := client.UploadZIP(tt.args.module, tt.args.cookies); (err != nil) != tt.wantErr {
+			if err := client.UploadZIP(ctx, tt.args.module, tt.args.cookies); (err != nil) != tt.wantErr {
 				t.Errorf("UploadZIP() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -132,6 +134,7 @@ func TestClient_UploadZIP(t *testing.T) {
 }
 
 func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
+	ctx := context.Background()
 	origGetSession := getSessionFunc
 	defer func() { getSessionFunc = origGetSession }()
 	getSessionFunc = func(c *Client, module *module2.Module, cookies []*http.Cookie) string {
@@ -152,6 +155,7 @@ func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		err := client.UploadZIP(
+			ctx,
 			&module2.Module{Name: "fake-name"},
 			[]*http.Cookie{{Name: "foo", Value: "bar"}},
 		)

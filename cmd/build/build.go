@@ -87,7 +87,7 @@ func build(cmd *cobra.Command, _ []string) error {
 	builder := builderFunc(mod, loggerInstance)
 	defer builder.Cleanup()
 
-	if err := builder.Build(); err != nil {
+	if err := builder.Build(cmd.Context()); err != nil {
 		return err
 	}
 

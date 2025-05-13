@@ -1,40 +1,68 @@
-linters-settings:
-  go:
-    go-version: "1.24"
-  govet:
-    shadow: true
-  dupl:
-    threshold: 200
-  goconst:
-    min-len: 3
-    min-occurrences: 2
-  gocognit:
-    min-complexity: 65
-
-linters:
-  enable:
-    - gosec
-    - nolintlint
-    - gofmt
-    - errcheck
-    - staticcheck
-    - unused
-    - goconst
-    - gocyclo
-    - govet
-    - bodyclose
-    - ineffassign
-    - gosimple
-    - goimports
-  disable:
-    - typecheck
-    - err113
-
+version: "2"
 run:
   tests: true
-  timeout: 5m
-
-issues:
-  exclude-use-default: false
-  exclude:
-    - "error return value not checked"
+linters:
+  enable:
+    - bodyclose
+    - goconst
+    - gocyclo
+    - gosec
+    - nolintlint
+    - govet
+    - errcheck
+    - errname
+    - ineffassign
+    - unused
+    - staticcheck
+    - cyclop
+    - copyloopvar
+    - asasalint
+    - bidichk
+    - containedctx
+    - exhaustive
+    - gocognit
+#    - gocritic
+    - iface
+    - lll
+    - whitespace
+    - zerologlint
+  disable:
+    - err113
+  settings:
+    dupl:
+      threshold: 150
+    gocognit:
+      min-complexity: 55
+    goconst:
+      min-len: 3
+      min-occurrences: 2
+    gocyclo:
+      min-complexity: 30
+    cyclop:
+      max-complexity: 20
+  exclusions:
+    generated: lax
+    rules:
+      - path: (.+)\.go$
+        text: error return value not checked
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - golines
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/pixel365/bx
+    golines:
+      max-len: 120

@@ -55,7 +55,7 @@ bx create --name my_module
 func create(cmd *cobra.Command, _ []string) error {
 	directory, ok := cmd.Context().Value(helpers.RootDir).(string)
 	if !ok {
-		return errors.InvalidRootDirError
+		return errors.ErrInvalidRootDir
 	}
 
 	name, _ := cmd.Flags().GetString("name")

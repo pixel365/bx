@@ -197,7 +197,8 @@ func walk(
 //   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
 //   - src (string): The source file path to copy from.
 //   - dst (string): The destination file path to copy to.
-//   - jobs (chan struct{}): A channel for managing concurrent file copy operations with a limited number of concurrent jobs.
+//   - jobs (chan struct{}): A channel for managing concurrent file copy operations with a limited number of concurrent
+//     jobs.
 //   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
 //   - convert (bool): A flag to indicate whether to convert the file content during the copy process.
 //
@@ -315,7 +316,8 @@ func copyFile(
 //     the function returns false, meaning the path should not be skipped.
 //
 // Returns:
-//   - bool: Returns `true` if the path matches any of the patterns or an error occurs, indicating the path should be skipped.
+//   - bool: Returns `true` if the path matches any of the patterns or an error occurs, indicating the path should be
+//     skipped.
 //     Returns `false` otherwise, meaning the path should not be skipped.
 func shouldSkip(path string, patterns []string) bool {
 	if len(patterns) == 0 {
@@ -388,7 +390,8 @@ func shouldInclude(path string, patterns []string) bool {
 
 // MkDir creates a directory at the specified path, including any necessary parent directories.
 // It first ensures the provided path is an absolute and clean path, and checks whether the path is valid.
-// If the path does not exist, it will be created with permissions 0750. If the directory already exists, it does nothing.
+// If the path does not exist, it will be created with permissions 0750. If the directory already exists,
+// it does nothing.
 //
 // Parameters:
 //   - path (string): The path where the directory should be created. The function will resolve this to an absolute path

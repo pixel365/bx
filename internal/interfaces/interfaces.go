@@ -21,10 +21,10 @@ import (
 //   - Collect: Gathers or stages files/metadata necessary for the build.
 //   - Cleanup: Releases resources or performs cleanup actions after the build.
 type Builder interface {
-	Build() error
+	Build(ctx context.Context) error
 	Prepare() error
 	Rollback() error
-	Collect() error
+	Collect(ctx context.Context) error
 	Cleanup()
 }
 

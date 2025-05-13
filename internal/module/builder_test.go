@@ -86,14 +86,14 @@ func TestModuleBuilder_Build(t *testing.T) {
 	}{
 		{fields{builder: builder}, "nil module", true},
 		{
-			fields{builder: NewModuleBuilder(&Module{Ctx: context.TODO()}, nil)},
+			fields{builder: NewModuleBuilder(&Module{}, nil)},
 			"todo context",
 			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.fields.builder.Build()
+			err := tt.fields.builder.Build(context.TODO())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Build() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -120,8 +120,8 @@ func TestModuleBuilder_Prepare(t *testing.T) {
 				t.Errorf("Prepare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !errors.Is(err, errors2.NilModuleError) {
-				t.Errorf("Prepare() error = %v, wantErr %v", err, errors2.NilModuleError)
+			if !errors.Is(err, errors2.ErrNilModule) {
+				t.Errorf("Prepare() error = %v, wantErr %v", err, errors2.ErrNilModule)
 			}
 		})
 	}
@@ -165,8 +165,8 @@ func TestModuleBuilder_Rollback(t *testing.T) {
 				t.Errorf("Rollback() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !errors.Is(err, errors2.NilModuleError) {
-				t.Errorf("Rollback() error = %v, wantErr %v", err, errors2.NilModuleError)
+			if !errors.Is(err, errors2.ErrNilModule) {
+				t.Errorf("Rollback() error = %v, wantErr %v", err, errors2.ErrNilModule)
 			}
 		})
 	}
@@ -187,13 +187,13 @@ func TestModuleBuilder_Collect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.fields.builder.Collect()
+			err := tt.fields.builder.Collect(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Collect() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !errors.Is(err, errors2.NilModuleError) {
-				t.Errorf("Collect() error = %v, wantErr %v", err, errors2.NilModuleError)
+			if !errors.Is(err, errors2.ErrNilModule) {
+				t.Errorf("Collect() error = %v, wantErr %v", err, errors2.ErrNilModule)
 			}
 		})
 	}

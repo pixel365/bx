@@ -28,7 +28,8 @@ const RootDir Cfg = "root_dir"
 // Choose displays a selection prompt to the user and stores the chosen value.
 //
 // If the list contains exactly one non-empty item, it is selected automatically without prompting.
-// Otherwise, a selection menu is rendered using the `huh` library. The chosen item is stored in the provided `value` pointer.
+// Otherwise, a selection menu is rendered using the `huh` library. The chosen item is stored in the provided `value`
+// pointer.
 //
 // Parameters:
 //   - items: A pointer to a slice of strings representing selectable items. Must not be nil or empty.
@@ -40,10 +41,10 @@ const RootDir Cfg = "root_dir"
 //
 // Notes:
 //   - If any item in the list is an empty string, an error is returned.
-//   - The function returns `errors.NoItemsError` when `items` is nil or has zero length.
+//   - The function returns `errors.ErrNoItems` when `items` is nil or has zero length.
 func Choose(items *[]string, value *string, title string) error {
 	if items == nil || len(*items) == 0 {
-		return errors.NoItemsError
+		return errors.ErrNoItems
 	}
 
 	n := len(*items)
@@ -78,9 +79,11 @@ func Choose(items *[]string, value *string, title string) error {
 //   - f: A function with no parameters and no return value whose stdout output will be captured.
 //
 // Returns:
-//   - string: The content written to stdout during the execution of `f`. Returns an empty string if an error occurs during pipe handling.
+//   - string: The content written to stdout during the execution of `f`.
+//     Returns an empty string if an error occurs during pipe handling.
 //
-// Note: Any error from pipe creation or reading is silently ignored. This function is not safe for concurrent use of os.Stdout.
+// Note: Any error from pipe creation or reading is silently ignored.
+// This function is not safe for concurrent use of os.Stdout.
 func CaptureOutput(f func()) string {
 	r, w, _ := os.Pipe()
 	stdout := os.Stdout
@@ -201,7 +204,7 @@ ignore:
 func CheckPath(path string) error {
 	path = filepath.Clean(path)
 	if !IsValidPath(path, path) {
-		return errors.InvalidFilepathError
+		return errors.ErrInvalidFilepath
 	}
 
 	_, err := os.Stat(path)
@@ -247,11 +250,11 @@ func IsDir(path string) (bool, error) {
 //   - error: Returns an error if the context is done (canceled or expired), otherwise nil.
 func CheckContext(ctx context.Context) error {
 	if ctx == nil {
-		return errors.NilContextError
+		return errors.ErrNilContext
 	}
 
 	if ctx == context.TODO() {
-		return errors.TODOContextError
+		return errors.ErrTODOContext
 	}
 
 	select {
@@ -314,18 +317,21 @@ func IsValidPath(filePath, basePath string) bool {
 // Parameters:
 //   - input (string): The input string containing variables in the format `{variableName}` to replace.
 //   - variables (map[string]string): A map containing variable names as keys and their replacement values as strings.
-//   - depth (int): The current recursion depth, which should start from 0. The function supports up to 5 levels of recursion.
+//   - depth (int): The current recursion depth, which should start from 0. The function supports up to 5 levels of
+//     recursion.
 //
 // Returns:
-//   - string: The updated string with variables replaced by their corresponding values, or an error if no replacement could be made.
-//   - error: An error is returned if the depth exceeds 5, if the depth is negative, or if the replacement results in an empty string.
+//   - string: The updated string with variables replaced by their corresponding values, or an error if no replacement
+//     could be made.
+//   - error: An error is returned if the depth exceeds 5, if the depth is negative, or if the replacement results in
+//     an empty string.
 func ReplaceVariables(input string, variables map[string]string, depth int) (string, error) {
 	if depth < 0 {
-		return "", errors.SmallDepthError
+		return "", errors.ErrSmallDepth
 	}
 
 	if depth > 5 {
-		return "", errors.LargeDepthError
+		return "", errors.ErrLargeDepth
 	}
 
 	variableRegex := regexp.MustCompile(`\{([a-zA-Z0-9-_]+)}`)
@@ -339,7 +345,7 @@ func ReplaceVariables(input string, variables map[string]string, depth int) (str
 	})
 
 	if updated == "" {
-		return "", errors.ReplacementError
+		return "", errors.ErrReplacement
 	}
 
 	if updated == input {

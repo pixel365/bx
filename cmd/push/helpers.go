@@ -50,35 +50,36 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return uploadFunc(httpClient, mod, cookies, silent)
+	return uploadFunc(cmd.Context(), httpClient, mod, cookies, silent)
 }
 
 func upload(
+	ctx context.Context,
 	client *request.Client,
 	module *module.Module,
 	cookies []*http.Cookie,
 	silent bool,
 ) error {
 	if module == nil {
-		return errors.NilModuleError
+		return errors.ErrNilModule
 	}
 
 	if client == nil {
-		return errors.NilClientError
+		return errors.ErrNilClient
 	}
 
 	if len(cookies) == 0 {
-		return errors.NilCookieError
+		return errors.ErrNilCookie
 	}
 
 	if silent {
-		return client.UploadZIP(module, cookies)
+		return client.UploadZIP(ctx, module, cookies)
 	}
 
 	return spinnerFunc(
 		"Uploading module to partners.1c-bitrix.ru...",
 		func(ctx context.Context) error {
-			return client.UploadZIP(module, cookies)
+			return client.UploadZIP(ctx, module, cookies)
 		},
 	)
 }

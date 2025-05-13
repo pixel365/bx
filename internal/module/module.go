@@ -1,7 +1,6 @@
 package module
 
 import (
-	"context"
 	"sync"
 
 	"github.com/pixel365/bx/internal/types"
@@ -10,7 +9,6 @@ import (
 )
 
 type Module struct {
-	Ctx            context.Context     `yaml:"-"`
 	Variables      map[string]string   `yaml:"variables,omitempty"`
 	Run            map[string][]string `yaml:"run,omitempty"`
 	changes        *types.Changes      `yaml:"-"`

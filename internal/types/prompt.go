@@ -12,7 +12,7 @@ type Prompt struct {
 
 func (p *Prompt) Input(title string, validator func(string) error) error {
 	if title == "" || validator == nil {
-		return errors.InvalidArgumentError
+		return errors.ErrInvalidArgument
 	}
 
 	value := ""

@@ -33,8 +33,8 @@ func TestReadModuleFromFlags(t *testing.T) {
 			t.Errorf("ReadModuleFromFlags() did not return an error")
 		}
 
-		if !errors.Is(err, errors2.NilCmdError) {
-			t.Errorf("err = %v, want %v", err, errors2.NilCmdError)
+		if !errors.Is(err, errors2.ErrNilCmd) {
+			t.Errorf("err = %v, want %v", err, errors2.ErrNilCmd)
 		}
 	})
 }
@@ -102,33 +102,32 @@ func TestAllModules(t *testing.T) {
 }
 
 func TestHandleStages_NilModule(t *testing.T) {
+	ctx := context.Background()
 	t.Run("nil module", func(t *testing.T) {
-		err := HandleStages([]string{}, nil, nil, nil, &FakeBuildLogger{}, true)
-		if !errors.Is(err, errors2.NilModuleError) {
-			t.Errorf("HandleStages() error = %v, want %v", err, errors2.NilModuleError)
+		err := HandleStages(ctx, []string{}, nil, nil, nil, &FakeBuildLogger{}, true)
+		if !errors.Is(err, errors2.ErrNilModule) {
+			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
 		}
 	})
 }
 
 func TestHandleStages_NilContext(t *testing.T) {
-	m := Module{
-		Ctx: context.TODO(),
-	}
+	ctx := context.TODO()
+	m := Module{}
 	t.Run("todo context", func(t *testing.T) {
-		err := HandleStages([]string{"fake-stage"}, &m, nil, nil, &FakeBuildLogger{}, true)
-		if !errors.Is(err, errors2.TODOContextError) {
-			t.Errorf("HandleStages() error = %v, want %v", err, errors2.TODOContextError)
+		err := HandleStages(ctx, []string{"fake-stage"}, &m, nil, nil, &FakeBuildLogger{}, true)
+		if !errors.Is(err, errors2.ErrTODOContext) {
+			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrTODOContext)
 		}
 	})
 }
 
 func TestHandleStages_StageNotFound(t *testing.T) {
-	m := Module{
-		Ctx: context.Background(),
-	}
+	ctx := context.Background()
+	m := Module{}
 	var wg sync.WaitGroup
 	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages([]string{"fake-stage"}, &m, &wg, nil, &FakeBuildLogger{}, true)
+		err := HandleStages(ctx, []string{"fake-stage"}, &m, &wg, nil, &FakeBuildLogger{}, true)
 		if err == nil {
 			t.Error("err is nil")
 		}
@@ -136,24 +135,32 @@ func TestHandleStages_StageNotFound(t *testing.T) {
 }
 
 func TestHandleStages_NoCustomCommandMode(t *testing.T) {
+	ctx := context.Background()
 	m := &Module{
-		Ctx: context.Background(),
 		Stages: []types.Stage{
 			{Name: "some-fake-stage"},
 		},
 	}
 	var wg sync.WaitGroup
 	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages([]string{"some-fake-stage"}, m, &wg, nil, &FakeBuildLogger{}, false)
-		if !errors.Is(err, errors2.NilModuleError) {
-			t.Errorf("HandleStages() error = %v, want %v", err, errors2.NilModuleError)
+		err := HandleStages(
+			ctx,
+			[]string{"some-fake-stage"},
+			m,
+			&wg,
+			nil,
+			&FakeBuildLogger{},
+			false,
+		)
+		if !errors.Is(err, errors2.ErrNilModule) {
+			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
 		}
 	})
 }
 
 func TestHandleStages_Ok(t *testing.T) {
+	ctx := context.Background()
 	m := &Module{
-		Ctx:            context.Background(),
 		BuildDirectory: "./testdata",
 		Stages: []types.Stage{
 			{Name: "some-fake-stage"},
@@ -161,7 +168,15 @@ func TestHandleStages_Ok(t *testing.T) {
 	}
 	var wg sync.WaitGroup
 	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages([]string{"some-fake-stage"}, m, &wg, nil, &FakeBuildLogger{}, false)
+		err := HandleStages(
+			ctx,
+			[]string{"some-fake-stage"},
+			m,
+			&wg,
+			nil,
+			&FakeBuildLogger{},
+			false,
+		)
 		if err != nil {
 			t.Errorf("HandleStages() error = %v, want nil", err)
 		}
@@ -257,8 +272,8 @@ func Test_makeZipFilePath(t *testing.T) {
 
 func TestCheckStages(t *testing.T) {
 	err := CheckStages(nil)
-	if !errors.Is(err, errors2.NilModuleError) {
-		t.Errorf("CheckStages() error = %v, want %v", err, errors2.NilModuleError)
+	if !errors.Is(err, errors2.ErrNilModule) {
+		t.Errorf("CheckStages() error = %v, want %v", err, errors2.ErrNilModule)
 	}
 }
 

@@ -38,11 +38,11 @@ import (
 // If all validations pass, it returns nil.
 func (m *Module) IsValid() error {
 	if m.Name == "" {
-		return errors.EmptyModuleNameError
+		return errors.ErrEmptyModuleName
 	}
 
 	if strings.Contains(m.Name, " ") {
-		return errors.NameContainsSpaceError
+		return errors.ErrNameContainsSpace
 	}
 
 	if err := validators.ValidateVersion(m.Version); err != nil {
@@ -50,7 +50,7 @@ func (m *Module) IsValid() error {
 	}
 
 	if m.Account == "" {
-		return errors.EmptyAccountNameError
+		return errors.ErrEmptyAccountName
 	}
 
 	if err := ValidateVariables(m); err != nil {
@@ -100,7 +100,7 @@ func (m *Module) IsValid() error {
 	switch m.Label {
 	case "", types.Alpha, types.Beta, types.Stable:
 	default:
-		return errors.InvalidLabelError
+		return errors.ErrInvalidLabel
 	}
 
 	return nil
@@ -208,7 +208,7 @@ func (m *Module) StageCallback(stageName string) (interfaces.Runnable, error) {
 		}
 	}
 
-	return callback.Callback{}, errors.StageCallbackNotFoundError
+	return callback.Callback{}, errors.ErrStageCallbackNotFound
 }
 
 // ValidateChangelog validates the changelog configuration of the module.
@@ -223,7 +223,7 @@ func (m *Module) StageCallback(stageName string) (interfaces.Runnable, error) {
 // Returns an error detailing the first encountered validation issue, or nil if the configuration is valid.
 func (m *Module) ValidateChangelog() error {
 	if (m.Changelog.From.Type != "" || m.Changelog.To.Type != "") && m.Repository == "" {
-		return errors.InvalidChangelogSettingsError
+		return errors.ErrInvalidChangelogSettings
 	}
 
 	if m.Repository != "" {
@@ -236,11 +236,11 @@ func (m *Module) ValidateChangelog() error {
 		}
 
 		if m.Changelog.From.Value == "" {
-			return errors.ChangelogFromValueError
+			return errors.ErrChangelogFromValue
 		}
 
 		if m.Changelog.To.Value == "" {
-			return errors.ChangelogToValueError
+			return errors.ErrChangelogToValue
 		}
 
 		if m.Changelog.Condition.Type != "" {
@@ -255,7 +255,7 @@ func (m *Module) ValidateChangelog() error {
 			}
 
 			if len(m.Changelog.Condition.Value) == 0 {
-				return errors.ChangelogConditionValueError
+				return errors.ErrChangelogConditionValue
 			}
 
 			for i, condition := range m.Changelog.Condition.Value {
@@ -271,10 +271,10 @@ func (m *Module) ValidateChangelog() error {
 		}
 	}
 
-	if m.Changelog.Sort != "" {
-		if m.Changelog.Sort != types.Asc && m.Changelog.Sort != types.Desc {
-			return fmt.Errorf("changelog sort must be %s or %s", types.Asc, types.Desc)
-		}
+	switch m.Changelog.Sort {
+	case "", types.Asc, types.Desc:
+	default:
+		return fmt.Errorf("changelog sort must be %s or %s", types.Asc, types.Desc)
 	}
 
 	return nil

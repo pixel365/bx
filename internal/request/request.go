@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"mime/multipart"
@@ -48,11 +49,11 @@ func NewClient(client HTTPClient, jar http.CookieJar) *Client {
 // authentication fails or an issue occurs during the request.
 func (c *Client) Authenticate(login, password string) ([]*http.Cookie, error) {
 	if login == "" {
-		return nil, errors2.EmptyLoginError
+		return nil, errors2.ErrEmptyLogin
 	}
 
 	if password == "" {
-		return nil, errors2.EmptyPasswordError
+		return nil, errors2.ErrEmptyPassword
 	}
 
 	body := url.Values{
@@ -95,28 +96,32 @@ func (c *Client) Authenticate(login, password string) ([]*http.Cookie, error) {
 	}
 
 	if len(cookies) == 0 {
-		return nil, errors2.AuthenticationError
+		return nil, errors2.ErrAuthentication
 	}
 
 	return cookies, nil
 }
 
-func (c *Client) Versions(module *module.Module, cookies []*http.Cookie) (types.Versions, error) {
+func (c *Client) Versions(
+	ctx context.Context,
+	module *module.Module,
+	cookies []*http.Cookie,
+) (types.Versions, error) {
 	if module == nil {
-		return nil, errors2.NilModuleError
+		return nil, errors2.ErrNilModule
 	}
 
 	if cookies == nil {
-		return nil, errors2.NilCookieError
+		return nil, errors2.ErrNilCookie
 	}
 
 	session := c.SessionId(module, cookies)
 	if session == "" {
-		return nil, errors2.EmptySessionError
+		return nil, errors2.ErrEmptySession
 	}
 
 	u, _ := url.Parse("https://partners.1c-bitrix.ru/personal/modules/update.php?ID=" + module.Name)
-	req, err := http.NewRequestWithContext(module.Ctx, http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -147,23 +152,28 @@ func (c *Client) Versions(module *module.Module, cookies []*http.Cookie) (types.
 // for the result of the upload operation.
 //
 // Parameters:
+//   - ctx: context.Context.
 //   - module: The module whose ZIP file is being uploaded.
 //   - cookies: The cookies containing the authentication information.
 //
 // Returns:
 //   - An error if any step fails (e.g., missing session, file errors, upload failure).
-func (c *Client) UploadZIP(module *module.Module, cookies []*http.Cookie) error {
+func (c *Client) UploadZIP(
+	ctx context.Context,
+	module *module.Module,
+	cookies []*http.Cookie,
+) error {
 	if module == nil {
-		return errors2.NilModuleError
+		return errors2.ErrNilModule
 	}
 
 	if cookies == nil {
-		return errors2.NilCookieError
+		return errors2.ErrNilCookie
 	}
 
 	session := c.SessionId(module, cookies)
 	if session == "" {
-		return errors2.EmptySessionError
+		return errors2.ErrEmptySession
 	}
 
 	path, err := module.ZipPath()
@@ -200,7 +210,7 @@ func (c *Client) UploadZIP(module *module.Module, cookies []*http.Cookie) error 
 	}
 
 	u, _ := url.Parse("https://partners.1c-bitrix.ru/personal/modules/deploy.php")
-	req, err := http.NewRequestWithContext(module.Ctx, http.MethodPost, u.String(), &requestBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), &requestBody)
 	if err != nil {
 		return err
 	}

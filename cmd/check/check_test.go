@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var fakeError = errors.New("fake error")
+var errFake = errors.New("fake error")
 
 func Test_newCheckCommand(t *testing.T) {
 	cmd := NewCheckCommand()
@@ -49,7 +49,7 @@ func Test_newCheckCommand(t *testing.T) {
 func Test_check_ReadModuleFromFlags(t *testing.T) {
 	originalReadModule := readModuleFromFlagsFunc
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
-		return nil, fakeError
+		return nil, errFake
 	}
 	defer func() {
 		readModuleFromFlagsFunc = originalReadModule
@@ -62,7 +62,7 @@ func Test_check_ReadModuleFromFlags(t *testing.T) {
 		t.Errorf("err is nil")
 	}
 
-	if !errors.Is(err, fakeError) {
+	if !errors.Is(err, errFake) {
 		t.Errorf("err = %v, want %v", err, "fake error")
 	}
 }
