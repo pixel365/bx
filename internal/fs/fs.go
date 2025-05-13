@@ -11,11 +11,11 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/text/encoding/charmap"
+
 	"github.com/pixel365/bx/internal/interfaces"
 
 	"github.com/pixel365/bx/internal/types"
-
-	"golang.org/x/text/encoding/charmap"
 
 	"github.com/pixel365/bx/internal/helpers"
 
@@ -101,7 +101,27 @@ func walk(
 	var wg2 sync.WaitGroup
 	jobs := make(chan struct{}, 10)
 
-	var changes *types.Changes = nil
+	err := filepath.Walk(from, visitor(
+		ctx, errCh, from, to, cfg, existsMode, convert, filterRules, jobs, &wg2,
+	))
+
+	wg2.Wait()
+
+	return err
+}
+
+func visitor(
+	ctx context.Context,
+	errCh chan<- error,
+	from, to string,
+	cfg interfaces.ModuleConfig,
+	existsMode types.FileExistsAction,
+	convert bool,
+	filterRules []string,
+	jobs chan struct{},
+	wg2 *sync.WaitGroup,
+) filepath.WalkFunc {
+	var changes *types.Changes
 	if !cfg.IsLastVersion() {
 		changes = cfg.GetChanges()
 	}
@@ -113,7 +133,7 @@ func walk(
 		return nil
 	}
 
-	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
+	return func(path string, info os.FileInfo, err error) error {
 		if ctxErr := helpers.CheckContext(ctx); ctxErr != nil {
 			errCh <- ctxErr
 			return ctxErr
@@ -134,11 +154,7 @@ func walk(
 		}
 		absFrom = filepath.Clean(absFrom)
 
-		if shouldSkip(relPath, cfg.GetIgnore()) {
-			return skipFn(info)
-		}
-
-		if !shouldInclude(absFrom, filterRules) {
+		if shouldSkip(relPath, cfg.GetIgnore()) || !shouldInclude(absFrom, filterRules) {
 			return skipFn(info)
 		}
 
@@ -147,34 +163,30 @@ func walk(
 			return err
 		}
 
-		if !isDir {
-			if changes != nil {
-				if !changes.IsChangedFile(absFrom) {
-					return nil
-				}
-			}
-
-			absTo, err := filepath.Abs(fmt.Sprintf("%s/%s", to, relPath))
-			if err != nil {
-				return err
-			}
-			absTo = filepath.Clean(absTo)
-			toDir := filepath.Dir(absTo)
-
-			if _, err := MkDir(toDir); err != nil {
-				return err
-			}
-
-			wg2.Add(1)
-			go copyFile(ctx, &wg2, errCh, absFrom, absTo, jobs, existsMode, convert)
+		if isDir {
+			return nil
 		}
 
+		if changes != nil && !changes.IsChangedFile(absFrom) {
+			return nil
+		}
+
+		absTo, err := filepath.Abs(fmt.Sprintf("%s/%s", to, relPath))
+		if err != nil {
+			return err
+		}
+		absTo = filepath.Clean(absTo)
+		toDir := filepath.Dir(absTo)
+
+		if _, err := MkDir(toDir); err != nil {
+			return err
+		}
+
+		wg2.Add(1)
+		go copyFile(ctx, wg2, errCh, absFrom, absTo, jobs, existsMode, convert)
+
 		return nil
-	})
-
-	wg2.Wait()
-
-	return err
+	}
 }
 
 // copyFile copies a file from the source path to the destination path, taking into account the context cancellation,
@@ -246,11 +258,6 @@ func copyFile(
 
 	defer helpers.Cleanup(in, errCh)
 
-	if err := helpers.CheckContext(ctx); err != nil {
-		errCh <- err
-		return
-	}
-
 	info, err := in.Stat()
 	if err != nil {
 		errCh <- err
@@ -258,50 +265,40 @@ func copyFile(
 	}
 
 	allowWrite := true
-	if existingFile != nil {
-		if existsMode == types.ReplaceIfNewer {
-			allowWrite = info.ModTime().After(existingFile.ModTime())
-		}
+	if existingFile != nil && existsMode == types.ReplaceIfNewer {
+		allowWrite = info.ModTime().After(existingFile.ModTime())
 	}
 
-	if allowWrite {
-		out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
-		if err != nil {
-			errCh <- err
-			return
-		}
+	if !allowWrite {
+		return
+	}
 
-		defer helpers.Cleanup(out, errCh)
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
+	if err != nil {
+		errCh <- err
+		return
+	}
 
-		if err := helpers.CheckContext(ctx); err != nil {
-			errCh <- err
-			return
-		}
+	defer helpers.Cleanup(out, errCh)
 
-		var writer io.Writer
-		if convert && isConvertable(src) {
-			encoder := charmap.Windows1251.NewEncoder()
-			writer = encoder.Writer(out)
-		} else {
-			writer = out
-		}
+	var writer io.Writer
+	if convert && isConvertable(src) {
+		encoder := charmap.Windows1251.NewEncoder()
+		writer = encoder.Writer(out)
+	} else {
+		writer = out
+	}
 
-		_, err = io.Copy(writer, in)
-		if err != nil {
-			errCh <- err
-			return
-		}
+	_, err = io.Copy(writer, in)
+	if err != nil {
+		errCh <- err
+		return
+	}
 
-		if err := helpers.CheckContext(ctx); err != nil {
-			errCh <- err
-			return
-		}
-
-		err = os.Chtimes(dst, info.ModTime(), info.ModTime())
-		if err != nil {
-			errCh <- err
-			return
-		}
+	err = os.Chtimes(dst, info.ModTime(), info.ModTime())
+	if err != nil {
+		errCh <- err
+		return
 	}
 }
 

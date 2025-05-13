@@ -30,9 +30,7 @@ bx list --name my_module
 # List all module versions by file path
 bx list -f config.yaml
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return list(cmd, args)
-		},
+		RunE: list,
 	}
 
 	cmd.Flags().StringP("name", "n", "", "Name of the module")

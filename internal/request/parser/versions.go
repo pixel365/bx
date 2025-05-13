@@ -26,7 +26,7 @@ func versionsTable(n *html.Node, class string) *html.Node {
 
 func versionRow(tr *html.Node) (string, string) {
 	var version string
-	var selectedValue string
+	var label string
 
 	for c := tr.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode && c.Data == "td" {
@@ -41,36 +41,14 @@ func versionRow(tr *html.Node) (string, string) {
 
 	for c := tr.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode && c.Data == "td" {
-			for inp := c.FirstChild; inp != nil; inp = inp.NextSibling {
-				if inp.Type == html.ElementNode && inp.Data == "input" {
-					var valueVal string
-					isChecked := false
-
-					for _, attr := range inp.Attr {
-						if attr.Key == "checked" {
-							isChecked = true
-							break
-						}
-					}
-
-					if isChecked {
-						for _, attr := range inp.Attr {
-							if attr.Key == "value" {
-								valueVal = attr.Val
-							}
-						}
-					}
-
-					if valueVal != "" {
-						selectedValue = valueVal
-						break
-					}
-				}
+			label = extractLabel(c)
+			if label != "" {
+				break
 			}
 		}
 	}
 
-	return version, selectedValue
+	return version, label
 }
 
 func extractVersion(n *html.Node) string {
@@ -85,4 +63,39 @@ func extractVersion(n *html.Node) string {
 	}
 
 	return ""
+}
+
+func extractLabel(c *html.Node) string {
+	var label string
+
+	for inp := c.FirstChild; inp != nil; inp = inp.NextSibling {
+		if inp.Type != html.ElementNode || inp.Data != "input" {
+			continue
+		}
+
+		var valueVal string
+		isChecked := false
+
+		for _, attr := range inp.Attr {
+			if attr.Key == "checked" {
+				isChecked = true
+				break
+			}
+		}
+
+		if isChecked {
+			for _, attr := range inp.Attr {
+				if attr.Key == "value" {
+					valueVal = attr.Val
+				}
+			}
+		}
+
+		if valueVal != "" {
+			label = valueVal
+			break
+		}
+	}
+
+	return label
 }

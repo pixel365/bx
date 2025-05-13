@@ -139,7 +139,7 @@ func Test_create_success(t *testing.T) {
 func Test_create_module_exists(t *testing.T) {
 	moduleName := fmt.Sprintf("mod-%d", time.Now().UTC().Unix())
 	fileName := fmt.Sprintf("%s.yaml", moduleName)
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	defer func() {

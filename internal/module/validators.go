@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pixel365/bx/internal/validators"
+
 	"github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
@@ -101,6 +103,32 @@ func ValidateRun(m *Module) error {
 		if err := validateStagesList(stages, fmt.Sprintf("run: %s stages", key), m.FindStage); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func ValidateMainFields(m *Module) error {
+	if m.Name == "" {
+		return errors.ErrEmptyModuleName
+	}
+
+	if strings.Contains(m.Name, " ") {
+		return errors.ErrNameContainsSpace
+	}
+
+	if err := validators.ValidateVersion(m.Version); err != nil {
+		return err
+	}
+
+	switch m.Label {
+	case "", types.Alpha, types.Beta, types.Stable:
+	default:
+		return errors.ErrInvalidLabel
+	}
+
+	if m.Account == "" {
+		return errors.ErrEmptyAccountName
 	}
 
 	return nil

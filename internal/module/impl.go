@@ -12,12 +12,11 @@ import (
 
 	"github.com/pixel365/bx/internal/types"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/pixel365/bx/internal/callback"
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/repo"
-	"github.com/pixel365/bx/internal/validators"
-
-	"gopkg.in/yaml.v3"
 )
 
 // IsValid validates the fields of the Module struct.
@@ -37,20 +36,8 @@ import (
 // If any of these conditions are violated, the method returns an error with a detailed message.
 // If all validations pass, it returns nil.
 func (m *Module) IsValid() error {
-	if m.Name == "" {
-		return errors.ErrEmptyModuleName
-	}
-
-	if strings.Contains(m.Name, " ") {
-		return errors.ErrNameContainsSpace
-	}
-
-	if err := validators.ValidateVersion(m.Version); err != nil {
+	if err := ValidateMainFields(m); err != nil {
 		return err
-	}
-
-	if m.Account == "" {
-		return errors.ErrEmptyAccountName
 	}
 
 	if err := ValidateVariables(m); err != nil {
@@ -95,12 +82,6 @@ func (m *Module) IsValid() error {
 
 	if err := ValidateRun(m); err != nil {
 		return err
-	}
-
-	switch m.Label {
-	case "", types.Alpha, types.Beta, types.Stable:
-	default:
-		return errors.ErrInvalidLabel
 	}
 
 	return nil
@@ -202,7 +183,8 @@ func (m *Module) PasswordEnv() string {
 //   - Runnable - the found callback if it exists.
 //   - error - an error if the callback is not found.
 func (m *Module) StageCallback(stageName string) (interfaces.Runnable, error) {
-	for _, cb := range m.Callbacks {
+	for i := range m.Callbacks {
+		cb := m.Callbacks[i]
 		if cb.Stage == stageName {
 			return cb, nil
 		}
@@ -222,51 +204,37 @@ func (m *Module) StageCallback(stageName string) (interfaces.Runnable, error) {
 //
 // Returns an error detailing the first encountered validation issue, or nil if the configuration is valid.
 func (m *Module) ValidateChangelog() error {
-	if (m.Changelog.From.Type != "" || m.Changelog.To.Type != "") && m.Repository == "" {
-		return errors.ErrInvalidChangelogSettings
+	if m.Repository == "" || (m.Changelog.From.Type == "" && m.Changelog.To.Type == "") {
+		return nil
 	}
 
-	if m.Repository != "" {
-		if m.Changelog.From.Type != types.Commit && m.Changelog.From.Type != types.Tag {
-			return fmt.Errorf("changelog from: type must be %s or %s", types.Commit, types.Tag)
+	if err := changeLogFromToValidate(m.Changelog); err != nil {
+		return err
+	}
+
+	if m.Changelog.Condition.Type != "" {
+		if m.Changelog.Condition.Type != types.Include &&
+			m.Changelog.Condition.Type != types.Exclude {
+			return fmt.Errorf(
+				"changelog [%s] condition: type must be %s or %s",
+				m.Name,
+				types.Include,
+				types.Exclude,
+			)
 		}
 
-		if m.Changelog.To.Type != types.Commit && m.Changelog.To.Type != types.Tag {
-			return fmt.Errorf("changelog to: type must be %s or %s", types.Commit, types.Tag)
+		if len(m.Changelog.Condition.Value) == 0 {
+			return errors.ErrChangelogConditionValue
 		}
 
-		if m.Changelog.From.Value == "" {
-			return errors.ErrChangelogFromValue
-		}
-
-		if m.Changelog.To.Value == "" {
-			return errors.ErrChangelogToValue
-		}
-
-		if m.Changelog.Condition.Type != "" {
-			if m.Changelog.Condition.Type != types.Include &&
-				m.Changelog.Condition.Type != types.Exclude {
-				return fmt.Errorf(
-					"changelog [%s] condition: type must be %s or %s",
-					m.Name,
-					types.Include,
-					types.Exclude,
-				)
+		for i, condition := range m.Changelog.Condition.Value {
+			if condition == "" {
+				return fmt.Errorf("condition [%d]: value is required", i)
 			}
 
-			if len(m.Changelog.Condition.Value) == 0 {
-				return errors.ErrChangelogConditionValue
-			}
-
-			for i, condition := range m.Changelog.Condition.Value {
-				if condition == "" {
-					return fmt.Errorf("condition [%d]: value is required", i)
-				}
-
-				_, err := regexp.Compile(condition)
-				if err != nil {
-					return fmt.Errorf("invalid condition [%d]: %w", i, err)
-				}
+			_, err := regexp.Compile(condition)
+			if err != nil {
+				return fmt.Errorf("invalid condition [%d]: %w", i, err)
 			}
 		}
 	}
@@ -298,4 +266,20 @@ func (m *Module) FindStage(name string) (types.Stage, error) {
 	}
 
 	return types.Stage{}, fmt.Errorf("stage `%s` not found", name)
+}
+
+func changeLogFromToValidate(c types.Changelog) error {
+	if c.From.Value == "" || c.To.Value == "" {
+		return errors.ErrChangelogValue
+	}
+
+	if c.From.Type != types.Commit && c.From.Type != types.Tag {
+		return fmt.Errorf("changelog from: type must be %s or %s", types.Commit, types.Tag)
+	}
+
+	if c.To.Type != types.Commit && c.To.Type != types.Tag {
+		return fmt.Errorf("changelog to: type must be %s or %s", types.Commit, types.Tag)
+	}
+
+	return nil
 }

@@ -23,9 +23,7 @@ func NewRunCommand() *cobra.Command {
 # Run a custom command
 bx run --name my_module --cmd custom_command
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd, args)
-		},
+		RunE: run,
 	}
 
 	cmd.Flags().StringP("name", "n", "", "Name of the module")

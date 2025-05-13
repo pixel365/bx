@@ -35,9 +35,7 @@ bx build --name my_module --version 1.2.3
 # Build .last_version
 bx build --name my_module --last
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return build(cmd, args)
-		},
+		RunE: build,
 	}
 
 	cmd.Flags().StringP("name", "n", "", "Name of the module")

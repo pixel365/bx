@@ -25,9 +25,7 @@ bx check --name my_module
 # Check the configuration of a module by file path
 bx check -f module-path/config.yaml
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return check(cmd, args)
-		},
+		RunE: check,
 	}
 
 	cmd.Flags().StringP("name", "n", "", "Name of the module")

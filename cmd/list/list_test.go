@@ -52,7 +52,7 @@ func TestNewListCommand(t *testing.T) {
 
 func Test_list_ReadModuleFromFlags(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -104,7 +104,7 @@ func Test_list_ReadModuleFromFlags(t *testing.T) {
 
 func Test_list_auth(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)

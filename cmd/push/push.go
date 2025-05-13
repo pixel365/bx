@@ -18,9 +18,7 @@ bx push -f config.yaml
 # Override version
 bx push --name my_module --version 1.2.3
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return push(cmd, args)
-		},
+		RunE: push,
 	}
 
 	cmd.Flags().StringP("name", "n", "", "Name of the module")

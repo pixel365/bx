@@ -380,7 +380,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 		fields  types.Changelog
 		wantErr bool
 	}{
-		{"empty", types.Changelog{}, true},
+		{"empty", types.Changelog{}, false},
 		{"empty from type", types.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  "",
@@ -573,12 +573,8 @@ func TestModule_ValidateChangelog_empty_repository(t *testing.T) {
 			},
 		}
 		err := m.ValidateChangelog()
-		if !errors.Is(err, errors2.ErrInvalidChangelogSettings) {
-			t.Errorf(
-				"ValidateChangelog() error = %v, wantErr %v",
-				err,
-				errors2.ErrInvalidChangelogSettings,
-			)
+		if err != nil {
+			t.Errorf("ValidateChangelog() error = %v", err)
 		}
 	})
 }

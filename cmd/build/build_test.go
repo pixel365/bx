@@ -73,7 +73,7 @@ func Test_newBuildCommand(t *testing.T) {
 
 func Test_build_IsValid(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -105,7 +105,7 @@ func Test_build_IsValid(t *testing.T) {
 
 func Test_build_success(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -148,7 +148,7 @@ func Test_build_success(t *testing.T) {
 
 func Test_build_fail(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -190,7 +190,7 @@ func Test_build_fail(t *testing.T) {
 
 func Test_build_invalid_version(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -233,7 +233,7 @@ func Test_build_invalid_version(t *testing.T) {
 
 func Test_build_valid_version(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -276,7 +276,7 @@ func Test_build_valid_version(t *testing.T) {
 
 func Test_build_repository(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -319,7 +319,7 @@ func Test_build_repository(t *testing.T) {
 
 func Test_build_invalid_last(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
@@ -370,7 +370,7 @@ func Test_build_invalid_last(t *testing.T) {
 
 func Test_build_read_module_error(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-	filePath := filepath.Join(fmt.Sprintf("./%s", fileName))
+	filePath := fmt.Sprintf("./%s", fileName)
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)

@@ -191,21 +191,20 @@ func (m *ModuleBuilder) Rollback() error {
 	return nil
 }
 
-// Collect gathers the necessary files for the build.
-// It processes each stage in parallel using goroutines to handle file copying.
-// The function creates the necessary directories for each stage and copies files as defined in the stage configuration.
-//
-// The method returns an error if any stage fails or if there are issues zipping the collected files.
-func (m *ModuleBuilder) Collect(ctx context.Context) error {
+func (m *ModuleBuilder) prepareVersionDirectory() (string, error) {
 	if m.module == nil {
-		return errors.ErrNilModule
+		return "", errors.ErrNilModule
 	}
 
 	versionDirectory, err := makeVersionDirectory(m.module)
 	if err != nil {
-		return err
+		return "", err
 	}
 
+	return versionDirectory, nil
+}
+
+func (m *ModuleBuilder) collectStages(ctx context.Context) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(m.module.Stages))
 
@@ -232,6 +231,24 @@ func (m *ModuleBuilder) Collect(ctx context.Context) error {
 	}
 
 	m.logger.Info("Collect complete")
+
+	return nil
+}
+
+// Collect gathers the necessary files for the build.
+// It processes each stage in parallel using goroutines to handle file copying.
+// The function creates the necessary directories for each stage and copies files as defined in the stage configuration.
+//
+// The method returns an error if any stage fails or if there are issues zipping the collected files.
+func (m *ModuleBuilder) Collect(ctx context.Context) error {
+	versionDirectory, err := m.prepareVersionDirectory()
+	if err != nil {
+		return err
+	}
+
+	if err := m.collectStages(ctx); err != nil {
+		return err
+	}
 
 	err = makeVersionDescription(m)
 	if err != nil {
@@ -310,6 +327,12 @@ func handleStage(
 	rootDir string,
 	cb func(string) (interfaces.Runnable, error),
 ) {
+	var err error
+
+	if logger != nil {
+		logger.Info("Handling stage %s", stage.Name)
+	}
+
 	_cb, cbErr := cb(stage.Name)
 
 	defer func() {
@@ -325,22 +348,17 @@ func handleStage(
 		go _cb.PreRun(ctx, wg, logger)
 	}
 
-	var err error
-
-	if logger != nil {
-		logger.Info("Handling stage %s", stage.Name)
-	}
-
 	defer func() {
 		if err != nil {
 			if logger != nil {
 				logger.Error(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err), err)
 			}
 			errCh <- err
-		} else {
-			if logger != nil {
-				logger.Info("Finished stage %s", stage.Name)
-			}
+			return
+		}
+
+		if logger != nil {
+			logger.Info("Finished stage %s", stage.Name)
 		}
 	}()
 

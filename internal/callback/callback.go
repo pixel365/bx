@@ -322,7 +322,7 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 // Returns:
 //   - error: Returns an error if the command execution fails, arguments are invalid, or the context is cancelled.
 func (c *CallbackParameters) runCommand(ctx context.Context, logger interfaces.BuildLogger) error {
-	_, cancelFunc := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
+	ctx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
 	defer cancelFunc()
 
 	rawCommand, _ := c.buildUrlAndBody()
@@ -336,31 +336,23 @@ func (c *CallbackParameters) runCommand(ctx context.Context, logger interfaces.B
 
 	com := cmd.NewCmd(args[0], args[1:]...)
 
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case out := <-com.Stdout:
-				if logger != nil {
-					logger.Info(out)
+	handleOutput := func(ch <-chan string, logFunc func(string, ...interface{})) {
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case out := <-ch:
+					if logger != nil {
+						logFunc(out, nil)
+					}
 				}
 			}
-		}
-	}()
+		}()
+	}
 
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case out := <-com.Stderr:
-				if logger != nil {
-					logger.Error(out, nil)
-				}
-			}
-		}
-	}()
+	handleOutput(com.Stdout, logger.Info)
+	handleOutput(com.Stderr, func(s string, args ...interface{}) { logger.Error(s, nil) })
 
 	statusChan := com.Start()
 
@@ -430,9 +422,10 @@ func (c *CallbackParameters) buildUrlAndBody() (string, io.Reader) {
 //   - error: An error if any callback fails validation, wrapped with its index; otherwise nil.
 func ValidateCallbacks(callbacks []Callback) error {
 	if len(callbacks) > 0 {
-		for index, cb := range callbacks {
+		for i := range callbacks {
+			cb := callbacks[i]
 			if err := cb.IsValid(); err != nil {
-				return fmt.Errorf("callback [%d]: %w", index, err)
+				return fmt.Errorf("callback [%d]: %w", i, err)
 			}
 		}
 	}

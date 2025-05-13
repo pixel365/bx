@@ -23,3 +23,12 @@ func Test_extractVersion(t *testing.T) {
 		}
 	})
 }
+
+func Test_extractLabel(t *testing.T) {
+	t.Run("extractLabel", func(t *testing.T) {
+		l := extractLabel(&html.Node{})
+		if l != "" {
+			t.Errorf("got %v; want empty string", l)
+		}
+	})
+}

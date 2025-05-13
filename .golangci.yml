@@ -21,7 +21,7 @@ linters:
     - containedctx
     - exhaustive
     - gocognit
-#    - gocritic
+    - gocritic
     - iface
     - lll
     - whitespace
@@ -30,16 +30,19 @@ linters:
     - err113
   settings:
     dupl:
-      threshold: 150
+      threshold: 100
     gocognit:
-      min-complexity: 55
+      min-complexity: 25
     goconst:
       min-len: 3
       min-occurrences: 2
     gocyclo:
-      min-complexity: 30
+      min-complexity: 15
     cyclop:
-      max-complexity: 20
+      max-complexity: 15
+    gocritic:
+      enabled-checks:
+        - rangeValCopy
   exclusions:
     generated: lax
     rules:

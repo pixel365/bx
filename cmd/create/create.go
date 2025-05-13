@@ -33,9 +33,7 @@ func NewCreateCommand() *cobra.Command {
 # Create a new module
 bx create --name my_module
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return create(cmd, args)
-		},
+		RunE: create,
 	}
 
 	cmd.Flags().StringP("name", "n", "", "Name of the module")

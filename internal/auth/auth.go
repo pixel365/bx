@@ -102,9 +102,12 @@ func InputPassword(cmd *cobra.Command, module *module.Module) (string, error) {
 
 	if password == "" {
 		prompter := newPasswordPromptFunc()
-		err := inputPasswordFunc(prompter, &password, "Enter Password:", func(input string) error {
-			return validators.ValidatePassword(input)
-		})
+		err := inputPasswordFunc(
+			prompter,
+			&password,
+			"Enter Password:",
+			validators.ValidatePassword,
+		)
 		if err != nil {
 			return "", err
 		}
