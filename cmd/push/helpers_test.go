@@ -297,7 +297,7 @@ func Test_push_valid_Version(t *testing.T) {
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "Version"
+			mod.Account = "some account"
 		}
 		return mod, err
 	}
@@ -322,6 +322,138 @@ func Test_push_valid_Version(t *testing.T) {
 	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--version", "1.0.0"})
 	err = cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
+	}
+}
+
+func Test_push_valid_label(t *testing.T) {
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("./%s", fileName)
+	filePath = filepath.Clean(filePath)
+
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	originalReadModule := readModuleFromFlagsFunc
+	originalInputPasswordFunc := inputPasswordFunc
+
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
+		if err == nil {
+			mod.Account = "another account"
+		}
+		return mod, err
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
+	}
+	defer func() {
+		inputPasswordFunc = originalInputPasswordFunc
+	}()
+
+	cmd := NewPushCommand()
+	cmd.SetArgs([]string{"--label", "stable"})
+	err = cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
+	}
+}
+
+func Test_push_invalid_label(t *testing.T) {
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("./%s", fileName)
+	filePath = filepath.Clean(filePath)
+
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	originalReadModule := readModuleFromFlagsFunc
+	originalInputPasswordFunc := inputPasswordFunc
+
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
+		if err == nil {
+			mod.Account = "Version"
+		}
+		return mod, err
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
+	}
+	defer func() {
+		inputPasswordFunc = originalInputPasswordFunc
+	}()
+
+	cmd := NewPushCommand()
+	cmd.SetArgs([]string{"--label", "some label"})
+	err = cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
+	}
+}
+
+func Test_push_invalid_module(t *testing.T) {
+	originalReadModule := readModuleFromFlagsFunc
+
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		return nil, errors.New("some error")
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	cmd := NewPushCommand()
+	err := cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
+	}
+}
+
+func Test_push_invalid_input(t *testing.T) {
+	originalReadModule := readModuleFromFlagsFunc
+	originalInputPasswordFunc := inputPasswordFunc
+
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		return nil, nil
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", errors.New("some error")
+	}
+	defer func() {
+		inputPasswordFunc = originalInputPasswordFunc
+	}()
+
+	cmd := NewPushCommand()
+	err := cmd.Execute()
 	if err == nil {
 		t.Errorf("err is nil")
 	}
