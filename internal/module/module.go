@@ -35,3 +35,12 @@ func (m *Module) GetVersion() string {
 	}
 	return m.Version
 }
+
+func (m *Module) GetLabel() types.VersionLabel {
+	switch m.Label {
+	case types.Alpha, types.Beta, types.Stable:
+		return m.Label
+	default:
+		return types.Alpha
+	}
+}

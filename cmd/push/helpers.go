@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/pixel365/bx/internal/types"
+
 	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/pixel365/bx/internal/auth"
@@ -39,6 +41,16 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	label, _ := cmd.Flags().GetString("label")
+	if label != "" {
+		switch types.VersionLabel(label) {
+		case types.Alpha, types.Beta, types.Stable:
+			mod.Label = types.VersionLabel(label)
+		default:
+			return errors.ErrInvalidLabel
+		}
+	}
+
 	password, err := inputPasswordFunc(cmd, mod)
 	if err != nil {
 		return err
@@ -50,7 +62,15 @@ func push(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return uploadFunc(cmd.Context(), httpClient, mod, cookies, silent)
+	err = uploadFunc(cmd.Context(), httpClient, mod, cookies, silent)
+	if err != nil {
+		return err
+	}
+
+	versions := make(types.Versions, 1)
+	versions[mod.Version] = mod.GetLabel()
+
+	return httpClient.ChangeLabels(mod, cookies, versions)
 }
 
 func upload(

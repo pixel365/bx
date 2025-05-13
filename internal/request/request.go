@@ -144,6 +144,59 @@ func (c *Client) Versions(
 	return parser.ParseVersions(string(respBody))
 }
 
+func (c *Client) ChangeLabels(
+	module *module.Module,
+	cookies []*http.Cookie,
+	versions types.Versions,
+) error {
+	if module == nil {
+		return errors2.ErrNilModule
+	}
+
+	if cookies == nil {
+		return errors2.ErrNilCookie
+	}
+
+	session := c.SessionId(module, cookies)
+	if session == "" {
+		return errors2.ErrEmptySession
+	}
+
+	body := url.Values{
+		"sessid": {session},
+		"ID":     {module.Name},
+		"submit": {"Y"},
+	}
+	for version, label := range versions {
+		body.Set(version, string(label))
+	}
+
+	u, _ := url.Parse("https://partners.1c-bitrix.ru/personal/modules/update.php")
+	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(body.Encode()))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	c.jar.SetCookies(u, cookies)
+
+	//nolint:bodyclose
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer helpers.Cleanup(resp.Body, nil)
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return parser.UploadResult(string(respBody))
+}
+
 // UploadZIP uploads a ZIP file containing the module's data to the Bitrix Partner Portal.
 //
 // This function first validates that the module and cookies are provided. It then retrieves the

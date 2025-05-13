@@ -7,6 +7,7 @@
     * [run: Запуск кастомных команд](usage/run.md)
     * [push: Публикация релиза](usage/push.md)
     * [list: Список версий модуля](usage/list.md)
+    * [label: Установить метку версии](usage/label.md)
     * [version: Версия BX](usage/version.md)
 * [Настройка](configuration/)
     * [Основные поля](configuration/main.md)
