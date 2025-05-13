@@ -3,8 +3,7 @@
 Для запуска команд определённых в [секции run](configuration/run), используется команда `run` с флагом подкоманды.
 
 ```bash
-# запуск customSubCommand
-bx run --cmd customSubCommand
+bx run [flags]
 ```
 
 ### Флаги
@@ -14,6 +13,11 @@ bx run --cmd customSubCommand
 - `--cmd`, `-c` &mdash; Подкоманда из секции [run](configuration/run)
 
 ### Использование
+
+```bash
+# запуск customSubCommand
+bx run --cmd customSubCommand
+```
 
 Использование подкоманд может быть полезно в том случае, 
 когда требуется ручной контроль за запуском этапов сборки, 
