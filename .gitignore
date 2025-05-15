@@ -22,6 +22,8 @@
 
 .env
 
+*.txt
+
 vendor/
 bin/
 build/

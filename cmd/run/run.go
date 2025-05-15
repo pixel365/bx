@@ -2,7 +2,6 @@ package run
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/module"
@@ -53,13 +52,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("command %s not found in mod %s", command, mod.Name)
 	}
 
-	var wg sync.WaitGroup
-	errCh := make(chan error, len(stages))
-
-	err = handleStagesFunc(cmd.Context(), stages, mod, &wg, errCh, nil, true)
-
-	wg.Wait()
-	close(errCh)
+	err = handleStagesFunc(cmd.Context(), stages, mod, nil, true)
 
 	return err
 }

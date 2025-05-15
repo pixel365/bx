@@ -44,7 +44,6 @@ var (
 	)
 	ErrNilCmd                   = errors.New("cmd is nil")
 	ErrNilClient                = errors.New("client is nil")
-	ErrTODOContext              = errors.New("todo context is prohibited")
 	ErrNilContext               = errors.New("nil context is prohibited")
 	ErrInvalidRootDir           = errors.New("invalid root directory")
 	ErrInvalidArgument          = errors.New("invalid argument")

@@ -7,10 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
-
-	"github.com/pixel365/bx/internal/interfaces"
 
 	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
@@ -53,28 +50,28 @@ type Callback struct {
 	Post  CallbackParameters `yaml:"post,omitempty"`
 }
 
-func (c Callback) PreRun(ctx context.Context, wg *sync.WaitGroup, logger interfaces.BuildLogger) {
-	defer wg.Done()
-
+func (c Callback) PreRun(ctx context.Context) error {
 	if err := c.Pre.IsValid(); err != nil {
-		return
+		return err
 	}
 
-	if err := c.Pre.Run(ctx, logger); err != nil && logger != nil {
-		logger.Error(fmt.Sprintf("failed to pre run callback for stage %s", c.Stage), err)
+	if err := c.Pre.Run(ctx); err != nil {
+		return fmt.Errorf("pre run callback failed for stage %s: %w", c.Stage, err)
 	}
+
+	return nil
 }
 
-func (c Callback) PostRun(ctx context.Context, wg *sync.WaitGroup, logger interfaces.BuildLogger) {
-	defer wg.Done()
-
+func (c Callback) PostRun(ctx context.Context) error {
 	if err := c.Post.IsValid(); err != nil {
-		return
+		return err
 	}
 
-	if err := c.Post.Run(ctx, logger); err != nil && logger != nil {
-		logger.Error(fmt.Sprintf("failed to post run callback for stage %s", c.Stage), err)
+	if err := c.Post.Run(ctx); err != nil {
+		return fmt.Errorf("post run callback failed for stage %s: %w", c.Stage, err)
 	}
+
+	return nil
 }
 
 // IsValid checks if the Callback structure is valid.
@@ -138,11 +135,10 @@ func (c *CallbackParameters) IsValid() error {
 //
 // Parameters:
 //   - ctx (context.Context): The context for the execution, used for cancellation and timeouts.
-//   - logger (BuildLogger): The logger to record any logs or errors during execution.
 //
 // Returns:
 //   - error: Returns an error if validation fails or if execution of the callback fails.
-func (c *CallbackParameters) Run(ctx context.Context, logger interfaces.BuildLogger) error {
+func (c *CallbackParameters) Run(ctx context.Context) error {
 	if err := c.IsValid(); err != nil {
 		return err
 	}
@@ -152,7 +148,7 @@ func (c *CallbackParameters) Run(ctx context.Context, logger interfaces.BuildLog
 	}
 
 	if c.Type == CommandType {
-		return c.runCommand(ctx, logger)
+		return c.runCommand(ctx)
 	}
 
 	return nil
@@ -317,11 +313,10 @@ func (c *CallbackParameters) runExternal(ctx context.Context) error {
 //
 // Parameters:
 //   - ctx (context.Context): The context for execution, used for cancellation and deadlines.
-//   - logger (BuildLogger): The logger to capture and display output from the command.
 //
 // Returns:
 //   - error: Returns an error if the command execution fails, arguments are invalid, or the context is cancelled.
-func (c *CallbackParameters) runCommand(ctx context.Context, logger interfaces.BuildLogger) error {
+func (c *CallbackParameters) runCommand(ctx context.Context) error {
 	ctx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
 	defer cancelFunc()
 
@@ -335,25 +330,6 @@ func (c *CallbackParameters) runCommand(ctx context.Context, logger interfaces.B
 	}
 
 	com := cmd.NewCmd(args[0], args[1:]...)
-
-	handleOutput := func(ch <-chan string, logFunc func(string, ...interface{})) {
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case out := <-ch:
-					if logger != nil {
-						logFunc(out, nil)
-					}
-				}
-			}
-		}()
-	}
-
-	handleOutput(com.Stdout, logger.Info)
-	handleOutput(com.Stderr, func(s string, args ...interface{}) { logger.Error(s, nil) })
-
 	statusChan := com.Start()
 
 	select {

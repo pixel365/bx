@@ -3,13 +3,11 @@ package fs
 import (
 	"archive/zip"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"golang.org/x/text/encoding/charmap"
 
@@ -22,120 +20,72 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-// CopyFromPath performs the process of copying files from a source directory to a target directory.
+// PathProcessing walks through the source directory specified in `path.From`
+// and submits file copy tasks to the provided `filesCh` channel.
 //
-// The function checks if the context is valid, and if so, it invokes the `walk` function to traverse the source
-// directory and perform the copy operation. It uses a `sync.WaitGroup` to wait for completion, and reports
-// any errors encountered through the provided error channel.
-//
-// Parameters:
-//   - ctx (context.Context): The context to control the execution and cancellation of the operation.
-//   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
-//   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-//   - cfg (internal.ModuleConfig): Module instance
-//   - from (string): The source directory to copy from.
-//   - to (string): The destination directory to copy to.
-//   - existsMode (FileExistsAction): The action to take if the file already exists in the destination.
-//   - convert (bool): A flag to indicate whether to convert the files during the copy process.
-//   - filterRules ([]string): Filter rules for selective copying of files based on patterns.
-//
-// If any error is encountered during the execution, it is reported through the `errCh` channel.
-func CopyFromPath(
-	ctx context.Context,
-	wg *sync.WaitGroup,
-	errCh chan<- error,
-	cfg interfaces.ModuleConfig,
-	from, to string,
-	existsMode types.FileExistsAction,
-	convert bool,
-	filterRules []string,
-) {
-	defer wg.Done()
-
-	if err := helpers.CheckContext(ctx); err != nil {
-		errCh <- err
-		return
-	}
-
-	if err := walk(ctx, wg, errCh, from, to, cfg, existsMode, convert, filterRules); err != nil {
-		if !errors.Is(err, doublestar.SkipDir) {
-			errCh <- err
-		}
-	}
-}
-
-// walk traverses the source directory recursively and copies files to the destination directory
-// while checking the context for cancellation. It processes the paths according to the specified patterns
-// and handles existing files based on the provided `existsMode`.
-//
-// The function uses a wait group to synchronize the completion of all file copy operations and reports
-// any errors encountered during the process through the provided error channel.
+// It applies ignore rules, change tracking (if enabled), and pattern-based filtering
+// before sending any file to be processed.
+// All context cancellations are respected and short-circuit the operation early.
 //
 // Parameters:
-//   - ctx (context.Context): The context to control the execution and cancellation of the operation.
-//   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
-//   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-//   - from (string): The source directory to walk through.
-//   - to (string): The destination directory where files should be copied.
-//   - cfg (internal.ModuleConfig): Module instance
-//   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
-//   - convert (bool): A flag to indicate whether to convert files during the copy process.
-//   - filterRules ([]string): Filter rules for selective copying of files based on patterns.
+//   - ctx: Context used to control cancellation and timeouts.
+//   - filesCh: Channel to which valid file copy tasks are submitted (type: types.Path).
+//   - cfg: Module configuration providing access to ignore rules and optional change tracking.
+//   - path: Describes the copy task, including source, destination, overwrite mode, and encoding settings.
+//   - filterRules: A list of file path patterns to include (e.g., ["*.php", "*.tpl"]).
 //
 // Returns:
-//   - error: If an error occurs during the traversal or file copying process, it will be returned. If the
-//     process completes successfully, it returns nil.
-func walk(
+//   - error: If an error occurs during directory walking or context cancellation.
+func PathProcessing(
 	ctx context.Context,
-	wg *sync.WaitGroup,
-	errCh chan<- error,
-	from, to string,
+	filesCh chan<- types.Path,
 	cfg interfaces.ModuleConfig,
-	existsMode types.FileExistsAction,
-	convert bool,
+	path types.Path,
 	filterRules []string,
 ) error {
-	wg.Add(1)
-	defer wg.Done()
+	if err := helpers.CheckContext(ctx); err != nil {
+		return err
+	}
 
-	var wg2 sync.WaitGroup
-	jobs := make(chan struct{}, 10)
-
-	err := filepath.Walk(from, visitor(
-		ctx, errCh, from, to, cfg, existsMode, convert, filterRules, jobs, &wg2,
+	err := filepath.Walk(path.From, visitor(
+		ctx, filesCh, cfg, path, filterRules,
 	))
-
-	wg2.Wait()
 
 	return err
 }
 
+// visitor returns a filepath.WalkFunc that handles file traversal logic,
+// and submits eligible files as copy tasks to `filesCh`.
+//
+// For each file, it applies the following logic:
+//   - Skips directories and ignored files (via cfg.GetIgnore()).
+//   - Applies file inclusion rules from `filterRules`.
+//   - If `cfg.IsLastVersion()` is false, applies change tracking using `cfg.GetChanges()`.
+//   - Resolves destination path, ensures the destination directory exists, and emits the copy task.
+//
+// Parameters:
+//   - ctx: Context for early cancellation.
+//   - filesCh: Channel to submit resulting copy tasks.
+//   - cfg: Module config containing ignore and change tracking logic.
+//   - path: Copy task parameters (source, target, mode).
+//   - filterRules: File pattern filters.
+//
+// Returns:
+//   - A `filepath.WalkFunc` suitable for use in `filepath.Walk`.
 func visitor(
 	ctx context.Context,
-	errCh chan<- error,
-	from, to string,
+	filesCh chan<- types.Path,
 	cfg interfaces.ModuleConfig,
-	existsMode types.FileExistsAction,
-	convert bool,
+	path types.Path,
 	filterRules []string,
-	jobs chan struct{},
-	wg2 *sync.WaitGroup,
 ) filepath.WalkFunc {
 	var changes *types.Changes
 	if !cfg.IsLastVersion() {
 		changes = cfg.GetChanges()
 	}
 
-	skipFn := func(info os.FileInfo) error {
-		if info.IsDir() {
-			return filepath.SkipDir
-		}
-		return nil
-	}
-
-	return func(path string, info os.FileInfo, err error) error {
+	return func(fromPath string, info os.FileInfo, err error) error {
 		if ctxErr := helpers.CheckContext(ctx); ctxErr != nil {
-			errCh <- ctxErr
 			return ctxErr
 		}
 
@@ -143,19 +93,19 @@ func visitor(
 			return err
 		}
 
-		relPath, err := filepath.Rel(from, path)
+		relPath, err := filepath.Rel(path.From, fromPath)
 		if err != nil {
 			return err
 		}
 
-		absFrom, err := filepath.Abs(fmt.Sprintf("%s/%s", from, relPath))
+		absFrom, err := filepath.Abs(fmt.Sprintf("%s/%s", path.From, relPath))
 		if err != nil {
 			return err
 		}
 		absFrom = filepath.Clean(absFrom)
 
 		if shouldSkip(relPath, cfg.GetIgnore()) || !shouldInclude(absFrom, filterRules) {
-			return skipFn(info)
+			return skip(info)
 		}
 
 		isDir, err := helpers.IsDir(absFrom)
@@ -171,25 +121,43 @@ func visitor(
 			return nil
 		}
 
-		absTo, err := filepath.Abs(fmt.Sprintf("%s/%s", to, relPath))
+		absTo, err := filepath.Abs(fmt.Sprintf("%s/%s", path.To, relPath))
 		if err != nil {
 			return err
 		}
 		absTo = filepath.Clean(absTo)
 		toDir := filepath.Dir(absTo)
 
-		if _, err := MkDir(toDir); err != nil {
+		if _, err = MkDir(toDir); err != nil {
 			return err
 		}
 
-		wg2.Add(1)
-		go copyFile(ctx, wg2, errCh, absFrom, absTo, jobs, existsMode, convert)
+		newPath := types.Path{
+			From:           absFrom,
+			To:             absTo,
+			ActionIfExists: path.ActionIfExists,
+			Convert:        path.Convert,
+		}
+
+		filesCh <- newPath
 
 		return nil
 	}
 }
 
-// copyFile copies a file from the source path to the destination path, taking into account the context cancellation,
+func skip(info os.FileInfo) error {
+	if info == nil {
+		return nil
+	}
+
+	if info.IsDir() {
+		return filepath.SkipDir
+	}
+
+	return nil
+}
+
+// CopyFile copies a file from the source path to the destination path, taking into account the context cancellation,
 // existing file handling mode (`existsMode`), and optional conversion of file content.
 //
 // The function checks if the destination file exists and takes action based on the specified `existsMode`:
@@ -205,52 +173,37 @@ func visitor(
 //
 // Parameters:
 //   - ctx (context.Context): The context to control the execution and cancellation of the operation.
-//   - wg (*sync.WaitGroup): The wait group to synchronize the completion of the operation.
 //   - errCh (chan<- error): A channel for reporting errors encountered during the operation.
-//   - src (string): The source file path to copy from.
-//   - dst (string): The destination file path to copy to.
-//   - jobs (chan struct{}): A channel for managing concurrent file copy operations with a limited number of concurrent
-//     jobs.
-//   - existsMode (FileExistsAction): The action to take if the file already exists in the destination directory.
-//   - convert (bool): A flag to indicate whether to convert the file content during the copy process.
+//   - file (types.Path): Path params.
 //
 // Returns:
 //   - None: Errors are sent to the error channel `errCh`, and no return value is provided.
-func copyFile(
+func CopyFile(
 	ctx context.Context,
-	wg *sync.WaitGroup,
 	errCh chan<- error,
-	src, dst string,
-	jobs chan struct{},
-	existsMode types.FileExistsAction,
-	convert bool,
+	file types.Path,
 ) {
-	defer wg.Done()
-
 	if err := helpers.CheckContext(ctx); err != nil {
 		errCh <- err
 		return
 	}
 
-	fileName := strings.LastIndex(src, "/")
-	if !strings.HasSuffix(dst, src[fileName:]) {
-		dst = filepath.Join(dst, src[fileName:])
-		dst = filepath.Clean(dst)
+	fileName := strings.LastIndex(file.From, "/")
+	if !strings.HasSuffix(file.To, file.From[fileName:]) {
+		file.To = filepath.Join(file.To, file.From[fileName:])
+		file.To = filepath.Clean(file.To)
 	}
 
 	var existingFile os.FileInfo = nil
-	stat, err := os.Stat(dst)
+	stat, err := os.Stat(file.To)
 	if err == nil {
 		existingFile = stat
-		if existsMode == types.Skip {
+		if file.ActionIfExists == types.Skip {
 			return
 		}
 	}
 
-	jobs <- struct{}{}
-	defer func() { <-jobs }()
-
-	in, err := os.Open(src)
+	in, err := os.Open(file.From)
 	if err != nil {
 		errCh <- err
 		return
@@ -265,7 +218,7 @@ func copyFile(
 	}
 
 	allowWrite := true
-	if existingFile != nil && existsMode == types.ReplaceIfNewer {
+	if existingFile != nil && file.ActionIfExists == types.ReplaceIfNewer {
 		allowWrite = info.ModTime().After(existingFile.ModTime())
 	}
 
@@ -273,7 +226,7 @@ func copyFile(
 		return
 	}
 
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
+	out, err := os.OpenFile(file.To, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
 	if err != nil {
 		errCh <- err
 		return
@@ -282,7 +235,7 @@ func copyFile(
 	defer helpers.Cleanup(out, errCh)
 
 	var writer io.Writer
-	if convert && isConvertable(src) {
+	if file.Convert && isConvertable(file.From) {
 		encoder := charmap.Windows1251.NewEncoder()
 		writer = encoder.Writer(out)
 	} else {
@@ -295,7 +248,7 @@ func copyFile(
 		return
 	}
 
-	err = os.Chtimes(dst, info.ModTime(), info.ModTime())
+	err = os.Chtimes(file.To, info.ModTime(), info.ModTime())
 	if err != nil {
 		errCh <- err
 		return

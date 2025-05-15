@@ -2,12 +2,16 @@ package fs
 
 import (
 	"context"
+	errors2 "errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
+
+	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/interfaces"
 
 	"github.com/pixel365/bx/internal/types"
 )
@@ -26,6 +30,17 @@ func (f FakeModuleConfig) GetIgnore() []string {
 }
 func (f FakeModuleConfig) GetChanges() *types.Changes { return nil }
 func (f FakeModuleConfig) IsLastVersion() bool        { return false }
+
+type FakeFileInfo struct {
+	Dir bool
+}
+
+func (f FakeFileInfo) Name() string       { return "" }
+func (f FakeFileInfo) Size() int64        { return 0 }
+func (f FakeFileInfo) Mode() fs.FileMode  { return fs.ModeDir }
+func (f FakeFileInfo) ModTime() time.Time { return time.Time{} }
+func (f FakeFileInfo) Sys() interface{}   { return nil }
+func (f FakeFileInfo) IsDir() bool        { return f.Dir }
 
 func Test_mkdir(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
@@ -144,33 +159,45 @@ func Test_CopyFromPath_ok(t *testing.T) {
 			}
 		}()
 
-		var wg sync.WaitGroup
-		errChan := make(chan error)
+		errChan := make(chan types.Path, 1)
 
 		module := FakeModuleConfig{}
 
-		wg.Add(1)
-		CopyFromPath(
+		path := types.Path{
+			From:           from,
+			To:             to,
+			ActionIfExists: types.Replace,
+			Convert:        false,
+		}
+
+		if err = PathProcessing(
 			context.Background(),
-			&wg,
 			errChan,
 			&module,
-			from,
-			to,
-			types.Replace,
-			false,
+			path,
 			[]string{},
-		)
-
-		close(errChan)
+		); err != nil {
+			close(errChan)
+			t.Error(err)
+		}
 
 		defer func() {
-			if err := os.Remove(fmt.Sprintf("%s/%s", toPath, fileName)); err != nil {
-				t.Error(err)
-			}
+			_ = os.Remove(fmt.Sprintf("%s/%s", toPath, fileName))
 		}()
 
-		wg.Wait()
+		close(errChan)
+	})
+}
+
+func TestPathProcessingContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	t.Run("cancelled context", func(t *testing.T) {
+		err := PathProcessing(ctx, nil, nil, types.Path{}, nil)
+		if err == nil {
+			t.Error("expected error")
+		}
 	})
 }
 
@@ -328,4 +355,66 @@ func TestIsFileExists_false(t *testing.T) {
 			t.Errorf("IsFileExists() = %v, want %v", ok, false)
 		}
 	})
+}
+
+func Test_skip(t *testing.T) {
+	type args struct {
+		info os.FileInfo
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{info: nil}, "nil info", false},
+		{args{info: FakeFileInfo{Dir: true}}, "is dir", true},
+		{args{info: FakeFileInfo{Dir: false}}, "is not dir", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := skip(tt.args.info); (err != nil) != tt.wantErr {
+				t.Errorf("skip() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_visitor(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	type args struct {
+		cfg         interfaces.ModuleConfig
+		err         error
+		filesCh     chan<- types.Path
+		path        types.Path
+		filterRules []string
+	}
+	tests := []struct {
+		want filepath.WalkFunc
+		name string
+		args args
+	}{
+		{want: func(_ string, _ fs.FileInfo, _ error) error {
+			return errors.ErrNilContext
+		}, name: "nil context", args: args{cfg: FakeModuleConfig{}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			visit := visitor(
+				ctx,
+				tt.args.filesCh,
+				tt.args.cfg,
+				tt.args.path,
+				tt.args.filterRules,
+			)
+			if visit == nil {
+				t.Errorf("visitor() = %v, want non-nil", visit)
+			}
+
+			if err := visit("", FakeFileInfo{}, tt.args.err); !errors2.Is(err, context.Canceled) {
+				t.Errorf("visit() error = %v, want %v", err, context.Canceled)
+			}
+		})
+	}
 }
