@@ -217,8 +217,6 @@ func HandleStages(
 
 	go copyWorkers(ctx, &copyFilesWg, filesCh, errCh, workersCount)
 
-	go cleanupWorker(&stagesWorkersWg, &copyFilesWg, &once, cancel, filesCh, logCh, errCh)
-
 	for _, name := range stages {
 		stage, _ := m.FindStage(name)
 		stagesWorkersWg.Add(1)
@@ -227,6 +225,8 @@ func HandleStages(
 			handleStage(ctx, filesCh, logCh, errCh, m, stage, dir, m.StageCallback)
 		}(stage)
 	}
+
+	go cleanupWorker(&stagesWorkersWg, &copyFilesWg, &once, cancel, filesCh, logCh, errCh)
 
 	<-ctx.Done()
 	return
