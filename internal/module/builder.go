@@ -4,21 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/pixel365/bx/internal/interfaces"
 
-	"github.com/pixel365/bx/internal/fs"
-	"github.com/pixel365/bx/internal/types"
-
 	"github.com/pixel365/bx/internal/errors"
+	"github.com/pixel365/bx/internal/fs"
 	"github.com/pixel365/bx/internal/helpers"
-	"github.com/pixel365/bx/internal/repo"
-
-	"golang.org/x/text/encoding/charmap"
 )
 
 type ModuleBuilder struct {
@@ -204,30 +195,27 @@ func (m *ModuleBuilder) prepareVersionDirectory() (string, error) {
 	return versionDirectory, nil
 }
 
+// collectStages executes the appropriate set of build stages for the current module.
+//
+// It selects either `Builds.Release` or `Builds.LastVersion` based on the `LastVersion` flag,
+// and delegates the execution to `HandleStages`.
+// Any errors during stage execution are logged
+// and returned to the caller.
+//
+// Parameters:
+//   - ctx: context used for cancellation and timeouts.
+//
+// Returns:
+//   - error: the first error encountered during stage processing, or nil on success.
 func (m *ModuleBuilder) collectStages(ctx context.Context) error {
-	var wg sync.WaitGroup
-	errCh := make(chan error, len(m.module.Stages))
-
 	stages := m.module.Builds.Release
 	if m.module.LastVersion {
 		stages = m.module.Builds.LastVersion
 	}
 
-	if err := HandleStages(ctx, stages, m.module, &wg, errCh, m.logger, false); err != nil {
+	if err := HandleStages(ctx, stages, m.module, m.logger, false); err != nil {
 		m.logger.Error("Collect: handle stages failed", err)
-	}
-
-	wg.Wait()
-	close(errCh)
-
-	var errs []error
-	for err := range errCh {
-		errs = append(errs, err)
-	}
-
-	if len(errs) > 0 {
-		m.logger.Error("Failed to collect build", nil)
-		return fmt.Errorf("errors: %v", errs)
+		return err
 	}
 
 	m.logger.Info("Collect complete")
@@ -296,196 +284,6 @@ func (m *ModuleBuilder) Collect(ctx context.Context) error {
 	}
 
 	m.logger.Info("Zip complete")
-
-	return nil
-}
-
-// handleStage processes an individual stage during the build.
-// It manages file copying based on the configuration for each stage, including handling concurrency using goroutines.
-// For each stage, it creates the necessary directories and copies files from the source to the destination directory.
-//
-// Parameters:
-//   - ctx: The context used to manage cancellation or timeouts.
-//   - wg: The wait group to synchronize the completion of all goroutines.
-//   - errCh: A channel for capturing any errors that occur during the process.
-//   - logger: The logger used to log messages about the process.
-//   - ignore: A list of files or directories to be ignored during file copying.
-//   - stage: The specific stage being processed, which contains source and destination paths.
-//   - rootDir: The directory where the files will be placed.
-//   - callback: Stage Callback
-//
-// Returns:
-//   - None.
-//     Errors will be passed to the `errCh` channel for further handling.
-func handleStage(
-	ctx context.Context,
-	wg *sync.WaitGroup,
-	errCh chan<- error,
-	logger interfaces.BuildLogger,
-	module *Module,
-	stage types.Stage,
-	rootDir string,
-	cb func(string) (interfaces.Runnable, error),
-) {
-	var err error
-
-	if logger != nil {
-		logger.Info("Handling stage %s", stage.Name)
-	}
-
-	_cb, cbErr := cb(stage.Name)
-
-	defer func() {
-		if cbErr == nil {
-			wg.Add(1)
-			go _cb.PostRun(ctx, wg, logger)
-		}
-		wg.Done()
-	}()
-
-	if cbErr == nil {
-		wg.Add(1)
-		go _cb.PreRun(ctx, wg, logger)
-	}
-
-	defer func() {
-		if err != nil {
-			if logger != nil {
-				logger.Error(fmt.Sprintf("Failed to handle stage %s: %s", stage.Name, err), err)
-			}
-			errCh <- err
-			return
-		}
-
-		if logger != nil {
-			logger.Info("Finished stage %s", stage.Name)
-		}
-	}()
-
-	if err := helpers.CheckContext(ctx); err != nil {
-		return
-	}
-
-	dirPath := stage.To
-	if rootDir != "" {
-		dirPath = filepath.Join(rootDir, stage.To)
-	}
-
-	dirPath = filepath.Clean(dirPath)
-	dirPath, err = filepath.Abs(dirPath)
-	if err != nil {
-		if logger != nil {
-			logger.Error(
-				fmt.Sprintf("Failed to get absolute path for stage %s: %s", stage.Name, err),
-				err,
-			)
-		}
-		return
-	}
-
-	to, err := fs.MkDir(dirPath)
-	if err != nil {
-		if logger != nil {
-			logger.Error("Failed to make stage `to` directory", err)
-		}
-		return
-	}
-
-	for _, from := range stage.From {
-		if err := helpers.CheckContext(ctx); err != nil {
-			return
-		}
-
-		wg.Add(1)
-		go fs.CopyFromPath(
-			ctx,
-			wg,
-			errCh,
-			module,
-			from,
-			to,
-			stage.ActionIfFileExists,
-			stage.ConvertTo1251,
-			stage.Filter,
-		)
-	}
-}
-
-func makeVersionDescription(builder *ModuleBuilder) error {
-	// If the full latest version is being built, then the version description file is not needed.
-	// However, it may be present when copying if specified in the configuration, at the discretion of the developer.
-	if builder.module.LastVersion {
-		return nil
-	}
-
-	descriptionRu := strings.Builder{}
-	encoder := charmap.Windows1251.NewEncoder()
-
-	if builder.module.Description != "" {
-		encodedDescriptionRu, err := encoder.String(builder.module.Description + "\n")
-		if err != nil {
-			return fmt.Errorf("encoding description [%s]: %w", builder.module.Description, err)
-		}
-
-		_, _ = descriptionRu.WriteString(encodedDescriptionRu)
-	} else {
-		if builder.module.Repository == "" {
-			return nil
-		}
-
-		commits, err := repo.ChangelogList(builder.module.Repository, builder.module.Changelog)
-		if err != nil {
-			return err
-		}
-
-		if len(commits) == 0 {
-			return nil
-		}
-
-		for _, commit := range commits {
-			encodedLine, err := encoder.String(commit + "\n")
-			if err != nil {
-				return fmt.Errorf("encoding commit [%s]: %w", commit, err)
-			}
-			_, _ = descriptionRu.WriteString(encodedLine)
-		}
-	}
-
-	footer, err := builder.module.Changelog.EncodedFooter()
-	if err != nil {
-		return fmt.Errorf(
-			"encoding footer template [%s]: %w",
-			builder.module.Changelog.FooterTemplate,
-			err,
-		)
-	}
-	_, _ = descriptionRu.WriteString(footer)
-
-	err = writeFileForVersion(builder, "description.ru", descriptionRu.String())
-	if err != nil {
-		return fmt.Errorf("failed to make description file: %w", err)
-	}
-
-	return nil
-}
-
-func makeVersionFile(builder *ModuleBuilder) error {
-	if builder.module.LastVersion {
-		return nil
-	}
-
-	now := time.Now().Format(time.DateTime)
-	buf := strings.Builder{}
-	buf.WriteString("<?php\n")
-	buf.WriteString("$arModuleVersion = array(\n")
-	buf.WriteString("\t\t\"VERSION\" => \"" + builder.module.Version + "\"\n")
-	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + now + "\"\n")
-	buf.WriteString(");\n")
-
-	err := writeFileForVersion(builder, "/install/version.php", buf.String())
-	if err != nil {
-		return fmt.Errorf("failed to make version.php file: %w", err)
-	}
 
 	return nil
 }

@@ -253,10 +253,6 @@ func CheckContext(ctx context.Context) error {
 		return errors.ErrNilContext
 	}
 
-	if ctx == context.TODO() {
-		return errors.ErrTODOContext
-	}
-
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context canceled: %w", ctx.Err())

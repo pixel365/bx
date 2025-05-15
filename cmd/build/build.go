@@ -83,11 +83,13 @@ func build(cmd *cobra.Command, _ []string) error {
 	)
 	loggerInstance := logger.NewFileZeroLogger(logPath, mod.LogDirectory)
 	builder := builderFunc(mod, loggerInstance)
-	defer builder.Cleanup()
 
 	if err := builder.Build(cmd.Context()); err != nil {
+		builder.Cleanup()
 		return err
 	}
+
+	builder.Cleanup()
 
 	fmt.Printf("Module %s successfully built. Version: %s\n", mod.Name, mod.Version)
 

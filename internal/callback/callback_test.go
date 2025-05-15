@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 )
 
@@ -392,36 +391,30 @@ func TestInvalidCallbackParametersRun(t *testing.T) {
 	t.Run("invalid run", func(t *testing.T) {
 		ctx := context.TODO()
 		cbp := CallbackParameters{}
-		if err := cbp.Run(ctx, nil); err == nil {
+		if err := cbp.Run(ctx); err == nil {
 			t.Error("expected error")
 		}
 	})
 }
 
 func TestCallback_PreRun(t *testing.T) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
 	ctx := context.TODO()
 	cb := Callback{}
 
 	t.Run("pre run", func(t *testing.T) {
-		cb.PreRun(ctx, wg, nil)
+		if err := cb.PreRun(ctx); err == nil {
+			t.Error("expected error")
+		}
 	})
-
-	wg.Wait()
 }
 
 func TestCallback_PostRun(t *testing.T) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
 	ctx := context.TODO()
 	cb := Callback{}
 
 	t.Run("post run", func(t *testing.T) {
-		cb.PostRun(ctx, wg, nil)
+		if err := cb.PostRun(ctx); err == nil {
+			t.Error("expected error")
+		}
 	})
-
-	wg.Wait()
 }

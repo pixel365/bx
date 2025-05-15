@@ -7,7 +7,6 @@ package interfaces
 
 import (
 	"context"
-	"sync"
 
 	"github.com/pixel365/bx/internal/types"
 )
@@ -63,11 +62,11 @@ type BuildLogger interface {
 // Runnable defines hooks for executing logic before and after a build stage.
 //
 // Methods:
-//   - PreRun: Executes logic before the main run phase; receives context and logger.
+//   - PreRun: Executes logic before the main run phase; receives context.
 //   - PostRun: Executes logic after the run phase completes.
 type Runnable interface {
-	PreRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
-	PostRun(ctx context.Context, wg *sync.WaitGroup, logger BuildLogger)
+	PreRun(ctx context.Context) error
+	PostRun(ctx context.Context) error
 }
 
 // Prompter abstracts user input collection and validation.

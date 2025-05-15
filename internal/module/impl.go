@@ -190,7 +190,7 @@ func (m *Module) StageCallback(stageName string) (interfaces.Runnable, error) {
 		}
 	}
 
-	return callback.Callback{}, errors.ErrStageCallbackNotFound
+	return nil, errors.ErrStageCallbackNotFound
 }
 
 // ValidateChangelog validates the changelog configuration of the module.

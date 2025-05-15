@@ -18,9 +18,16 @@ import (
 	"github.com/pixel365/bx/internal/types"
 )
 
-type FakeBuildLogger struct{}
+type FakeBuildLogger struct {
+	Logs []string
+	mu   sync.Mutex
+}
 
-func (l *FakeBuildLogger) Info(_ string, _ ...interface{}) {}
+func (l *FakeBuildLogger) Info(msg string, _ ...interface{}) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.Logs = append(l.Logs, msg)
+}
 
 func (l *FakeBuildLogger) Error(_ string, _ error, _ ...interface{}) {}
 
@@ -104,20 +111,9 @@ func TestAllModules(t *testing.T) {
 func TestHandleStages_NilModule(t *testing.T) {
 	ctx := context.Background()
 	t.Run("nil module", func(t *testing.T) {
-		err := HandleStages(ctx, []string{}, nil, nil, nil, &FakeBuildLogger{}, true)
+		err := HandleStages(ctx, []string{}, nil, &FakeBuildLogger{}, true)
 		if !errors.Is(err, errors2.ErrNilModule) {
 			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
-		}
-	})
-}
-
-func TestHandleStages_NilContext(t *testing.T) {
-	ctx := context.TODO()
-	m := Module{}
-	t.Run("todo context", func(t *testing.T) {
-		err := HandleStages(ctx, []string{"fake-stage"}, &m, nil, nil, &FakeBuildLogger{}, true)
-		if !errors.Is(err, errors2.ErrTODOContext) {
-			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrTODOContext)
 		}
 	})
 }
@@ -125,9 +121,8 @@ func TestHandleStages_NilContext(t *testing.T) {
 func TestHandleStages_StageNotFound(t *testing.T) {
 	ctx := context.Background()
 	m := Module{}
-	var wg sync.WaitGroup
 	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages(ctx, []string{"fake-stage"}, &m, &wg, nil, &FakeBuildLogger{}, true)
+		err := HandleStages(ctx, []string{"fake-stage"}, &m, &FakeBuildLogger{}, true)
 		if err == nil {
 			t.Error("err is nil")
 		}
@@ -141,44 +136,16 @@ func TestHandleStages_NoCustomCommandMode(t *testing.T) {
 			{Name: "some-fake-stage"},
 		},
 	}
-	var wg sync.WaitGroup
 	t.Run("nil context", func(t *testing.T) {
 		err := HandleStages(
 			ctx,
 			[]string{"some-fake-stage"},
 			m,
-			&wg,
-			nil,
 			&FakeBuildLogger{},
 			false,
 		)
 		if !errors.Is(err, errors2.ErrNilModule) {
 			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
-		}
-	})
-}
-
-func TestHandleStages_Ok(t *testing.T) {
-	ctx := context.Background()
-	m := &Module{
-		BuildDirectory: "./testdata",
-		Stages: []types.Stage{
-			{Name: "some-fake-stage"},
-		},
-	}
-	var wg sync.WaitGroup
-	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages(
-			ctx,
-			[]string{"some-fake-stage"},
-			m,
-			&wg,
-			nil,
-			&FakeBuildLogger{},
-			false,
-		)
-		if err != nil {
-			t.Errorf("HandleStages() error = %v, want nil", err)
 		}
 	})
 }
@@ -319,5 +286,195 @@ func TestCheckStages_WithErrors(t *testing.T) {
 		if err.Error() != expectedMsg {
 			t.Errorf("CheckStages() error = %v, want %v", err, expectedMsg)
 		}
+	}
+}
+
+func TestCopyWorkers(t *testing.T) {
+	var mu sync.Mutex
+	var called []types.Path
+
+	copyFileFunc = func(ctx context.Context, errCh chan<- error, path types.Path) {
+		mu.Lock()
+		called = append(called, path)
+		mu.Unlock()
+	}
+
+	filesCh := make(chan types.Path, 3)
+	errCh := make(chan error, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	copyWorkers(ctx, &wg, filesCh, errCh, 2)
+
+	filesCh <- types.Path{From: "a.txt", To: "x"}
+	filesCh <- types.Path{From: "b.txt", To: "y"}
+	close(filesCh)
+
+	wg.Wait()
+
+	if len(called) != 2 {
+		t.Errorf("expected 2 calls, got %d", len(called))
+	}
+}
+
+func TestErrorWorker(t *testing.T) {
+	errCh := make(chan error, 2)
+	var once sync.Once
+	_, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var capturedErr error
+	go errorWorker(errCh, cancel, &once, &capturedErr)
+
+	expectedErr := errors.New("fail")
+	errCh <- expectedErr
+	time.Sleep(50 * time.Millisecond)
+
+	if !errors.Is(capturedErr, expectedErr) {
+		t.Errorf("expected %v, got %v", expectedErr, capturedErr)
+	}
+}
+
+func TestLogWorker(t *testing.T) {
+	logCh := make(chan string, 2)
+	mock := &FakeBuildLogger{}
+
+	go logWorker(logCh, mock)
+	logCh <- "hello"
+	logCh <- "world"
+	close(logCh)
+
+	time.Sleep(50 * time.Millisecond)
+
+	if len(mock.Logs) != 2 {
+		t.Errorf("expected 2 logs, got %d", len(mock.Logs))
+	}
+	if mock.Logs[0] != "hello" || mock.Logs[1] != "world" {
+		t.Errorf("unexpected logs: %v", mock.Logs)
+	}
+}
+
+func TestCleanupWorker(t *testing.T) {
+	var stageWg, copyWg sync.WaitGroup
+	stageWg.Add(1)
+	copyWg.Add(1)
+
+	filesCh := make(chan types.Path, 1)
+	logCh := make(chan string, 1)
+	errCh := make(chan error, 1)
+
+	var canceled bool
+	cancel := func() { canceled = true }
+
+	var once sync.Once
+	go cleanupWorker(&stageWg, &copyWg, &once, cancel, filesCh, logCh, errCh)
+
+	stageWg.Done()
+	copyWg.Done()
+
+	time.Sleep(50 * time.Millisecond)
+
+	select {
+	case _, ok := <-filesCh:
+		if ok {
+			t.Error("filesCh should be closed")
+		}
+	default:
+		t.Error("filesCh not closed")
+	}
+
+	if !canceled {
+		t.Error("cancel not called")
+	}
+}
+
+func Test_makeVersionFile(t *testing.T) {
+	defer func() {
+		stat, err := os.Stat("testdata")
+		if err != nil {
+			return
+		}
+
+		if stat.IsDir() {
+			_ = os.RemoveAll(stat.Name())
+		}
+	}()
+
+	type args struct {
+		builder *ModuleBuilder
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{builder: &ModuleBuilder{module: &Module{}}}, "empty module", true},
+		{args{builder: &ModuleBuilder{module: &Module{LastVersion: true}}}, "last version", false},
+		{args{builder: &ModuleBuilder{module: &Module{
+			BuildDirectory: "testdata",
+			Version:        "1.0.0",
+		}}}, "valid version", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := makeVersionFile(tt.args.builder); (err != nil) != tt.wantErr {
+				t.Errorf("makeVersionFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_makeVersionDescription(t *testing.T) {
+	defer func() {
+		stat, err := os.Stat("testdata")
+		if err != nil {
+			return
+		}
+
+		if stat.IsDir() {
+			_ = os.RemoveAll(stat.Name())
+		}
+	}()
+
+	type args struct {
+		builder *ModuleBuilder
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{builder: &ModuleBuilder{
+			module: &Module{
+				BuildDirectory: "testdata",
+				Version:        "1.0.0",
+			},
+			logger: nil,
+		}}, "empty repository", false},
+		{args{builder: &ModuleBuilder{
+			module: &Module{
+				BuildDirectory: "testdata",
+				Version:        "1.0.0",
+				Description:    "some description",
+			},
+			logger: nil,
+		}}, "has description", false},
+		{args{builder: &ModuleBuilder{
+			module: &Module{
+				BuildDirectory: "testdata",
+				Version:        "1.0.0",
+				Repository:     ".",
+			},
+			logger: nil,
+		}}, "has repository", false},
+		{args{builder: &ModuleBuilder{module: &Module{LastVersion: true}}}, "last version", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := makeVersionDescription(tt.args.builder); (err != nil) != tt.wantErr {
+				t.Errorf("makeVersionDescription() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }
