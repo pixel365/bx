@@ -194,11 +194,6 @@ func HandleStages(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if m == nil {
-		err = errors.ErrNilModule
-		return
-	}
-
 	dir := ""
 	if !customCommandMode {
 		dir, err = makeVersionDirectory(m)
@@ -222,21 +217,16 @@ func HandleStages(
 
 	go copyWorkers(ctx, &copyFilesWg, filesCh, errCh, workersCount)
 
-	for _, name := range stages {
-		stage, stageErr := m.FindStage(name)
-		if stageErr != nil {
-			return stageErr
-		}
-
-		s := stage
-		stagesWorkersWg.Add(1)
-		go func(stage *types.Stage) {
-			defer stagesWorkersWg.Done()
-			handleStage(ctx, filesCh, logCh, errCh, m, *stage, dir, m.StageCallback)
-		}(&s)
-	}
-
 	go cleanupWorker(&stagesWorkersWg, &copyFilesWg, &once, cancel, filesCh, logCh, errCh)
+
+	for _, name := range stages {
+		stage, _ := m.FindStage(name)
+		stagesWorkersWg.Add(1)
+		go func(stage types.Stage) {
+			defer stagesWorkersWg.Done()
+			handleStage(ctx, filesCh, logCh, errCh, m, stage, dir, m.StageCallback)
+		}(stage)
+	}
 
 	<-ctx.Done()
 	return

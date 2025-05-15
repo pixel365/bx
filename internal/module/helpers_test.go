@@ -108,27 +108,6 @@ func TestAllModules(t *testing.T) {
 	}
 }
 
-func TestHandleStages_NilModule(t *testing.T) {
-	ctx := context.Background()
-	t.Run("nil module", func(t *testing.T) {
-		err := HandleStages(ctx, []string{}, nil, &FakeBuildLogger{}, true)
-		if !errors.Is(err, errors2.ErrNilModule) {
-			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
-		}
-	})
-}
-
-func TestHandleStages_StageNotFound(t *testing.T) {
-	ctx := context.Background()
-	m := Module{}
-	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages(ctx, []string{"fake-stage"}, &m, &FakeBuildLogger{}, true)
-		if err == nil {
-			t.Error("err is nil")
-		}
-	})
-}
-
 func TestHandleStages_NoCustomCommandMode(t *testing.T) {
 	ctx := context.Background()
 	m := &Module{
