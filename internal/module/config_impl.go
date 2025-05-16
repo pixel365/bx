@@ -24,12 +24,12 @@ func (m *Module) GetIgnore() []string {
 }
 
 func (m *Module) GetChanges() *types.Changes {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if m.Repository == "" {
 		return nil
 	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.changes == nil {
 		changes, err := changesListFunc(m.Repository, m.Changelog)
@@ -45,4 +45,16 @@ func (m *Module) GetChanges() *types.Changes {
 
 func (m *Module) IsLastVersion() bool {
 	return m.LastVersion
+}
+
+func (m *Module) SourceCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	i := 0
+	for _, stage := range m.Stages {
+		i += len(stage.From)
+	}
+
+	return i
 }

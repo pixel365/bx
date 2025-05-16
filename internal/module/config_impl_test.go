@@ -116,3 +116,20 @@ func TestModule_IsLastVersion(t *testing.T) {
 		}
 	})
 }
+
+func TestModule_SourceCount(t *testing.T) {
+	t.Run("SourceCount", func(t *testing.T) {
+		mod := Module{
+			Stages: []types.Stage{
+				{
+					From: []string{"stage"},
+				},
+			},
+		}
+
+		count := mod.SourceCount()
+		if count != 1 {
+			t.Errorf("SourceCount() error = %v, wantErr %v", count, nil)
+		}
+	})
+}

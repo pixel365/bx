@@ -47,8 +47,13 @@ func PathProcessing(
 		return err
 	}
 
+	var changes *types.Changes
+	if !cfg.IsLastVersion() {
+		changes = cfg.GetChanges()
+	}
+
 	err := filepath.Walk(path.From, visitor(
-		ctx, filesCh, cfg, path, filterRules,
+		ctx, filesCh, cfg, path, filterRules, changes,
 	))
 
 	return err
@@ -69,6 +74,7 @@ func PathProcessing(
 //   - cfg: Module config containing ignore and change tracking logic.
 //   - path: Copy task parameters (source, target, mode).
 //   - filterRules: File pattern filters.
+//   - changes: List of changes.
 //
 // Returns:
 //   - A `filepath.WalkFunc` suitable for use in `filepath.Walk`.
@@ -78,12 +84,8 @@ func visitor(
 	cfg interfaces.ModuleConfig,
 	path types.Path,
 	filterRules []string,
+	changes *types.Changes,
 ) filepath.WalkFunc {
-	var changes *types.Changes
-	if !cfg.IsLastVersion() {
-		changes = cfg.GetChanges()
-	}
-
 	return func(fromPath string, info os.FileInfo, err error) error {
 		if ctxErr := helpers.CheckContext(ctx); ctxErr != nil {
 			return ctxErr

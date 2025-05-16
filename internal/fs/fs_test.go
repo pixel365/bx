@@ -387,6 +387,7 @@ func Test_visitor(t *testing.T) {
 		cfg         interfaces.ModuleConfig
 		err         error
 		filesCh     chan<- types.Path
+		changes     *types.Changes
 		path        types.Path
 		filterRules []string
 	}
@@ -407,6 +408,7 @@ func Test_visitor(t *testing.T) {
 				tt.args.cfg,
 				tt.args.path,
 				tt.args.filterRules,
+				tt.args.changes,
 			)
 			if visit == nil {
 				t.Errorf("visitor() = %v, want non-nil", visit)
