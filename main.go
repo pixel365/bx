@@ -16,6 +16,7 @@ func main() {
 
 	root := cmd.NewRootCmd(ctx)
 	if err := root.Execute(); err != nil {
-		log.Printf("error: %v", err)
+		stop()
+		log.Fatalf("error: %v", err)
 	}
 }

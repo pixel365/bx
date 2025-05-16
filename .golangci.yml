@@ -41,6 +41,8 @@ linters:
     cyclop:
       max-complexity: 15
     gocritic:
+      disabled-checks:
+        - exitAfterDefer
       enabled-checks:
         - rangeValCopy
   exclusions:
