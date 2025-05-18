@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/pixel365/bx/internal/client"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/module"
-	"github.com/pixel365/bx/internal/request"
 )
 
 func TestNewLabelCommand(t *testing.T) {
@@ -94,8 +95,8 @@ func TestLabelCommand_valid_label(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc

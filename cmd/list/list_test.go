@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pixel365/bx/internal/client"
+
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
-	"github.com/pixel365/bx/internal/request"
 )
 
 func TestNewListCommand(t *testing.T) {
@@ -81,8 +82,8 @@ func Test_list_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -133,8 +134,8 @@ func Test_list_auth(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc

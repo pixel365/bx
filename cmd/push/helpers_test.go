@@ -5,17 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/pixel365/bx/internal/client"
+
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
-	"github.com/pixel365/bx/internal/request"
 )
+
+type mockHttpClient struct {
+	DoFunc func(req *http.Request) (*http.Response, error)
+}
+
+func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
+	return m.DoFunc(req)
+}
+func (m *mockHttpClient) SetCookies(_ *url.URL, _ []*http.Cookie) {}
 
 func Test_push_ReadModuleFromFlags(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
@@ -48,8 +59,8 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -100,8 +111,8 @@ func Test_push_invalid_Version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -153,8 +164,8 @@ func Test_push_auth(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -206,14 +217,14 @@ func Test_push_upload(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, nil
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, nil
 	}
 	defer func() {
 		authFunc = originalAuthFunc
 	}()
 
-	uploadFunc = func(ctx context.Context, client *request.Client, module *module.Module,
+	uploadFunc = func(ctx context.Context, client client.HTTPClient, module *module.Module,
 		cookies []*http.Cookie, silent bool) error {
 		return errors.New("upload error")
 	}
@@ -238,7 +249,7 @@ func Test_push_upload(t *testing.T) {
 func Test_upload(t *testing.T) {
 	ctx := context.Background()
 	type args struct {
-		client  *request.Client
+		client  client.HTTPClient
 		module  *module.Module
 		cookies []*http.Cookie
 		silent  bool
@@ -253,9 +264,9 @@ func Test_upload(t *testing.T) {
 		wantErr bool
 	}{
 		{"nil client", args{nil, &module.Module{}, nil, false}, true},
-		{"nil module", args{&request.Client{}, nil, nil, false}, true},
-		{"nil cookies", args{&request.Client{}, &module.Module{}, nil, false}, true},
-		{"not silent", args{&request.Client{}, &module.Module{}, c, false}, false},
+		{"nil module", args{&mockHttpClient{}, nil, nil, false}, true},
+		{"nil cookies", args{&mockHttpClient{}, &module.Module{}, nil, false}, true},
+		{"not silent", args{&mockHttpClient{}, &module.Module{}, c, false}, false},
 	}
 
 	origSpinnerFunc := spinnerFunc
@@ -305,8 +316,8 @@ func Test_push_valid_Version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
