@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
+
+	"github.com/pixel365/bx/internal/client"
+	"github.com/pixel365/bx/internal/request"
 
 	"github.com/spf13/cobra"
 
@@ -17,6 +21,7 @@ var (
 	readModuleFromFlagsFunc = module.ReadModuleFromFlags
 	authFunc                = auth.Authenticate
 	inputPasswordFunc       = auth.InputPassword
+	versionsFunc            = request.Versions
 )
 
 func NewListCommand() *cobra.Command {
@@ -55,12 +60,15 @@ func list(cmd *cobra.Command, _ []string) error {
 	}
 
 	silent, _ := cmd.Flags().GetBool("silent")
-	httpClient, cookies, err := authFunc(mod, password, silent)
+
+	httpClient := client.NewClient(10 * time.Second)
+
+	cookies, err := authFunc(httpClient, mod, password, silent)
 	if err != nil {
 		return err
 	}
 
-	versions, err := httpClient.Versions(cmd.Context(), mod, cookies)
+	versions, err := versionsFunc(cmd.Context(), httpClient, mod, cookies)
 	if err != nil {
 		return err
 	}

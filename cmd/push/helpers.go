@@ -3,6 +3,9 @@ package push
 import (
 	"context"
 	"net/http"
+	"time"
+
+	"github.com/pixel365/bx/internal/client"
 
 	"github.com/pixel365/bx/internal/types"
 
@@ -57,7 +60,10 @@ func push(cmd *cobra.Command, _ []string) error {
 	}
 
 	silent, _ := cmd.Flags().GetBool("silent")
-	httpClient, cookies, err := authFunc(mod, password, silent)
+
+	httpClient := client.NewClient(10 * time.Second)
+
+	cookies, err := authFunc(httpClient, mod, password, silent)
 	if err != nil {
 		return err
 	}
@@ -70,12 +76,12 @@ func push(cmd *cobra.Command, _ []string) error {
 	versions := make(types.Versions, 1)
 	versions[mod.Version] = mod.GetLabel()
 
-	return httpClient.ChangeLabels(mod, cookies, versions)
+	return request.ChangeLabels(httpClient, mod, cookies, versions)
 }
 
 func upload(
 	ctx context.Context,
-	client *request.Client,
+	client client.HTTPClient,
 	module *module.Module,
 	cookies []*http.Cookie,
 	silent bool,
@@ -93,13 +99,13 @@ func upload(
 	}
 
 	if silent {
-		return client.UploadZIP(ctx, module, cookies)
+		return request.UploadZIP(ctx, client, module, cookies)
 	}
 
 	return spinnerFunc(
 		"Uploading module to partners.1c-bitrix.ru...",
 		func(ctx context.Context) error {
-			return client.UploadZIP(ctx, module, cookies)
+			return request.UploadZIP(ctx, client, module, cookies)
 		},
 	)
 }

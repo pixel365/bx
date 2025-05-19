@@ -3,11 +3,12 @@ package auth
 import (
 	"context"
 	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/pixel365/bx/internal/client"
 
 	"github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
@@ -33,52 +34,48 @@ var (
 //   - silent (bool): Skip spinner.
 //
 // Returns:
-//   - *request.Client: An HTTP client configured with a cookie jar, ready to make authenticated requests.
 //   - []*http.Cookie: A slice of cookies obtained from the authentication response, typically used for
 //     session management.
-//   - error: Any error encountered during parameter validation or the authentication process.
+//   - Error: Any error encountered during parameter validation or the authentication process.
 //
 // Description:
-// Authenticate first validates that both the module and password are provided and non-empty.
-// It creates an HTTP client with an associated cookie jar and wraps it using a request.Client.
+// First validates that both the module and password are provided and non-empty.
+// It creates an HTTP client with an associated cookie jar and wraps it using a request.client.
 // Using a spinner for progress feedback, it calls httpClient.Authenticate with the module’s account and password.
 // If authentication succeeds, the function returns the configured client and cookies;
 // otherwise, it returns the encountered error.
 func Authenticate(
+	client client.HTTPClient,
 	module *module.Module,
 	password string,
 	silent bool,
-) (*request.Client, []*http.Cookie, error) {
+) ([]*http.Cookie, error) {
 	if module == nil {
-		return nil, nil, errors.ErrNilModule
+		return nil, errors.ErrNilModule
 	}
 
 	if password == "" {
-		return nil, nil, errors.ErrEmptyPassword
+		return nil, errors.ErrEmptyPassword
 	}
-
-	jar, _ := cookiejar.New(nil)
-	client := &http.Client{Jar: jar}
-	httpClient := request.NewClient(client, jar)
 
 	var err error
 	var cookies []*http.Cookie
 
 	if silent {
-		cookies, err = httpClient.Authenticate(module.Account, password)
+		cookies, err = request.Authenticate(client, module.Account, password)
 	} else {
 		err = helpers.Spinner("Authenticate on partners.1c-bitrix.ru...",
 			func(ctx context.Context) error {
-				cookies, err = httpClient.Authenticate(module.Account, password)
+				cookies, err = request.Authenticate(client, module.Account, password)
 				return err
 			})
 	}
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return httpClient, cookies, nil
+	return cookies, nil
 }
 
 // InputPassword manages the process of obtaining and validating the password needed for authentication.

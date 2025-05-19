@@ -4,32 +4,16 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"net/http/cookiejar"
 	"strings"
 	"testing"
+
+	client2 "github.com/pixel365/bx/internal/client"
 
 	module2 "github.com/pixel365/bx/internal/module"
 )
 
-type mockHttpClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
-	return m.DoFunc(req)
-}
-
-func TestNewClient(t *testing.T) {
-	t.Run("new client", func(t *testing.T) {
-		client := NewClient(nil, nil)
-		if client == nil {
-			t.Error("nil client")
-		}
-	})
-}
-
-func TestClient_Authorization(t *testing.T) {
-	mockClient := &mockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
+func Test_Authorization(t *testing.T) {
+	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
 			Header:     make(http.Header),
@@ -39,8 +23,6 @@ func TestClient_Authorization(t *testing.T) {
 
 		return resp, nil
 	}}
-
-	client := NewClient(mockClient, nil)
 
 	want := []*http.Cookie{
 		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
@@ -52,7 +34,7 @@ func TestClient_Authorization(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		client  *Client
+		client  client2.HTTPClient
 		args    args
 		want    []*http.Cookie
 		wantErr bool
@@ -63,7 +45,7 @@ func TestClient_Authorization(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.client.Authenticate(tt.args.login, tt.args.password)
+			got, err := Authenticate(tt.client, tt.args.login, tt.args.password)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -83,9 +65,9 @@ func TestClient_Authorization(t *testing.T) {
 	}
 }
 
-func TestClient_UploadZIP(t *testing.T) {
+func Test_UploadZIP(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &mockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
+	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
 			Header:     make(http.Header),
@@ -96,7 +78,6 @@ func TestClient_UploadZIP(t *testing.T) {
 		return resp, nil
 	}}
 
-	client := NewClient(mockClient, nil)
 	cookies := []*http.Cookie{
 		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
 	}
@@ -107,7 +88,7 @@ func TestClient_UploadZIP(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		client  *Client
+		client  client2.HTTPClient
 		args    args
 		wantErr bool
 	}{
@@ -126,22 +107,22 @@ func TestClient_UploadZIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := client.UploadZIP(ctx, tt.args.module, tt.args.cookies); (err != nil) != tt.wantErr {
+			if err := UploadZIP(ctx, tt.client, tt.args.module, tt.args.cookies); (err != nil) != tt.wantErr {
 				t.Errorf("UploadZIP() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
+func Test_UploadZIP_InvalidZipPath(t *testing.T) {
 	ctx := context.Background()
 	origGetSession := getSessionFunc
 	defer func() { getSessionFunc = origGetSession }()
-	getSessionFunc = func(c *Client, module *module2.Module, cookies []*http.Cookie) string {
+	getSessionFunc = func(c client2.HTTPClient, module *module2.Module, cookies []*http.Cookie) string {
 		return "fake-session-id"
 	}
 
-	mockClient := &mockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
+	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
 			Header:     make(http.Header),
@@ -151,11 +132,11 @@ func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
 
 		return resp, nil
 	}}
-	client := NewClient(mockClient, nil)
 
 	t.Run("", func(t *testing.T) {
-		err := client.UploadZIP(
+		err := UploadZIP(
 			ctx,
+			client,
 			&module2.Module{Name: "fake-name"},
 			[]*http.Cookie{{Name: "foo", Value: "bar"}},
 		)
@@ -165,8 +146,8 @@ func TestClient_UploadZIP_InvalidZipPath(t *testing.T) {
 	})
 }
 
-func TestClient_SessionId(t *testing.T) {
-	mockClient := &mockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
+func Test_SessionId(t *testing.T) {
+	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
 			Body: io.NopCloser(
@@ -179,8 +160,6 @@ func TestClient_SessionId(t *testing.T) {
 		return resp, nil
 	}}
 
-	jar, _ := cookiejar.New(nil)
-	client := NewClient(mockClient, jar)
 	cookies := []*http.Cookie{
 		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
 	}
@@ -193,7 +172,7 @@ func TestClient_SessionId(t *testing.T) {
 		cookies []*http.Cookie
 	}
 	tests := []struct {
-		client *Client
+		client client2.HTTPClient
 		name   string
 		want   string
 		args   args
@@ -202,8 +181,8 @@ func TestClient_SessionId(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := client.SessionId(tt.args.module, tt.args.cookies); got != tt.want {
-				t.Errorf("SessionId() = %v, want %v", got, tt.want)
+			if got := sessionId(tt.client, tt.args.module, tt.args.cookies); got != tt.want {
+				t.Errorf("sessionId() = %v, want %v", got, tt.want)
 			}
 		})
 	}

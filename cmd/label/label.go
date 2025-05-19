@@ -2,6 +2,10 @@ package label
 
 import (
 	"errors"
+	"time"
+
+	"github.com/pixel365/bx/internal/client"
+	"github.com/pixel365/bx/internal/request"
 
 	errors2 "github.com/pixel365/bx/internal/errors"
 
@@ -17,6 +21,8 @@ var (
 	readModuleFromFlagsFunc = module.ReadModuleFromFlags
 	authFunc                = auth.Authenticate
 	inputPasswordFunc       = auth.InputPassword
+	changeLabelsFunc        = request.ChangeLabels
+	newClientFunc           = client.NewClient
 )
 
 func NewLabelCommand() *cobra.Command {
@@ -62,7 +68,10 @@ func label(cmd *cobra.Command, _ []string) error {
 	}
 
 	silent, _ := cmd.Flags().GetBool("silent")
-	httpClient, cookies, err := authFunc(mod, password, silent)
+
+	httpClient := newClientFunc(10 * time.Second)
+
+	cookies, err := authFunc(httpClient, mod, password, silent)
 	if err != nil {
 		return err
 	}
@@ -70,7 +79,7 @@ func label(cmd *cobra.Command, _ []string) error {
 	versions := make(types.Versions, 1)
 	versions[mod.Version] = l
 
-	err = httpClient.ChangeLabels(mod, cookies, versions)
+	err = changeLabelsFunc(httpClient, mod, cookies, versions)
 	if err != nil {
 		return err
 	}

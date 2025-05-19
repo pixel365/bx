@@ -1,6 +1,7 @@
 package list
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,11 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pixel365/bx/internal/types"
+
+	"github.com/pixel365/bx/internal/client"
+
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
-	"github.com/pixel365/bx/internal/request"
 )
 
 func TestNewListCommand(t *testing.T) {
@@ -81,8 +85,9 @@ func Test_list_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module,
+		password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -125,7 +130,7 @@ func Test_list_auth(t *testing.T) {
 	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
 		mod, err := module.ReadModule(filePath, "", true)
 		if err == nil {
-			mod.Account = "auth"
+			mod.Account = "some account"
 		}
 		return mod, err
 	}
@@ -133,8 +138,9 @@ func Test_list_auth(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module,
+		password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -146,6 +152,69 @@ func Test_list_auth(t *testing.T) {
 	defer func() {
 		inputPasswordFunc = originalInputPasswordFunc
 	}()
+
+	cmd := NewListCommand()
+	err = cmd.Execute()
+	if err == nil {
+		t.Errorf("err is nil")
+	}
+}
+
+func Test_list_versions(t *testing.T) {
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("./%s", fileName)
+	filePath = filepath.Clean(filePath)
+
+	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		if err != nil {
+			t.Error(err)
+		}
+	}(filePath)
+
+	originalReadModule := readModuleFromFlagsFunc
+	originalAuthFunc := authFunc
+	originalInputPasswordFunc := inputPasswordFunc
+	originalVersionsFunc := versionsFunc
+
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		mod, err := module.ReadModule(filePath, "", true)
+		if err == nil {
+			mod.Account = "auth"
+		}
+		return mod, err
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	authFunc = func(client client.HTTPClient, module *module.Module,
+		password string, silent bool) ([]*http.Cookie, error) {
+		return nil, nil
+	}
+	defer func() {
+		authFunc = originalAuthFunc
+	}()
+
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "", nil
+	}
+	defer func() {
+		inputPasswordFunc = originalInputPasswordFunc
+	}()
+
+	defer func() {
+		versionsFunc = originalVersionsFunc
+	}()
+
+	versionsFunc = func(ctx context.Context, client client.HTTPClient, module *module.Module,
+		cookies []*http.Cookie) (types.Versions, error) {
+		return nil, errors.New("versions error")
+	}
 
 	cmd := NewListCommand()
 	err = cmd.Execute()

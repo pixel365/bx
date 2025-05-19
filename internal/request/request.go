@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pixel365/bx/internal/client"
 	"github.com/pixel365/bx/internal/request/parser"
 	"github.com/pixel365/bx/internal/types"
 
@@ -22,22 +23,6 @@ import (
 
 var getSessionFunc = getSession
 
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-type Client struct {
-	httpClient HTTPClient
-	jar        http.CookieJar
-}
-
-func NewClient(client HTTPClient, jar http.CookieJar) *Client {
-	return &Client{
-		httpClient: client,
-		jar:        jar,
-	}
-}
-
 // Authenticate performs user authentication by sending login credentials
 // to the Bitrix Partner Portal.
 //
@@ -47,7 +32,7 @@ func NewClient(client HTTPClient, jar http.CookieJar) *Client {
 //
 // Returns a slice of cookies if authentication is successful or an error if
 // authentication fails or an issue occurs during the request.
-func (c *Client) Authenticate(login, password string) ([]*http.Cookie, error) {
+func Authenticate(client client.HTTPClient, login, password string) ([]*http.Cookie, error) {
 	if login == "" {
 		return nil, errors2.ErrEmptyLogin
 	}
@@ -76,7 +61,7 @@ func (c *Client) Authenticate(login, password string) ([]*http.Cookie, error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	//nolint:bodyclose
-	resp, err := c.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +87,9 @@ func (c *Client) Authenticate(login, password string) ([]*http.Cookie, error) {
 	return cookies, nil
 }
 
-func (c *Client) Versions(
+func Versions(
 	ctx context.Context,
+	client client.HTTPClient,
 	module *module.Module,
 	cookies []*http.Cookie,
 ) (types.Versions, error) {
@@ -115,7 +101,7 @@ func (c *Client) Versions(
 		return nil, errors2.ErrNilCookie
 	}
 
-	session := c.SessionId(module, cookies)
+	session := sessionId(client, module, cookies)
 	if session == "" {
 		return nil, errors2.ErrEmptySession
 	}
@@ -126,10 +112,10 @@ func (c *Client) Versions(
 		return nil, err
 	}
 
-	c.jar.SetCookies(u, cookies)
+	client.SetCookies(u, cookies)
 
 	//nolint:bodyclose
-	resp, err := c.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +130,8 @@ func (c *Client) Versions(
 	return parser.ParseVersions(string(respBody))
 }
 
-func (c *Client) ChangeLabels(
+func ChangeLabels(
+	client client.HTTPClient,
 	module *module.Module,
 	cookies []*http.Cookie,
 	versions types.Versions,
@@ -157,7 +144,7 @@ func (c *Client) ChangeLabels(
 		return errors2.ErrNilCookie
 	}
 
-	session := c.SessionId(module, cookies)
+	session := sessionId(client, module, cookies)
 	if session == "" {
 		return errors2.ErrEmptySession
 	}
@@ -179,10 +166,10 @@ func (c *Client) ChangeLabels(
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	c.jar.SetCookies(u, cookies)
+	client.SetCookies(u, cookies)
 
 	//nolint:bodyclose
-	resp, err := c.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -211,8 +198,9 @@ func (c *Client) ChangeLabels(
 //
 // Returns:
 //   - An error if any step fails (e.g., missing session, file errors, upload failure).
-func (c *Client) UploadZIP(
+func UploadZIP(
 	ctx context.Context,
+	client client.HTTPClient,
 	module *module.Module,
 	cookies []*http.Cookie,
 ) error {
@@ -224,7 +212,7 @@ func (c *Client) UploadZIP(
 		return errors2.ErrNilCookie
 	}
 
-	session := c.SessionId(module, cookies)
+	session := sessionId(client, module, cookies)
 	if session == "" {
 		return errors2.ErrEmptySession
 	}
@@ -269,10 +257,10 @@ func (c *Client) UploadZIP(
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	c.jar.SetCookies(u, cookies)
+	client.SetCookies(u, cookies)
 
 	//nolint:bodyclose
-	resp, err := c.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -287,7 +275,7 @@ func (c *Client) UploadZIP(
 	return parser.UploadResult(string(respBody))
 }
 
-// SessionId retrieves the session ID for a given module from the Bitrix Partner Portal.
+// sessionId retrieves the session ID for a given module from the Bitrix Partner Portal.
 //
 // The function sends a GET request to the edit page of the module, then parses the HTML
 // response to extract the session ID. The session ID is needed for later operations
@@ -299,11 +287,11 @@ func (c *Client) UploadZIP(
 //
 // Returns:
 //   - The session ID as a string if found, otherwise returns an empty string.
-func (c *Client) SessionId(module *module.Module, cookies []*http.Cookie) string {
-	return getSessionFunc(c, module, cookies)
+func sessionId(client client.HTTPClient, module *module.Module, cookies []*http.Cookie) string {
+	return getSessionFunc(client, module, cookies)
 }
 
-func getSession(c *Client, module *module.Module, cookies []*http.Cookie) string {
+func getSession(client client.HTTPClient, module *module.Module, cookies []*http.Cookie) string {
 	if module == nil || len(cookies) == 0 || module.Name == "" {
 		return ""
 	}
@@ -314,10 +302,10 @@ func getSession(c *Client, module *module.Module, cookies []*http.Cookie) string
 		return ""
 	}
 
-	c.jar.SetCookies(u, cookies)
+	client.SetCookies(u, cookies)
 
 	//nolint:bodyclose
-	resp, err := c.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return ""
 	}

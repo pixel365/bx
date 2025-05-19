@@ -4,13 +4,17 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
+
+	"github.com/pixel365/bx/internal/types"
+
+	"github.com/pixel365/bx/internal/client"
 
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/module"
-	"github.com/pixel365/bx/internal/request"
 )
 
 func TestNewLabelCommand(t *testing.T) {
@@ -94,8 +98,9 @@ func TestLabelCommand_valid_label(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(module *module.Module, password string, silent bool) (*request.Client, []*http.Cookie, error) {
-		return nil, nil, errors.New("auth error")
+	authFunc = func(client client.HTTPClient, module *module.Module,
+		password string, silent bool) ([]*http.Cookie, error) {
+		return nil, errors.New("auth error")
 	}
 	defer func() {
 		authFunc = originalAuthFunc
@@ -159,6 +164,62 @@ func TestLabelCommand_valid_label3(t *testing.T) {
 	}()
 
 	t.Run("valid label", func(t *testing.T) {
+		err := cmd.Execute()
+		if err == nil {
+			t.Error("Execute() should return an error")
+		}
+	})
+}
+
+func TestLabelCommand_change_labels(t *testing.T) {
+	cmd := NewLabelCommand()
+	cmd.SetArgs([]string{"stable"})
+
+	originalReadModule := readModuleFromFlagsFunc
+	originalInputPasswordFunc := inputPasswordFunc
+	originalChangeLabelsFunc := changeLabelsFunc
+	origNewClient := newClientFunc
+	originalAuthFunc := authFunc
+
+	readModuleFromFlagsFunc = func(cmd *cobra.Command) (*module.Module, error) {
+		return &module.Module{Version: "1.0.0", Account: "login"}, nil
+	}
+	defer func() {
+		readModuleFromFlagsFunc = originalReadModule
+	}()
+
+	inputPasswordFunc = func(cmd *cobra.Command, module *module.Module) (string, error) {
+		return "password123456", nil
+	}
+	defer func() {
+		inputPasswordFunc = originalInputPasswordFunc
+	}()
+
+	changeLabelsFunc = func(client client.HTTPClient, module *module.Module,
+		cookies []*http.Cookie, versions types.Versions) error {
+		return errors.New("change labels error")
+	}
+
+	defer func() {
+		changeLabelsFunc = originalChangeLabelsFunc
+	}()
+
+	newClientFunc = func(ttl time.Duration) client.HTTPClient {
+		return &client.MockHttpClient{}
+	}
+	defer func() {
+		newClientFunc = origNewClient
+	}()
+
+	authFunc = func(client client.HTTPClient, module *module.Module, password string,
+		silent bool) ([]*http.Cookie, error) {
+		return nil, nil
+	}
+
+	defer func() {
+		authFunc = originalAuthFunc
+	}()
+	t.Run("change labels", func(t *testing.T) {
 		err := cmd.Execute()
 		if err == nil {
 			t.Error("Execute() should return an error")
