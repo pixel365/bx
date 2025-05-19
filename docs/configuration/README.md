@@ -9,4 +9,5 @@
 * [Кастомные команды](configuration/run.md)
 * [Настройка исключений](configuration/ignore.md)
 * [Пароль в переменной окружения](configuration/password.md)
+* [CI/CD](configuration/ci.md)
 * [Полный пример конфигурации](configuration/example.md)
