@@ -286,8 +286,8 @@ func makeVersionFile(builder *ModuleBuilder) error {
 	buf := strings.Builder{}
 	buf.WriteString("<?php\n")
 	buf.WriteString("$arModuleVersion = array(\n")
-	buf.WriteString("\t\t\"VERSION\" => \"" + builder.module.Version + "\"\n")
-	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + now + "\"\n")
+	buf.WriteString("\t\t\"VERSION\" => \"" + builder.module.Version + "\",\n")
+	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + now + "\",\n")
 	buf.WriteString(");\n")
 
 	err := writeFileForVersion(builder, "/install/version.php", buf.String())
