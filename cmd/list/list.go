@@ -21,6 +21,7 @@ var (
 	readModuleFromFlagsFunc = module.ReadModuleFromFlags
 	authFunc                = auth.Authenticate
 	inputPasswordFunc       = auth.InputPassword
+	versionsFunc            = request.Versions
 )
 
 func NewListCommand() *cobra.Command {
@@ -67,7 +68,7 @@ func list(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	versions, err := request.Versions(cmd.Context(), httpClient, mod, cookies)
+	versions, err := versionsFunc(cmd.Context(), httpClient, mod, cookies)
 	if err != nil {
 		return err
 	}

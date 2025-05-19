@@ -59,7 +59,8 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+	authFunc = func(client client.HTTPClient, module *module.Module, password string,
+		silent bool) ([]*http.Cookie, error) {
 		return nil, errors.New("auth error")
 	}
 	defer func() {
@@ -111,7 +112,8 @@ func Test_push_invalid_Version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+	authFunc = func(client client.HTTPClient, module *module.Module, password string,
+		silent bool) ([]*http.Cookie, error) {
 		return nil, errors.New("auth error")
 	}
 	defer func() {
@@ -164,7 +166,8 @@ func Test_push_auth(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+	authFunc = func(client client.HTTPClient, module *module.Module, password string,
+		silent bool) ([]*http.Cookie, error) {
 		return nil, errors.New("auth error")
 	}
 	defer func() {
@@ -217,7 +220,8 @@ func Test_push_upload(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+	authFunc = func(client client.HTTPClient, module *module.Module,
+		password string, silent bool) ([]*http.Cookie, error) {
 		return nil, nil
 	}
 	defer func() {
@@ -316,7 +320,8 @@ func Test_push_valid_Version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	authFunc = func(client client.HTTPClient, module *module.Module, password string, silent bool) ([]*http.Cookie, error) {
+	authFunc = func(client client.HTTPClient, module *module.Module,
+		password string, silent bool) ([]*http.Cookie, error) {
 		return nil, errors.New("auth error")
 	}
 	defer func() {

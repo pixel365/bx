@@ -21,6 +21,8 @@ var (
 	readModuleFromFlagsFunc = module.ReadModuleFromFlags
 	authFunc                = auth.Authenticate
 	inputPasswordFunc       = auth.InputPassword
+	changeLabelsFunc        = request.ChangeLabels
+	newClientFunc           = client.NewClient
 )
 
 func NewLabelCommand() *cobra.Command {
@@ -67,7 +69,7 @@ func label(cmd *cobra.Command, _ []string) error {
 
 	silent, _ := cmd.Flags().GetBool("silent")
 
-	httpClient := client.NewClient(10 * time.Second)
+	httpClient := newClientFunc(10 * time.Second)
 
 	cookies, err := authFunc(httpClient, mod, password, silent)
 	if err != nil {
@@ -77,7 +79,7 @@ func label(cmd *cobra.Command, _ []string) error {
 	versions := make(types.Versions, 1)
 	versions[mod.Version] = l
 
-	err = request.ChangeLabels(httpClient, mod, cookies, versions)
+	err = changeLabelsFunc(httpClient, mod, cookies, versions)
 	if err != nil {
 		return err
 	}
