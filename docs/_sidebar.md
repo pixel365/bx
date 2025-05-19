@@ -1,5 +1,6 @@
 * [Обзор](/)
 * [Установка](installation.md)
+* [С чего начать?](getting_started.md)
 * [Команды](usage/)
     * [create: Новый модуль](usage/create.md)
     * [check: Проверка конфигурации](usage/check.md)
