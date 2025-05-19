@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,15 +17,6 @@ import (
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 )
-
-type mockHttpClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
-	return m.DoFunc(req)
-}
-func (m *mockHttpClient) SetCookies(_ *url.URL, _ []*http.Cookie) {}
 
 func Test_push_ReadModuleFromFlags(t *testing.T) {
 	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
@@ -268,9 +258,9 @@ func Test_upload(t *testing.T) {
 		wantErr bool
 	}{
 		{"nil client", args{nil, &module.Module{}, nil, false}, true},
-		{"nil module", args{&mockHttpClient{}, nil, nil, false}, true},
-		{"nil cookies", args{&mockHttpClient{}, &module.Module{}, nil, false}, true},
-		{"not silent", args{&mockHttpClient{}, &module.Module{}, c, false}, false},
+		{"nil module", args{&client.MockHttpClient{}, nil, nil, false}, true},
+		{"nil cookies", args{&client.MockHttpClient{}, &module.Module{}, nil, false}, true},
+		{"not silent", args{&client.MockHttpClient{}, &module.Module{}, c, false}, false},
 	}
 
 	origSpinnerFunc := spinnerFunc
