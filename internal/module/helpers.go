@@ -282,13 +282,7 @@ func makeVersionFile(builder *ModuleBuilder) error {
 		return nil
 	}
 
-	now := time.Now().Format(time.DateTime)
-	buf := strings.Builder{}
-	buf.WriteString("<?php\n")
-	buf.WriteString("$arModuleVersion = array(\n")
-	buf.WriteString("\t\t\"VERSION\" => \"" + builder.module.Version + "\",\n")
-	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + now + "\",\n")
-	buf.WriteString(");\n")
+	buf := versionPhpContent(builder.module.Version, time.Now())
 
 	err := writeFileForVersion(builder, "/install/version.php", buf.String())
 	if err != nil {
@@ -296,4 +290,15 @@ func makeVersionFile(builder *ModuleBuilder) error {
 	}
 
 	return nil
+}
+
+func versionPhpContent(version string, date time.Time) strings.Builder {
+	buf := strings.Builder{}
+	buf.WriteString("<?php\n")
+	buf.WriteString("$arModuleVersion = array(\n")
+	buf.WriteString("\t\t\"VERSION\" => \"" + version + "\",\n")
+	buf.WriteString("\t\t\"VERSION_DATE\" => \"" + date.Format(time.DateTime) + "\",\n")
+	buf.WriteString(");\n")
+
+	return buf
 }
