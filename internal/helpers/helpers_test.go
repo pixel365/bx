@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
+	"maps"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -371,4 +374,79 @@ func TestUserInput_fail(t *testing.T) {
 			t.Errorf("UserInput() err = %v", err)
 		}
 	})
+}
+
+func TestSortSemanticVersions(t *testing.T) {
+	m := make(map[string]struct{})
+
+	m["8.9.2"] = struct{}{}
+	m["8.8.0"] = struct{}{}
+	m["8.20.5"] = struct{}{}
+	m["8.19.1"] = struct{}{}
+	m["8.9.0"] = struct{}{}
+	m["0.0.1"] = struct{}{}
+	m["8.20.4"] = struct{}{}
+	m["8.2.8"] = struct{}{}
+	m["10.0.0"] = struct{}{}
+	m["8.2.9"] = struct{}{}
+	m["8.2.9-beta"] = struct{}{}
+	m["8.2.9-alpha"] = struct{}{}
+	m["8.2.9-4d42446a"] = struct{}{}
+
+	type args struct {
+		versions iter.Seq[string]
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"ok",
+			args{versions: maps.Keys(m)},
+			[]string{
+				"0.0.1",
+				"8.2.8",
+				"8.2.9-4d42446a",
+				"8.2.9-alpha",
+				"8.2.9-beta",
+				"8.2.9",
+				"8.8.0",
+				"8.9.0",
+				"8.9.2",
+				"8.19.1",
+				"8.20.4",
+				"8.20.5",
+				"10.0.0",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SortSemanticVersions(tt.args.versions); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SortSemanticVersions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_normalizeVersion(t *testing.T) {
+	type args struct {
+		version string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"with prefix", args{"v0.0.1"}, "v0.0.1"},
+		{"without prefix", args{"0.0.1"}, "v0.0.1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeVersion(tt.args.version); got != tt.want {
+				t.Errorf("normalizeVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

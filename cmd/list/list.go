@@ -3,8 +3,9 @@ package list
 import (
 	"fmt"
 	"maps"
-	"slices"
 	"time"
+
+	"github.com/pixel365/bx/internal/helpers"
 
 	"github.com/pixel365/bx/internal/client"
 	"github.com/pixel365/bx/internal/request"
@@ -87,7 +88,8 @@ func list(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	items := slices.Sorted(maps.Keys(versions))
+	keys := maps.Keys(versions)
+	items := helpers.SortSemanticVersions(keys)
 
 	if sorting == types.Asc {
 		for _, version := range items {
