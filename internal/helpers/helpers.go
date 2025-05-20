@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"iter"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/huh/spinner"
@@ -19,6 +21,8 @@ import (
 	"github.com/pixel365/bx/internal/types"
 
 	"github.com/charmbracelet/huh"
+
+	"golang.org/x/mod/semver"
 )
 
 type Cfg string
@@ -421,4 +425,26 @@ func Spinner(title string, action func(context.Context) error) error {
 		Type(spinner.Dots).
 		ActionWithErr(action).
 		Run()
+}
+
+// SortSemanticVersions sorts a sequence of version strings according to
+// semantic versioning rules (https://semver.org).
+// Versions that do not start with a 'v' prefix are normalized automatically (e.g., "1.2.3" becomes "v1.2.3").
+// The returned slice is a new sorted copy; the input is not modified.
+func SortSemanticVersions(versions iter.Seq[string]) []string {
+	result := slices.SortedFunc(versions, func(a string, b string) int {
+		return semver.Compare(normalizeVersion(a), normalizeVersion(b))
+	})
+
+	return result
+}
+
+// normalizeVersion ensures that a version string has a 'v' prefix,
+// as required by the semver.Compare function.
+// If the version already starts with 'v', it is returned unchanged.
+func normalizeVersion(version string) string {
+	if !strings.HasPrefix(version, "v") {
+		return "v" + version
+	}
+	return version
 }
