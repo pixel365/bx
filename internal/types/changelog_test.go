@@ -13,7 +13,7 @@ func TestChangelog_EncodedFooter(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", fields{FooterTemplate: ""}, "", false},
-		{"equals", fields{FooterTemplate: "some footer"}, "\nsome footer", false},
+		{"equals", fields{FooterTemplate: "some footer"}, "<br>some footer", false},
 		{"es", fields{FooterTemplate: "algún pie de página"}, "", true},
 		{"jp", fields{FooterTemplate: "フッター"}, "", true},
 		{"kz", fields{FooterTemplate: "кейбір төменгі колонтитул"}, "", true},
