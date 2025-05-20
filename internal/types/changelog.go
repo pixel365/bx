@@ -15,5 +15,5 @@ func (c *Changelog) EncodedFooter() (string, error) {
 		return "", nil
 	}
 
-	return charmap.Windows1251.NewEncoder().String("\n" + c.FooterTemplate)
+	return charmap.Windows1251.NewEncoder().String("<br>" + c.FooterTemplate)
 }
