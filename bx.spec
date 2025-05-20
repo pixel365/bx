@@ -5,7 +5,9 @@ Summary:        Command-Line Tool for 1C-Bitrix Module Development
 
 License:        MIT
 URL:            https://github.com/pixel365/%{name}
-Source0:        https://github.com/pixel365/%{name}/releases/download/v%{version}/%{name}_%{version}_linux_amd64.tar.gz
+Source0:        %{name}_v%{version}_linux_amd64.tar.gz
+
+%global debug_package %{nil}
 
 Requires:       glibc
 
@@ -17,18 +19,20 @@ Build configurations are versioned alongside the project,
 ensuring consistency and traceability of changes throughout the development process.
 
 %prep
-mkdir -p build
-cp %{SOURCE0} build/
-cd build
-tar -xzf %{name}_%{version}_linux_amd64.tar.gz
+%setup -q -c -T
+tar -xzf %{SOURCE0}
 
 %build
 # nothing to build
 
 %install
-install -D -m0755 build/%{name} %{buildroot}%{_bindir}/%{name}
-install -D -m0644 build/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
-install -D -m0644 build/README.md %{buildroot}%{_docdir}/%{name}/README.md
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_licensedir}/%{name}
+mkdir -p %{buildroot}%{_docdir}/%{name}
+
+install -m0755 bx %{buildroot}%{_bindir}/%{name}
+install -m0644 LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
+install -m0644 README.md %{buildroot}%{_docdir}/%{name}/README.md
 
 %files
 %{_bindir}/%{name}
@@ -36,5 +40,5 @@ install -D -m0644 build/README.md %{buildroot}%{_docdir}/%{name}/README.md
 %doc %{_docdir}/%{name}/README.md
 
 %changelog
-* Mon May 20 2025 Ruslan Semagin <you@example.com> - 1.5.3-1
+* Tue May 20 2025 Ruslan Semagin <pixel.365.24@gmail.com> - 1.5.3-1
 - Initial binary release from GitHub
