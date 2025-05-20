@@ -251,7 +251,7 @@ func makeVersionDescription(builder *ModuleBuilder) error {
 		}
 
 		for _, commit := range commits {
-			encodedLine, err := encoder.String(commit + "\n")
+			encodedLine, err := encoder.String(commit + "<br>")
 			if err != nil {
 				return fmt.Errorf("encoding commit [%s]: %w", commit, err)
 			}
