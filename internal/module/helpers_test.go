@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -282,4 +283,25 @@ func Test_makeVersionDescription(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_versionPhpContent(t *testing.T) {
+	date, err := time.Parse(time.RFC3339, "2025-05-20T23:00:00Z")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Run("php version", func(t *testing.T) {
+		buf := versionPhpContent("1.0.0", date)
+
+		buf2 := strings.Builder{}
+		buf2.WriteString("<?php\n")
+		buf2.WriteString("$arModuleVersion = array(\n")
+		buf2.WriteString("\t\t\"VERSION\" => \"1.0.0\",\n")
+		buf2.WriteString("\t\t\"VERSION_DATE\" => \"" + date.Format(time.DateTime) + "\",\n")
+		buf2.WriteString(");\n")
+
+		if buf.String() != buf2.String() {
+			t.Errorf("versionPhpContent() got = %v, want %v", buf.String(), buf2.String())
+		}
+	})
 }
