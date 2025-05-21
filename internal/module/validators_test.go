@@ -466,3 +466,47 @@ func TestValidateRun(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateLog(t *testing.T) {
+	type args struct {
+		m *Module
+	}
+	tests := []struct {
+		args    args
+		name    string
+		wantErr bool
+	}{
+		{args{m: &Module{}}, "empty log", false},
+		{args{m: &Module{Log: &types.Log{}}}, "empty log dir", true},
+		{args{m: &Module{Log: &types.Log{
+			Dir:     "/var/log",
+			MaxSize: 0,
+		}}}, "zero maxSize", true},
+		{args{m: &Module{Log: &types.Log{
+			Dir:        "/var/log",
+			MaxSize:    1,
+			MaxBackups: 0,
+		}}}, "zero maxBackups", true},
+		{args{m: &Module{Log: &types.Log{
+			Dir:        "/var/log",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     0,
+		}}}, "zero maxAge", true},
+		{args{m: &Module{Log: &types.Log{
+			Dir:        "/var/log",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     1,
+			LocalTime:  true,
+			Compress:   true,
+		}}}, "valid", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateLog(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateLog() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

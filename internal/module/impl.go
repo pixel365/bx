@@ -84,6 +84,10 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
+	if err := ValidateLog(m); err != nil {
+		return err
+	}
+
 	return nil
 }
 

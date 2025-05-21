@@ -47,16 +47,14 @@ type ModuleConfig interface {
 	IsLastVersion() bool
 }
 
-// BuildLogger provides structured logging during the build process.
+// Logger provides structured logging during the build process.
 //
 // Methods:
 //   - Info: Logs informational messages with optional formatting arguments.
 //   - Error: Logs error messages with the associated error and optional context.
-//   - Cleanup: Finalizes or flushes any pending logs or resources.
-type BuildLogger interface {
+type Logger interface {
 	Info(message string, args ...interface{})
 	Error(message string, err error, args ...interface{})
-	Cleanup()
 }
 
 // Runnable defines hooks for executing logic before and after a build stage.

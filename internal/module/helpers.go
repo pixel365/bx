@@ -206,8 +206,8 @@ func writeFileForVersion(builder *ModuleBuilder, path, content string) error {
 	}
 
 	defer func() {
-		if err := file.Close(); err != nil && builder.logger != nil {
-			builder.logger.Error("Failed to close "+path, err)
+		if err := file.Close(); err != nil && builder.log != nil {
+			builder.log.Error("Failed to close "+path, err)
 		}
 	}()
 

@@ -160,7 +160,7 @@ func Test_run_HandleStages(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	handleStagesFunc = func(ctx context.Context, stages []string, m *module.Module, logger interfaces.BuildLogger,
+	handleStagesFunc = func(ctx context.Context, stages []string, m *module.Module, logger interfaces.Logger,
 		customCommandMode bool) error {
 		return nil
 	}
