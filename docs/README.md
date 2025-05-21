@@ -26,6 +26,7 @@ BX &mdash; делает процесс сборки и публикации ре
   * [Сценарии сборки](configuration/builds.md)
   * [Кастомные команды](configuration/run.md)
   * [Настройка исключений](configuration/ignore.md)
+  * [Логирование](configuration/log.md)
   * [Пароль в переменной окружения](configuration/password.md)
   * [Полный пример конфигурации](configuration/example.md)
 * [Внести вклад в разработку BX](contribution.md)

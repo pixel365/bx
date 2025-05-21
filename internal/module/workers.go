@@ -86,14 +86,14 @@ func errorWorker(ch <-chan error, cancel context.CancelFunc, once *sync.Once, er
 	}
 }
 
-// logWorker consumes log messages from the provided channel and sends them to the logger.
+// logWorker consumes log messages from the provided channel and sends them to the log.
 //
 // It runs as a background goroutine, and processes log messages until the channel is closed.
 //
 // Parameters:
 //   - ch: channel carrying log messages.
-//   - logger: implementation of BuildLogger used to output logs.
-func logWorker(ch <-chan string, logger interfaces.BuildLogger) {
+//   - log: implementation of Logger used to output logs.
+func logWorker(ch <-chan string, logger interfaces.Logger) {
 	for msg := range ch {
 		logger.Info(msg)
 	}

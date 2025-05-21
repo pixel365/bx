@@ -131,7 +131,7 @@ func Test_build_success(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.Logger) interfaces.Builder {
 		return &FakeSuccessBuilder{}
 	}
 	defer func() {
@@ -174,7 +174,7 @@ func Test_build_fail(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.Logger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -216,7 +216,7 @@ func Test_build_invalid_version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.Logger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -259,7 +259,7 @@ func Test_build_valid_version(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.Logger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -302,7 +302,7 @@ func Test_build_repository(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.Logger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {
@@ -346,7 +346,7 @@ func Test_build_invalid_last(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	builderFunc = func(m *module.Module, logger interfaces.BuildLogger) interfaces.Builder {
+	builderFunc = func(m *module.Module, logger interfaces.Logger) interfaces.Builder {
 		return &FakeFailBuilder{}
 	}
 	defer func() {

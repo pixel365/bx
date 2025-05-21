@@ -6,13 +6,13 @@
 package logger
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/pixel365/bx/internal/helpers"
+	"github.com/pixel365/bx/internal/types"
 
 	"github.com/rs/zerolog"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // ZeroLogger is a file-based structured logger powered by zerolog.
@@ -21,9 +21,7 @@ import (
 // with optional formatting. The logger includes automatic cleanup and renaming logic
 // to move the log file to a target directory after use.
 type ZeroLogger struct {
-	logger  zerolog.Logger
-	logFile *os.File
-	logDir  string
+	logger zerolog.Logger
 }
 
 // Info logs an informational message using zerolog.
@@ -35,13 +33,11 @@ type ZeroLogger struct {
 //   - message: The log message or format string.
 //   - args: Optional format arguments for the message.
 func (l *ZeroLogger) Info(message string, args ...interface{}) {
-	if l.logFile != nil {
-		if len(args) > 0 {
-			l.logger.Info().Msgf(message, args...)
-			return
-		}
-		l.logger.Info().Msg(message)
+	if len(args) > 0 {
+		l.logger.Info().Msgf(message, args...)
+		return
 	}
+	l.logger.Info().Msg(message)
 }
 
 // Error logs an error message along with an associated error.
@@ -51,64 +47,53 @@ func (l *ZeroLogger) Info(message string, args ...interface{}) {
 //
 // Parameters:
 //   - message: The log message or format string.
-//   - err:     The error object to include in the log.
-//   - args:    Optional format arguments for the message.
+//   - err: The error object to include in the log.
+//   - args: Optional format arguments for the message.
 func (l *ZeroLogger) Error(message string, err error, args ...interface{}) {
-	if l.logFile != nil {
-		if len(args) > 0 {
-			l.logger.Error().Err(err).Msgf(message, args...)
-			return
-		}
-		l.logger.Error().Err(err).Msg(message)
+	if len(args) > 0 {
+		l.logger.Error().Err(err).Msgf(message, args...)
+		return
 	}
+	l.logger.Error().Err(err).Msg(message)
 }
 
-// Cleanup closes the log file and moves it to the configured log directory.
+// NewFileLogger creates and returns a new instance of ZeroLogger,
+// which writes logs both to stdout and to a rotating file.
 //
-// If a rename operation fails, it is silently ignored. If no file was opened,
-// Cleanup does nothing.
-func (l *ZeroLogger) Cleanup() {
-	if l.logFile != nil {
-		helpers.Cleanup(l.logFile, nil)
-
-		path := fmt.Sprintf("%s/%s", l.logDir, l.logFile.Name())
-		path = filepath.Clean(path)
-
-		err := os.Rename(l.logFile.Name(), path)
-		if err != nil {
-			return
-		}
-	}
-}
-
-// NewFileZeroLogger creates a new ZeroLogger instance that logs to a file.
-//
-// The file is opened in append mode and created if it does not exist. If the file
-// cannot be opened, the function panics. The resulting logger is timestamped
-// and configured for structured output.
+// The log file is created in the specified directory with the name "<moduleName>.log".
+// File rotation is handled by lumberjack.Logger
+// based on the provided configuration in the log parameter.
 //
 // Parameters:
-//   - filePath: Path to the log file to write to.
-//   - logDir:   Directory where the file will be moved after cleanup.
+//   - log: pointer to types.Log containing log directory and rotation settings
+//   - moduleName: name of the module used to construct the log filename
 //
 // Returns:
-//   - *ZeroLogger: A configured logger instance ready for use.
-func NewFileZeroLogger(filePath, logDir string) *ZeroLogger {
-	filePath = filepath.Clean(filePath)
-	logFile, err := os.OpenFile(
-		filePath,
-		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
-		0600,
-	)
+//   - A pointer to a ZeroLogger instance configured with file and stdout output
+func NewFileLogger(log *types.Log, moduleName string) *ZeroLogger {
+	if log == nil {
+		return &ZeroLogger{}
+	}
 
+	fullPath := filepath.Join(log.Dir, moduleName+".log")
+	fullPath, _ = filepath.Abs(fullPath)
+	fullPath = filepath.Clean(fullPath)
+
+	err := os.MkdirAll(filepath.Dir(fullPath), 0750)
 	if err != nil {
-		panic(err)
+		panic("Failed to create log directory: " + fullPath)
+	}
+
+	logFile := &lumberjack.Logger{
+		Filename:   fullPath,
+		MaxSize:    log.MaxSize,
+		MaxBackups: log.MaxBackups,
+		MaxAge:     log.MaxAge,
+		Compress:   log.Compress,
 	}
 
 	logger := &ZeroLogger{
-		logger:  zerolog.New(logFile).With().Timestamp().Logger(),
-		logFile: logFile,
-		logDir:  logDir,
+		logger: zerolog.New(logFile).With().Timestamp().Logger(),
 	}
 
 	return logger

@@ -13,13 +13,13 @@ import (
 )
 
 type ModuleBuilder struct {
-	logger interfaces.BuildLogger
+	log    interfaces.Logger
 	module *Module
 }
 
-func NewModuleBuilder(m *Module, logger interfaces.BuildLogger) interfaces.Builder {
+func NewModuleBuilder(m *Module, logger interfaces.Logger) interfaces.Builder {
 	return &ModuleBuilder{
-		logger: logger,
+		log:    logger,
 		module: m,
 	}
 }
@@ -38,27 +38,27 @@ func (m *ModuleBuilder) Build(ctx context.Context) error {
 		return err
 	}
 
-	m.logger.Info("Building module")
+	m.log.Info("Building module")
 
 	if err := m.Prepare(); err != nil {
-		m.logger.Error("Failed to prepare build", err)
+		m.log.Error("Failed to prepare build", err)
 		if rollbackErr := m.Rollback(); rollbackErr != nil {
-			m.logger.Error("Failed to rollback", rollbackErr)
+			m.log.Error("Failed to rollback", rollbackErr)
 		}
 		return err
 	}
 
-	m.logger.Info("Prepare complete")
+	m.log.Info("Prepare complete")
 
 	if err := m.Collect(ctx); err != nil {
-		m.logger.Error("Failed to collect build", err)
+		m.log.Error("Failed to collect build", err)
 		if rollbackErr := m.Rollback(); rollbackErr != nil {
-			m.logger.Error("Failed to rollback", rollbackErr)
+			m.log.Error("Failed to rollback", rollbackErr)
 		}
 		return err
 	}
 
-	m.logger.Info("Build complete")
+	m.log.Info("Build complete")
 
 	return nil
 }
@@ -74,47 +74,33 @@ func (m *ModuleBuilder) Prepare() error {
 	}
 
 	if err := CheckStages(m.module); err != nil {
-		m.logger.Error("Prepare: check stages failed", err)
+		m.log.Error("Prepare: check stages failed", err)
 		return err
 	}
 
-	m.logger.Info("Check stages complete")
+	m.log.Info("Check stages complete")
 
 	if m.module.BuildDirectory == "" {
 		m.module.BuildDirectory = "./build"
 	}
 
-	if m.module.LogDirectory == "" {
-		m.module.LogDirectory = "./log"
-	}
-
 	path, err := fs.MkDir(m.module.BuildDirectory)
 	if err != nil {
-		m.logger.Error("Prepare: failed to make build directory", err)
+		m.log.Error("Prepare: failed to make build directory", err)
 		return err
 	}
 
-	m.logger.Info("Build directory complete: %s", path)
+	m.log.Info("Build directory complete: %s", path)
 
 	m.module.BuildDirectory = path
 
-	path, err = fs.MkDir(m.module.LogDirectory)
-	if err != nil {
-		m.logger.Error("Prepare: failed to make log directory", err)
-		return err
-	}
-
-	m.logger.Info("Log directory complete: %s", path)
-
-	m.module.LogDirectory = path
-
 	path, err = fs.MkDir(fmt.Sprintf("%s/%s", m.module.BuildDirectory, m.module.GetVersion()))
 	if err != nil {
-		m.logger.Info("Prepare: failed to make build version directory")
+		m.log.Info("Prepare: failed to make build version directory")
 		return err
 	}
 
-	m.logger.Info("Build version directory complete: %s", path)
+	m.log.Info("Build version directory complete: %s", path)
 
 	return nil
 }
@@ -126,20 +112,18 @@ func (m *ModuleBuilder) Cleanup() {
 		return
 	}
 
-	defer m.logger.Cleanup()
-
 	versionDir, err := makeVersionDirectory(m.module)
 	if err != nil {
-		m.logger.Error("Cleanup: failed to make version dir", err)
+		m.log.Error("Cleanup: failed to make version dir", err)
 		return
 	}
 
 	if err := os.RemoveAll(versionDir); err != nil {
-		m.logger.Error("Cleanup: failed to remove version directory", err)
+		m.log.Error("Cleanup: failed to remove version directory", err)
 		return
 	}
 
-	m.logger.Info("Cleanup complete")
+	m.log.Info("Cleanup complete")
 }
 
 // Rollback reverts any changes made during the build process.
@@ -164,7 +148,7 @@ func (m *ModuleBuilder) Rollback() error {
 			return err
 		}
 
-		m.logger.Info("Removed zip file: %s", zipPath)
+		m.log.Info("Removed zip file: %s", zipPath)
 	}
 
 	versionDir, err := makeVersionDirectory(m.module)
@@ -176,8 +160,8 @@ func (m *ModuleBuilder) Rollback() error {
 		return err
 	}
 
-	m.logger.Info("Removed version directory: %s", versionDir)
-	m.logger.Info("Rollback complete")
+	m.log.Info("Removed version directory: %s", versionDir)
+	m.log.Info("Rollback complete")
 
 	return nil
 }
@@ -213,12 +197,12 @@ func (m *ModuleBuilder) collectStages(ctx context.Context) error {
 		stages = m.module.Builds.LastVersion
 	}
 
-	if err := HandleStages(ctx, stages, m.module, m.logger, false); err != nil {
-		m.logger.Error("Collect: handle stages failed", err)
+	if err := HandleStages(ctx, stages, m.module, m.log, false); err != nil {
+		m.log.Error("Collect: handle stages failed", err)
 		return err
 	}
 
-	m.logger.Info("Collect complete")
+	m.log.Info("Collect complete")
 
 	return nil
 }
@@ -240,13 +224,13 @@ func (m *ModuleBuilder) Collect(ctx context.Context) error {
 
 	err = makeVersionDescription(m)
 	if err != nil {
-		m.logger.Error("Failed to collect build description", err)
+		m.log.Error("Failed to collect build description", err)
 		return err
 	}
 
 	err = makeVersionFile(m)
 	if err != nil {
-		m.logger.Error("Failed to create version.php", err)
+		m.log.Error("Failed to create version.php", err)
 	}
 
 	_, err = fs.RemoveEmptyDirs(versionDirectory)
@@ -279,11 +263,11 @@ func (m *ModuleBuilder) Collect(ctx context.Context) error {
 	}
 
 	if err := fs.ZipIt(versionDirectory, zipPath); err != nil {
-		m.logger.Error("Failed to zip build", err)
+		m.log.Error("Failed to zip build", err)
 		return err
 	}
 
-	m.logger.Info("Zip complete")
+	m.log.Info("Zip complete")
 
 	return nil
 }

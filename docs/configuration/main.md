@@ -5,8 +5,8 @@
 - `label` &mdash; Метка версии. Возможные значения: `alpha`, `beta`, `stable`. По-умолчанию &mdash; `alpha`.
 - `account` * &mdash; Аккаунт (логин) в 1С-Битрикс Маркетплейс, к которому привязан модуль.
 - `buildDirectory` * &mdash; Полный или относительный путь до директории в которой будет сохранён дистрибутив модуля.
-- `logDirectory` * &mdash; Полный или относительный путь до директории в которой будут храниться логи сборки модуля.
 - `repository` &mdash; Полный или относительный путь до корня репозитория модуля.
+- ~~`logDirectory`~~ &mdash; Устарел (см. [настройка лога](configuration/log.md))
 
 "*" &mdash; Обязательное поле.
 
@@ -18,7 +18,6 @@ version: "1.0.0"
 label: "stable"
 account: "test"
 buildDirectory: "./dist"
-logDirectory: "./logs"
 repository: "."
 ```
 

@@ -40,7 +40,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -60,7 +59,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -79,7 +77,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "repository",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -97,7 +94,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -121,7 +117,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -147,7 +142,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -173,7 +167,6 @@ func TestModule_IsValid(t *testing.T) {
 			Account:        "tester",
 			Repository:     "",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "test",
@@ -201,7 +194,6 @@ func TestModule_IsValid(t *testing.T) {
 				Label:          tt.fields.Label,
 				Account:        tt.fields.Account,
 				BuildDirectory: tt.fields.BuildDirectory,
-				LogDirectory:   tt.fields.LogDirectory,
 				Stages:         tt.fields.Stages,
 				Ignore:         tt.fields.Ignore,
 				Repository:     tt.fields.Repository,
@@ -270,7 +262,6 @@ func TestModule_NormalizeStages(t *testing.T) {
 			Account:        "tester",
 			Repository:     "tester",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "{foo}",
@@ -290,7 +281,6 @@ func TestModule_NormalizeStages(t *testing.T) {
 			Account:        "tester",
 			Repository:     "tester",
 			BuildDirectory: "tester",
-			LogDirectory:   "tester",
 			Stages: []types.Stage{
 				{
 					Name:               "{foo}",
@@ -310,7 +300,6 @@ func TestModule_NormalizeStages(t *testing.T) {
 				Version:        tt.fields.Version,
 				Account:        tt.fields.Account,
 				BuildDirectory: tt.fields.BuildDirectory,
-				LogDirectory:   tt.fields.LogDirectory,
 				Stages:         tt.fields.Stages,
 				Ignore:         tt.fields.Ignore,
 			}
@@ -363,7 +352,6 @@ func TestModule_ValidateChangelog(t *testing.T) {
 		Version:        "1.0.0",
 		Account:        "tester",
 		BuildDirectory: "tester",
-		LogDirectory:   "tester",
 		Repository:     ".",
 		Stages: []types.Stage{
 			{
@@ -542,7 +530,6 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Version:        mod.Version,
 				Account:        mod.Account,
 				BuildDirectory: mod.BuildDirectory,
-				LogDirectory:   mod.LogDirectory,
 				Repository:     mod.Repository,
 				Stages:         mod.Stages,
 			}
@@ -603,7 +590,6 @@ func TestModule_FindStage(t *testing.T) {
 			Version:        "1.0.0",
 			Account:        "test",
 			BuildDirectory: "./build",
-			LogDirectory:   "./logs",
 			Stages: []types.Stage{
 				{
 					Name:               "stage_1",
@@ -627,7 +613,6 @@ func TestModule_FindStage(t *testing.T) {
 			Version:        "1.0.0",
 			Account:        "test",
 			BuildDirectory: "./build",
-			LogDirectory:   "./logs",
 			Stages: []types.Stage{
 				{
 					Name:               "stage_1",
@@ -649,7 +634,6 @@ func TestModule_FindStage(t *testing.T) {
 				Version:        tt.fields.Version,
 				Account:        tt.fields.Account,
 				Name:           tt.fields.Name,
-				LogDirectory:   tt.fields.LogDirectory,
 				Stages:         tt.fields.Stages,
 			}
 			got, err := m.FindStage(tt.args.name)

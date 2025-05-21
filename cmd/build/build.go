@@ -2,7 +2,6 @@ package build
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/pixel365/bx/internal/module"
 
@@ -75,13 +74,7 @@ func build(cmd *cobra.Command, _ []string) error {
 
 	mod.LastVersion = last
 
-	logPath := fmt.Sprintf(
-		"./%s-%s.%s.log",
-		mod.Name,
-		mod.GetVersion(),
-		time.Now().UTC().Format(time.RFC3339),
-	)
-	loggerInstance := logger.NewFileZeroLogger(logPath, mod.LogDirectory)
+	loggerInstance := logger.NewFileLogger(mod.Log, mod.Name)
 	builder := builderFunc(mod, loggerInstance)
 
 	if err := builder.Build(cmd.Context()); err != nil {

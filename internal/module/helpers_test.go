@@ -256,7 +256,7 @@ func Test_makeVersionDescription(t *testing.T) {
 				BuildDirectory: "testdata",
 				Version:        "1.0.0",
 			},
-			logger: nil,
+			log: nil,
 		}}, "empty repository", false},
 		{args{builder: &ModuleBuilder{
 			module: &Module{
@@ -264,7 +264,7 @@ func Test_makeVersionDescription(t *testing.T) {
 				Version:        "1.0.0",
 				Description:    "some description",
 			},
-			logger: nil,
+			log: nil,
 		}}, "has description", false},
 		{args{builder: &ModuleBuilder{
 			module: &Module{
@@ -272,7 +272,7 @@ func Test_makeVersionDescription(t *testing.T) {
 				Version:        "1.0.0",
 				Repository:     ".",
 			},
-			logger: nil,
+			log: nil,
 		}}, "has repository", false},
 		{args{builder: &ModuleBuilder{module: &Module{LastVersion: true}}}, "last version", false},
 	}

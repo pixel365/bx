@@ -31,7 +31,7 @@ import (
 //   - ctx: base context used for cancellation.
 //   - stages: list of stage names to execute.
 //   - m: the module containing the stage definitions.
-//   - logger: implementation of BuildLogger for reporting progress and messages.
+//   - log: implementation of Logger for reporting progress and messages.
 //   - customCommandMode: if true, skips versioned output directory creation.
 //
 // Returns:
@@ -40,7 +40,7 @@ func HandleStages(
 	ctx context.Context,
 	stages []string,
 	m *Module,
-	logger interfaces.BuildLogger,
+	logger interfaces.Logger,
 	customCommandMode bool,
 ) (err error) {
 	ctx, cancel := context.WithCancel(ctx)

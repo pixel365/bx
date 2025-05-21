@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pixel365/bx/internal/types"
 )
 
 type InfoRecord struct {
@@ -31,10 +34,18 @@ const (
 )
 
 func TestNewFileZeroLogger(t *testing.T) {
-	t.Run("NewFileZeroLogger", func(t *testing.T) {
-		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
-		logger := NewFileZeroLogger(filePath, "./")
-		defer logger.Cleanup()
+	t.Run("NewFileLogger", func(t *testing.T) {
+		log := types.Log{
+			Dir:        "./",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     1,
+			LocalTime:  false,
+			Compress:   false,
+		}
+		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
+		logger := NewFileLogger(&log, name)
 		defer func() {
 			err := os.Remove(filePath)
 			if err != nil {
@@ -43,26 +54,43 @@ func TestNewFileZeroLogger(t *testing.T) {
 		}()
 
 		if logger == nil {
-			t.Errorf("NewFileZeroLogger() = nil, want not nil")
+			t.Errorf("NewFileLogger() = nil, want not nil")
+		}
+	})
+}
+
+func TestNilZeroLogger(t *testing.T) {
+	t.Run("NilZeroLogger", func(t *testing.T) {
+		logger := NewFileLogger(nil, "")
+		if !reflect.DeepEqual(logger, &ZeroLogger{}) {
+			t.Errorf("NewFileLogger() = nil, want not nil")
 		}
 	})
 }
 
 func TestZeroLogger_Info(t *testing.T) {
 	t.Run("info", func(t *testing.T) {
-		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
+		log := types.Log{
+			Dir:        "./",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     1,
+			LocalTime:  false,
+			Compress:   false,
+		}
+		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
 		filePath = filepath.Clean(filePath)
-		logger := NewFileZeroLogger(filePath, "./")
-		defer logger.Cleanup()
+		logger := NewFileLogger(&log, name)
 		defer func() {
-			err := os.Remove(filePath)
+			err := os.Remove(filepath.Clean(filePath + ".log"))
 			if err != nil {
 				return
 			}
 		}()
 
 		logger.Info("test")
-		data, err := os.ReadFile(filePath)
+		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
 		if err != nil {
 			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
@@ -86,19 +114,27 @@ func TestZeroLogger_Info(t *testing.T) {
 
 func TestZeroLogger_Info_With_Args(t *testing.T) {
 	t.Run("info", func(t *testing.T) {
-		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
+		log := types.Log{
+			Dir:        "./",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     1,
+			LocalTime:  false,
+			Compress:   false,
+		}
+		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
 		filePath = filepath.Clean(filePath)
-		logger := NewFileZeroLogger(filePath, "./")
-		defer logger.Cleanup()
+		logger := NewFileLogger(&log, name)
 		defer func() {
-			err := os.Remove(filePath)
+			err := os.Remove(filepath.Clean(filePath + ".log"))
 			if err != nil {
 				return
 			}
 		}()
 
 		logger.Info("test: %s", "info")
-		data, err := os.ReadFile(filePath)
+		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
 		if err != nil {
 			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
@@ -122,19 +158,27 @@ func TestZeroLogger_Info_With_Args(t *testing.T) {
 
 func TestZeroLogger_Error(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
+		log := types.Log{
+			Dir:        "./",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     1,
+			LocalTime:  false,
+			Compress:   false,
+		}
+		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
 		filePath = filepath.Clean(filePath)
-		logger := NewFileZeroLogger(filePath, "./")
-		defer logger.Cleanup()
+		logger := NewFileLogger(&log, name)
 		defer func() {
-			err := os.Remove(filePath)
+			err := os.Remove(filepath.Clean(filePath + ".log"))
 			if err != nil {
 				return
 			}
 		}()
 
 		logger.Error(test, errors.New(test))
-		data, err := os.ReadFile(filePath)
+		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
 		if err != nil {
 			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
@@ -162,19 +206,27 @@ func TestZeroLogger_Error(t *testing.T) {
 
 func TestZeroLogger_Error_With_Args(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
+		log := types.Log{
+			Dir:        "./",
+			MaxSize:    1,
+			MaxBackups: 1,
+			MaxAge:     1,
+			LocalTime:  false,
+			Compress:   false,
+		}
+		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
 		filePath = filepath.Clean(filePath)
-		logger := NewFileZeroLogger(filePath, "./")
-		defer logger.Cleanup()
+		logger := NewFileLogger(&log, name)
 		defer func() {
-			err := os.Remove(filePath)
+			err := os.Remove(filepath.Clean(filePath + ".log"))
 			if err != nil {
 				return
 			}
 		}()
 
 		logger.Error("test: %s", errors.New(test), "error")
-		data, err := os.ReadFile(filePath)
+		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
 		if err != nil {
 			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
@@ -200,18 +252,18 @@ func TestZeroLogger_Error_With_Args(t *testing.T) {
 	})
 }
 
-func TestZeroLogger_Cleanup(t *testing.T) {
-	t.Run("Cleanup", func(t *testing.T) {
-		filePath := fmt.Sprintf("./_%d.log", time.Now().UTC().Unix())
-		filePath = filepath.Clean(filePath)
-		logger := NewFileZeroLogger(filePath, "./")
-		defer func() {
-			err := os.Remove(filePath)
-			if err != nil {
-				return
-			}
-		}()
+func TestNewFileLogger_PanicOnInvalidDir(t *testing.T) {
+	log := &types.Log{
+		Dir: string([]byte{0x00}),
+	}
 
-		logger.Cleanup()
-	})
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("NewFileLogger() did not panic on invalid dir")
+		} else {
+			t.Log(err)
+		}
+	}()
+
+	NewFileLogger(log, "test-module")
 }

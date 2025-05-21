@@ -1,6 +1,7 @@
 package module
 
 import (
+	e "errors"
 	"fmt"
 	"strings"
 
@@ -129,6 +130,30 @@ func ValidateMainFields(m *Module) error {
 
 	if m.Account == "" {
 		return errors.ErrEmptyAccountName
+	}
+
+	return nil
+}
+
+func ValidateLog(m *Module) error {
+	if m.Log == nil {
+		return nil
+	}
+
+	if m.Log.Dir == "" {
+		return e.New("log dir is required")
+	}
+
+	if m.Log.MaxSize <= 0 {
+		return e.New("log max size is required")
+	}
+
+	if m.Log.MaxBackups <= 0 {
+		return e.New("log max backups is required")
+	}
+
+	if m.Log.MaxAge <= 0 {
+		return e.New("log max age is required")
 	}
 
 	return nil

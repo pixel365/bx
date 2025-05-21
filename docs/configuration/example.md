@@ -6,8 +6,15 @@ version: "1.0.0"
 label: "stable"
 account: "test"
 buildDirectory: "./dist/test"
-logDirectory: "./logs/test"
 repository: "."
+
+log:
+  dir: "./logs"
+  maxSize: 10
+  maxBackups: 5
+  maxAge: 30
+  localTime: true
+  compress: true
 
 variables:
   structPath: "./examples/structure"
