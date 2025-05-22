@@ -36,7 +36,7 @@ import (
 // If any of these conditions are violated, the method returns an error with a detailed message.
 // If all validations pass, it returns nil.
 func (m *Module) IsValid() error {
-	if err := ValidateMainFields(m); err != nil {
+	if err := validateMainFields(m); err != nil {
 		return err
 	}
 
@@ -44,11 +44,11 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
-	if err := ValidateStages(m.Stages); err != nil {
+	if err := validateStages(m.Stages); err != nil {
 		return err
 	}
 
-	if err := ValidateRules(m.Ignore, "ignore"); err != nil {
+	if err := validateRules(m.Ignore, "ignore"); err != nil {
 		return err
 	}
 
@@ -84,7 +84,7 @@ func (m *Module) IsValid() error {
 		return err
 	}
 
-	if err := ValidateLog(m); err != nil {
+	if err := validateLog(m); err != nil {
 		return err
 	}
 
