@@ -4,8 +4,11 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/pixel365/bx/internal/types"
 
 	client2 "github.com/pixel365/bx/internal/client"
 
@@ -183,6 +186,42 @@ func Test_SessionId(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := sessionId(tt.client, tt.args.module, tt.args.cookies); got != tt.want {
 				t.Errorf("sessionId() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVersions(t *testing.T) {
+	type args struct {
+		client  client2.HTTPClient
+		module  *module2.Module
+		cookies []*http.Cookie
+	}
+	tests := []struct {
+		want    types.Versions
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{nil, "nil module", args{client: nil, module: nil}, true},
+		{
+			nil,
+			"nil cookies",
+			args{client: nil, module: &module2.Module{}, cookies: nil},
+			true,
+		},
+	}
+
+	ctx := context.Background()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Versions(ctx, tt.args.client, tt.args.module, tt.args.cookies)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Versions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Versions() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
