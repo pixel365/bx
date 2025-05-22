@@ -160,8 +160,8 @@ func TestValidateStages(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateStages(tt.args.m.Stages); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateStages() error = %v, wantErr %v", err, tt.wantErr)
+			if err := validateStages(tt.args.m.Stages); (err != nil) != tt.wantErr {
+				t.Errorf("validateStages() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -182,8 +182,8 @@ func TestValidateIgnore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateRules(tt.args.m, "ignore"); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateRules() error = %v, wantErr %v", err, tt.wantErr)
+			if err := validateRules(tt.args.m, "ignore"); (err != nil) != tt.wantErr {
+				t.Errorf("validateRules() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -504,8 +504,49 @@ func TestValidateLog(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateLog(tt.args.m); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateLog() error = %v, wantErr %v", err, tt.wantErr)
+			if err := validateLog(tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("validateLog() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_validateMainFields(t *testing.T) {
+	tests := []struct {
+		m       *Module
+		name    string
+		wantErr bool
+	}{
+		{&Module{}, "empty name", true},
+		{&Module{
+			Name: "some name",
+		}, "name contains space", true},
+		{&Module{
+			Name:    "name",
+			Version: "invalid version",
+		}, "invalid version", true},
+		{&Module{
+			Name:    "name",
+			Version: "1.0.0",
+			Account: "",
+		}, "empty account", true},
+		{&Module{
+			Name:    "name",
+			Version: "1.0.0",
+			Account: "acc",
+			Label:   types.VersionLabel("label"),
+		}, "invalid label", true},
+		{&Module{
+			Name:    "name",
+			Version: "1.0.0",
+			Account: "acc",
+			Label:   types.Beta,
+		}, "valid", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateMainFields(tt.m); (err != nil) != tt.wantErr {
+				t.Errorf("validateMainFields() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

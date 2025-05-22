@@ -12,7 +12,7 @@ import (
 	"github.com/pixel365/bx/internal/types"
 )
 
-func ValidateStages(stages []types.Stage) error {
+func validateStages(stages []types.Stage) error {
 	if len(stages) == 0 {
 		return errors.ErrInvalidStages
 	}
@@ -36,7 +36,7 @@ func ValidateStages(stages []types.Stage) error {
 			}
 		}
 
-		if err := ValidateRules(stage.Filter, fmt.Sprintf("stage [%d] filter", index)); err != nil {
+		if err := validateRules(stage.Filter, fmt.Sprintf("stage [%d] filter", index)); err != nil {
 			return err
 		}
 	}
@@ -44,7 +44,7 @@ func ValidateStages(stages []types.Stage) error {
 	return nil
 }
 
-func ValidateRules(rules []string, name string) error {
+func validateRules(rules []string, name string) error {
 	if len(rules) > 0 {
 		for index, rule := range rules {
 			if rule == "" {
@@ -109,7 +109,7 @@ func ValidateRun(m *Module) error {
 	return nil
 }
 
-func ValidateMainFields(m *Module) error {
+func validateMainFields(m *Module) error {
 	if m.Name == "" {
 		return errors.ErrEmptyModuleName
 	}
@@ -135,7 +135,7 @@ func ValidateMainFields(m *Module) error {
 	return nil
 }
 
-func ValidateLog(m *Module) error {
+func validateLog(m *Module) error {
 	if m.Log == nil {
 		return nil
 	}

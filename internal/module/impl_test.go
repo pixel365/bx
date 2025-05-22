@@ -14,19 +14,25 @@ import (
 var fakeCondType types.ChangelogConditionType = "fake"
 
 func TestModule_IsValid(t *testing.T) {
+	emptyRun := make(map[string][]string)
+	run := make(map[string][]string)
+	run["test"] = []string{"test"}
+
 	type fields struct {
 		Variables      map[string]string
-		Name           string
-		Version        string
-		Label          types.VersionLabel
+		Log            *types.Log
+		Run            map[string][]string
+		BuildDirectory string
 		Account        string
 		Repository     string
-		BuildDirectory string
+		Label          types.VersionLabel
 		LogDirectory   string
-		Stages         []types.Stage
-		Ignore         []string
+		Version        string
+		Name           string
 		Changelog      types.Changelog
 		Builds         types.Builds
+		Stages         []types.Stage
+		Ignore         []string
 	}
 	tests := []struct {
 		name    string
@@ -52,6 +58,7 @@ func TestModule_IsValid(t *testing.T) {
 			Builds: types.Builds{
 				Release: []string{"test"},
 			},
+			Run: run,
 		}, false},
 		{"invalid", fields{
 			Name:           "test",
@@ -69,6 +76,7 @@ func TestModule_IsValid(t *testing.T) {
 			},
 			Ignore:    []string{},
 			Variables: nil,
+			Run:       run,
 		}, true},
 		{"repository does not exists", fields{
 			Variables:      nil,
@@ -86,6 +94,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
+			Run:    run,
 		}, true},
 		{"valid sort value", fields{
 			Variables:      nil,
@@ -109,6 +118,7 @@ func TestModule_IsValid(t *testing.T) {
 			Builds: types.Builds{
 				Release: []string{"test"},
 			},
+			Run: run,
 		}, false},
 		{"valid stage filter", fields{
 			Variables:      nil,
@@ -133,6 +143,7 @@ func TestModule_IsValid(t *testing.T) {
 			Builds: types.Builds{
 				Release: []string{"test"},
 			},
+			Run: run,
 		}, false},
 		{"valid label", fields{
 			Variables:      nil,
@@ -158,6 +169,7 @@ func TestModule_IsValid(t *testing.T) {
 			Builds: types.Builds{
 				Release: []string{"test"},
 			},
+			Run: run,
 		}, false},
 		{"invalid label", fields{
 			Variables:      nil,
@@ -183,6 +195,116 @@ func TestModule_IsValid(t *testing.T) {
 			Builds: types.Builds{
 				Release: []string{"test"},
 			},
+			Run: run,
+		}, true},
+		{"invalid stage in last version", fields{
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Label:          types.Alpha,
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			Stages: []types.Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: types.Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: types.Changelog{
+				Sort: types.Asc,
+			},
+			Builds: types.Builds{
+				Release:     []string{"test"},
+				LastVersion: []string{"invalid stage"},
+			},
+			Run: run,
+		}, true},
+		{"invalid stage in release", fields{
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Label:          types.Alpha,
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			Stages: []types.Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: types.Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: types.Changelog{
+				Sort: types.Asc,
+			},
+			Builds: types.Builds{
+				Release:     []string{"invalid release stage"},
+				LastVersion: []string{"test"},
+			},
+			Run: run,
+		}, true},
+		{"empty run", fields{
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Label:          types.Alpha,
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			Stages: []types.Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: types.Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: types.Changelog{
+				Sort: types.Asc,
+			},
+			Builds: types.Builds{
+				Release:     []string{"test"},
+				LastVersion: []string{"test"},
+			},
+			Run: emptyRun,
+		}, true},
+		{"invalid log", fields{
+			Variables:      nil,
+			Name:           "test",
+			Version:        "1.0.0",
+			Label:          types.Alpha,
+			Account:        "tester",
+			Repository:     "",
+			BuildDirectory: "tester",
+			Stages: []types.Stage{
+				{
+					Name:               "test",
+					To:                 "tester",
+					ActionIfFileExists: types.Replace,
+					From:               []string{"./tester"},
+					Filter:             []string{"**/*.php"},
+				},
+			},
+			Ignore: []string{},
+			Changelog: types.Changelog{
+				Sort: types.Asc,
+			},
+			Builds: types.Builds{
+				Release:     []string{"test"},
+				LastVersion: []string{"test"},
+			},
+			Run: run,
+			Log: &types.Log{Dir: ""},
 		}, true},
 	}
 	for _, tt := range tests {
@@ -198,6 +320,8 @@ func TestModule_IsValid(t *testing.T) {
 				Ignore:         tt.fields.Ignore,
 				Repository:     tt.fields.Repository,
 				Builds:         tt.fields.Builds,
+				Run:            tt.fields.Run,
+				Log:            tt.fields.Log,
 			}
 			if err := m.IsValid(); (err != nil) != tt.wantErr {
 				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
