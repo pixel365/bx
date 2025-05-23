@@ -95,33 +95,13 @@ func CaptureOutput(f func()) string {
 
 	f()
 
-	err := w.Close()
-	if err != nil {
-		return ""
-	}
+	Cleanup(w, nil)
 
 	os.Stdout = stdout
 	var buf bytes.Buffer
 	_, _ = buf.ReadFrom(r)
 
 	return buf.String()
-}
-
-// ResultMessage prints a formatted message to standard output.
-//
-// If no additional arguments are provided, the format string is printed as-is
-// using fmt.Println. If arguments are provided, the function formats the string
-// using fmt.Printf.
-//
-// Parameters:
-//   - format: The string to print, which may include format verbs if arguments are supplied.
-//   - a: Optional variadic arguments to be used with format verbs in the format string.
-func ResultMessage(format string, a ...any) {
-	if len(a) == 0 {
-		fmt.Println(format)
-	} else {
-		fmt.Printf(format, a...)
-	}
 }
 
 // GetModulesDir returns the absolute path to the `.bx` directory located in the current working directory.
@@ -144,7 +124,14 @@ func DefaultYAML() string {
 version: "1.0.0"
 account: ""
 buildDirectory: "./dist/test"
-logDirectory: "./logs/test"
+
+log:
+  dir: "./logs"
+  maxSize: 10
+  maxBackups: 5
+  maxAge: 30
+  localTime: true
+  compress: true
 
 variables:
   structPath: "./examples/structure"
@@ -159,35 +146,12 @@ stages:
     from:
       - "{bitrix}/components"
       - "{local}/components"
-  - name: "templates"
-    to: "{install}/templates"
-    actionIfFileExists: "replace"
-    from:
-      - "{bitrix}/templates"
-      - "{local}/templates"
-  - name: "rootFiles"
-    to: "."
-    actionIfFileExists: "replace"
-    from:
-      - "{structPath}/simple-file.php"
-  - name: "testFiles"
-    to: "test"
-    actionIfFileExists: "replace"
-    from:
-      - "{structPath}/simple-file.php"
-    convertTo1251: false
 
 builds:
   release:
     - "components"
-    - "templates"
-    - "rootFiles"
-    - "testFiles"
   lastVersion:
     - "components"
-    - "templates"
-    - "rootFiles"
-    - "testFiles"
 
 ignore:
   - "**/*.log"

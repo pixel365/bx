@@ -4,8 +4,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pixel365/bx/internal/module"
-
-	"github.com/pixel365/bx/internal/helpers"
 )
 
 var (
@@ -55,7 +53,7 @@ func check(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	helpers.ResultMessage("ok")
+	println("ok")
 
 	return nil
 }

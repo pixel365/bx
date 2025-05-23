@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	errors2 "github.com/pixel365/bx/internal/errors"
+
 	"github.com/pixel365/bx/internal/types"
 )
 
@@ -31,7 +33,14 @@ func TestDefaultYAML(t *testing.T) {
 version: "1.0.0"
 account: ""
 buildDirectory: "./dist/test"
-logDirectory: "./logs/test"
+
+log:
+  dir: "./logs"
+  maxSize: 10
+  maxBackups: 5
+  maxAge: 30
+  localTime: true
+  compress: true
 
 variables:
   structPath: "./examples/structure"
@@ -46,35 +55,12 @@ stages:
     from:
       - "{bitrix}/components"
       - "{local}/components"
-  - name: "templates"
-    to: "{install}/templates"
-    actionIfFileExists: "replace"
-    from:
-      - "{bitrix}/templates"
-      - "{local}/templates"
-  - name: "rootFiles"
-    to: "."
-    actionIfFileExists: "replace"
-    from:
-      - "{structPath}/simple-file.php"
-  - name: "testFiles"
-    to: "test"
-    actionIfFileExists: "replace"
-    from:
-      - "{structPath}/simple-file.php"
-    convertTo1251: false
 
 builds:
   release:
     - "components"
-    - "templates"
-    - "rootFiles"
-    - "testFiles"
   lastVersion:
     - "components"
-    - "templates"
-    - "rootFiles"
-    - "testFiles"
 
 ignore:
   - "**/*.log"
@@ -164,10 +150,23 @@ func TestCheckContextDone(t *testing.T) {
 	})
 }
 
+func TestCheckContextNil(t *testing.T) {
+	t.Run("TestCheckContextNil", func(t *testing.T) {
+		err := CheckContext(nil) //nolint:staticcheck // SA1012: passing nil context is intentional
+		if err == nil {
+			t.Error("CheckContext() did not return an error")
+		}
+
+		if !errors.Is(err, errors2.ErrNilContext) {
+			t.Error("CheckContext() did not return an error")
+		}
+	})
+}
+
 func TestCaptureOutput(t *testing.T) {
 	t.Run("TestCaptureOutput", func(t *testing.T) {
 		output := CaptureOutput(func() {
-			ResultMessage("ok")
+			fmt.Println("ok")
 		})
 
 		if output != "ok\n" {
@@ -175,7 +174,7 @@ func TestCaptureOutput(t *testing.T) {
 		}
 
 		output = CaptureOutput(func() {
-			ResultMessage("%s\n", "ok string")
+			fmt.Println("ok string")
 		})
 
 		if output != "ok string\n" {
