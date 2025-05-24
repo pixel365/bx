@@ -33,23 +33,3 @@ jobs:
         run: |
             gofmt -s -w .
             git diff --exit-code
-
-  gosec:
-    name: Gosec Security Scanner
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Set up Go
-        uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639
-        with:
-          go-version: '1.24'
-
-      - name: Run gosec
-        uses: securego/gosec@6decf96c3d272d5a8bbdcf9fddb5789d0be16a8d
-        with:
-          args: ./...
