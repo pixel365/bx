@@ -5,9 +5,9 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]  # Покрытие всех веток
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]  # Проверка всех PR
 
 jobs:
   lint:
@@ -34,5 +34,22 @@ jobs:
             gofmt -s -w .
             git diff --exit-code
 
-      - name: Gosec Security Checker
+  gosec:
+    name: Gosec Security Scanner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24.3'
+
+      - name: Run gosec
         uses: securego/gosec@v2.22.4
+        with:
+          args: ./...
