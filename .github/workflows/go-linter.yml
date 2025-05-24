@@ -1,5 +1,8 @@
 name: Lint Go Code
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "main" ]
