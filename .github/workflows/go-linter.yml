@@ -5,9 +5,9 @@ permissions:
 
 on:
   push:
-    branches: [ "**" ]  # Покрытие всех веток
+    branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]  # Проверка всех PR
+    branches: [ "**" ]
 
 jobs:
   lint:
