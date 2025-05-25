@@ -34,3 +34,51 @@ func TestChangelog_EncodedFooter(t *testing.T) {
 		})
 	}
 }
+
+func TestChangelog_ApplyTransformation(t *testing.T) {
+	type fields struct {
+		Changelog Changelog
+	}
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		want   string
+		fields fields
+	}{
+		{"nil transformation", args{s: "raw string"}, "raw string", fields{Changelog: Changelog{}}},
+		{
+			"unknown type",
+			args{s: " raw string "},
+			"raw string",
+			fields{Changelog: Changelog{Transform: &[]TypeValue[TransformType, []string]{
+				{TransformType("unknown"), []string{""}},
+			}}},
+		},
+		{
+			"has prefix",
+			args{s: "feat: some feature"},
+			"some feature",
+			fields{Changelog: Changelog{Transform: &[]TypeValue[TransformType, []string]{
+				{StripPrefix, []string{"feat:"}},
+			}}},
+		},
+		{
+			"no prefix",
+			args{s: "fix: some feature"},
+			"fix: some feature",
+			fields{Changelog: Changelog{Transform: &[]TypeValue[TransformType, []string]{
+				{StripPrefix, []string{"feat:"}},
+			}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.fields.Changelog.ApplyTransformation(tt.args.s); got != tt.want {
+				t.Errorf("ApplyTransformation() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
