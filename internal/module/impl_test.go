@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pixel365/bx/internal/types/changelog"
+
 	"github.com/pixel365/bx/internal/callback"
 	errors2 "github.com/pixel365/bx/internal/errors"
 
@@ -29,7 +31,7 @@ func TestModule_IsValid(t *testing.T) {
 		LogDirectory   string
 		Version        string
 		Name           string
-		Changelog      types.Changelog
+		Changelog      changelog.Changelog
 		Builds         types.Builds
 		Stages         []types.Stage
 		Ignore         []string
@@ -112,7 +114,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -137,7 +139,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -163,7 +165,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -189,7 +191,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -215,7 +217,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -242,7 +244,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -269,7 +271,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -296,7 +298,7 @@ func TestModule_IsValid(t *testing.T) {
 				},
 			},
 			Ignore: []string{},
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				Sort: types.Asc,
 			},
 			Builds: types.Builds{
@@ -460,7 +462,7 @@ func TestModule_PasswordEnv(t *testing.T) {
 
 func TestModule_ValidateChangelog(t *testing.T) {
 	type fields struct {
-		Changelog      types.Changelog
+		Changelog      changelog.Changelog
 		Name           string
 		Version        string
 		Account        string
@@ -471,7 +473,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 	}
 
 	mod := fields{
-		Changelog:      types.Changelog{},
+		Changelog:      changelog.Changelog{},
 		Name:           "test",
 		Version:        "1.0.0",
 		Account:        "tester",
@@ -489,11 +491,11 @@ func TestModule_ValidateChangelog(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		fields  types.Changelog
+		fields  changelog.Changelog
 		wantErr bool
 	}{
-		{"empty", types.Changelog{}, false},
-		{"empty from type", types.Changelog{
+		{"empty", changelog.Changelog{}, false},
+		{"empty from type", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  "",
 				Value: "v1.0.0",
@@ -503,7 +505,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Value: "v2.0.0",
 			},
 		}, true},
-		{"empty from value", types.Changelog{
+		{"empty from value", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "",
@@ -513,7 +515,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Value: "v2.0.0",
 			},
 		}, true},
-		{"empty to type", types.Changelog{
+		{"empty to type", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -523,7 +525,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Value: "v2.0.0",
 			},
 		}, true},
-		{"empty to value", types.Changelog{
+		{"empty to value", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -533,7 +535,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Value: "",
 			},
 		}, true},
-		{"valid without conditions", types.Changelog{
+		{"valid without conditions", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -543,7 +545,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Value: "v2.0.0",
 			},
 		}, false},
-		{"empty condition", types.Changelog{
+		{"empty condition", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -561,7 +563,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, true},
-		{"invalid regex in condition", types.Changelog{
+		{"invalid regex in condition", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -579,7 +581,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, true},
-		{"invalid changelog sort", types.Changelog{
+		{"invalid changelog sort", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -597,7 +599,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 			},
 			Sort: "sort",
 		}, true},
-		{"fully valid", types.Changelog{
+		{"fully valid", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -614,7 +616,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, false},
-		{"invalid condition type", types.Changelog{
+		{"invalid condition type", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -631,7 +633,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				},
 			},
 		}, true},
-		{"empty condition values", types.Changelog{
+		{"empty condition values", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -668,7 +670,7 @@ func TestModule_ValidateChangelog_empty_repository(t *testing.T) {
 	t.Run("empty repository", func(t *testing.T) {
 		m := &Module{
 			Repository: "",
-			Changelog: types.Changelog{
+			Changelog: changelog.Changelog{
 				From: types.TypeValue[types.ChangelogType, string]{
 					Type:  types.Tag,
 					Value: "v1.0.0",

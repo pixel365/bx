@@ -3,6 +3,8 @@ package module
 import (
 	"sync"
 
+	"github.com/pixel365/bx/internal/types/changelog"
+
 	"github.com/pixel365/bx/internal/types"
 
 	"github.com/pixel365/bx/internal/callback"
@@ -20,7 +22,7 @@ type Module struct {
 	Name           string              `yaml:"name"`
 	Account        string              `yaml:"account"`
 	BuildDirectory string              `yaml:"buildDirectory,omitempty"`
-	Changelog      types.Changelog     `yaml:"changelog,omitempty"`
+	Changelog      changelog.Changelog `yaml:"changelog,omitempty"`
 	Builds         types.Builds        `yaml:"builds"`
 	Stages         []types.Stage       `yaml:"stages"`
 	Ignore         []string            `yaml:"ignore"`

@@ -3,7 +3,6 @@ package module
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/pixel365/bx/internal/interfaces"
@@ -212,44 +211,7 @@ func (m *Module) ValidateChangelog() error {
 		return nil
 	}
 
-	if err := changeLogFromToValidate(m.Changelog); err != nil {
-		return err
-	}
-
-	if m.Changelog.Condition.Type != "" {
-		if m.Changelog.Condition.Type != types.Include &&
-			m.Changelog.Condition.Type != types.Exclude {
-			return fmt.Errorf(
-				"changelog [%s] condition: type must be %s or %s",
-				m.Name,
-				types.Include,
-				types.Exclude,
-			)
-		}
-
-		if len(m.Changelog.Condition.Value) == 0 {
-			return errors.ErrChangelogConditionValue
-		}
-
-		for i, condition := range m.Changelog.Condition.Value {
-			if condition == "" {
-				return fmt.Errorf("condition [%d]: value is required", i)
-			}
-
-			_, err := regexp.Compile(condition)
-			if err != nil {
-				return fmt.Errorf("invalid condition [%d]: %w", i, err)
-			}
-		}
-	}
-
-	switch m.Changelog.Sort {
-	case "", types.Asc, types.Desc:
-	default:
-		return fmt.Errorf("changelog sort must be %s or %s", types.Asc, types.Desc)
-	}
-
-	return nil
+	return m.Changelog.IsValid()
 }
 
 // FindStage searches for a stage with the specified name in the module.
@@ -270,20 +232,4 @@ func (m *Module) FindStage(name string) (types.Stage, error) {
 	}
 
 	return types.Stage{}, fmt.Errorf("stage `%s` not found", name)
-}
-
-func changeLogFromToValidate(c types.Changelog) error {
-	if c.From.Value == "" || c.To.Value == "" {
-		return errors.ErrChangelogValue
-	}
-
-	if c.From.Type != types.Commit && c.From.Type != types.Tag {
-		return fmt.Errorf("changelog from: type must be %s or %s", types.Commit, types.Tag)
-	}
-
-	if c.To.Type != types.Commit && c.To.Type != types.Tag {
-		return fmt.Errorf("changelog to: type must be %s or %s", types.Commit, types.Tag)
-	}
-
-	return nil
 }

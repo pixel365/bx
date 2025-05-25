@@ -3,6 +3,8 @@ package module
 import (
 	"testing"
 
+	"github.com/pixel365/bx/internal/types/changelog"
+
 	"github.com/pixel365/bx/internal/types"
 )
 
@@ -85,7 +87,7 @@ func TestModule_GetChanges2(t *testing.T) {
 			changesListFunc = origChangesListFunc
 		}()
 
-		changesListFunc = func(_ string, _ types.Changelog) (*types.Changes, error) {
+		changesListFunc = func(_ string, _ changelog.Changelog) (*types.Changes, error) {
 			return &types.Changes{}, nil
 		}
 

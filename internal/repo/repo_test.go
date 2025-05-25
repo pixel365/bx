@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pixel365/bx/internal/types/changelog"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
@@ -55,7 +57,7 @@ func TestOpenRepository_Ok(t *testing.T) {
 func TestChangelogList(t *testing.T) {
 	type args struct {
 		repository string
-		rules      types.Changelog
+		rules      changelog.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -63,8 +65,8 @@ func TestChangelogList(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{"empty changelog", args{"", types.Changelog{}}, []string{}, false},
-		{"empty repository", args{"", types.Changelog{
+		{"empty changelog", args{"", changelog.Changelog{}}, []string{}, false},
+		{"empty repository", args{"", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -76,7 +78,7 @@ func TestChangelogList(t *testing.T) {
 			Sort:      "asc",
 			Condition: types.TypeValue[types.ChangelogConditionType, []string]{},
 		}}, nil, true},
-		{"empty from values", args{"", types.Changelog{
+		{"empty from values", args{"", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "",
@@ -114,7 +116,7 @@ func TestChangelogList_listOfCommits_Fail(t *testing.T) {
 		openRepositoryFunc = origOpenRepository
 	}()
 
-	listOfCommitsFunc = func(_ *git.Repository, _ types.Changelog, _ CommitFilterFunc) ([]string, error) {
+	listOfCommitsFunc = func(_ *git.Repository, _ changelog.Changelog, _ CommitFilterFunc) ([]string, error) {
 		return nil, errors.New("fail")
 	}
 
@@ -123,7 +125,7 @@ func TestChangelogList_listOfCommits_Fail(t *testing.T) {
 	}
 
 	t.Run("commits fail", func(t *testing.T) {
-		_, err := ChangelogList("", types.Changelog{
+		_, err := ChangelogList("", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -149,7 +151,7 @@ func TestChangelogList_listOfCommits_Ok_Asc(t *testing.T) {
 		openRepositoryFunc = origOpenRepository
 	}()
 
-	listOfCommitsFunc = func(_ *git.Repository, _ types.Changelog, _ CommitFilterFunc) ([]string, error) {
+	listOfCommitsFunc = func(_ *git.Repository, _ changelog.Changelog, _ CommitFilterFunc) ([]string, error) {
 		return []string{"commit 2", "commit 1"}, nil
 	}
 
@@ -158,7 +160,7 @@ func TestChangelogList_listOfCommits_Ok_Asc(t *testing.T) {
 	}
 
 	t.Run("commits fail", func(t *testing.T) {
-		commits, err := ChangelogList("", types.Changelog{
+		commits, err := ChangelogList("", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -189,7 +191,7 @@ func TestChangelogList_listOfCommits_Ok_Desc(t *testing.T) {
 		openRepositoryFunc = origOpenRepository
 	}()
 
-	listOfCommitsFunc = func(_ *git.Repository, _ types.Changelog, _ CommitFilterFunc) ([]string, error) {
+	listOfCommitsFunc = func(_ *git.Repository, _ changelog.Changelog, _ CommitFilterFunc) ([]string, error) {
 		return []string{"commit 1", "commit 2"}, nil
 	}
 
@@ -198,7 +200,7 @@ func TestChangelogList_listOfCommits_Ok_Desc(t *testing.T) {
 	}
 
 	t.Run("commits fail", func(t *testing.T) {
-		commits, err := ChangelogList("", types.Changelog{
+		commits, err := ChangelogList("", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -271,7 +273,7 @@ func Test_listOfCommits(t *testing.T) {
 	type args struct {
 		repository *git.Repository
 		filter     CommitFilterFunc
-		rules      types.Changelog
+		rules      changelog.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -299,7 +301,7 @@ func Test_listOfCommits(t *testing.T) {
 func Test_hashes(t *testing.T) {
 	type args struct {
 		repository *git.Repository
-		rules      types.Changelog
+		rules      changelog.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -331,7 +333,7 @@ func Test_hashes(t *testing.T) {
 func TestChangesList(t *testing.T) {
 	type args struct {
 		repository string
-		rules      types.Changelog
+		rules      changelog.Changelog
 	}
 	tests := []struct {
 		want    *types.Changes
@@ -364,7 +366,7 @@ func TestChangesList_nil_repository(t *testing.T) {
 			return nil, nil
 		}
 
-		_, err := ChangesList("", types.Changelog{})
+		_, err := ChangesList("", changelog.Changelog{})
 		if !errors.Is(err, errors2.ErrNilRepository) {
 			t.Errorf("ChangesList() error = %v, wantErr %v", err, errors2.ErrNilRepository)
 		}
@@ -382,11 +384,11 @@ func TestChangesList_hashes_fail(t *testing.T) {
 			return &git.Repository{}, nil
 		}
 
-		hashesFunc = func(_ *git.Repository, _ types.Changelog) (plumbing.Hash, plumbing.Hash, error) {
+		hashesFunc = func(_ *git.Repository, _ changelog.Changelog) (plumbing.Hash, plumbing.Hash, error) {
 			return plumbing.ZeroHash, plumbing.ZeroHash, errors.New("some error")
 		}
 
-		_, err := ChangesList("repo", types.Changelog{})
+		_, err := ChangesList("repo", changelog.Changelog{})
 		e := fmt.Errorf("repository [%s]: %w", "repo", errors.New("some error")).Error()
 		if err.Error() != e {
 			t.Errorf("ChangesList() error = %v, want %v", e, err)
