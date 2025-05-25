@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/pixel365/bx/internal/types/changelog"
+
 	errors2 "github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
@@ -92,7 +94,7 @@ func OpenRepository(repository string) (*git.Repository, error) {
 //   - Sorting is applied only if `rules.Sort` is explicitly set.
 //   - Uses `listOfCommits` with a predefined `CommitFilter` function.
 //   - The function does not modify the repository; it only queries commit history.
-func ChangelogList(repository string, rules types.Changelog) ([]string, error) {
+func ChangelogList(repository string, rules changelog.Changelog) ([]string, error) {
 	if rules.From.Type == "" || rules.To.Type == "" {
 		return []string{}, nil
 	}
@@ -194,7 +196,7 @@ func CommitFilter(
 //
 // Parameters:
 //   - repository: A pointer to a `git.Repository` instance.
-//   - rules: A `Changelog` struct defining the commit range and filtering rules.
+//   - changelog: A `Changelog` struct defining the commit range and filtering rules.
 //   - filter: A function that determines whether a commit message should be included.
 //
 // Returns:
@@ -222,14 +224,14 @@ func CommitFilter(
 //   - If an error occurs while iterating, it is wrapped and returned unless it's `ErrObjectNotFound`.
 func listOfCommits(
 	repository *git.Repository,
-	rules types.Changelog,
+	changelog changelog.Changelog,
 	filter CommitFilterFunc,
 ) ([]string, error) {
 	if repository == nil {
 		return nil, errors2.ErrNilRepository
 	}
 
-	startHash, endHash, err := hashes(repository, rules)
+	startHash, endHash, err := hashes(repository, changelog)
 	if err != nil {
 		return nil, fmt.Errorf("repository [%s]: %w", repository, err)
 	}
@@ -247,8 +249,9 @@ func listOfCommits(
 		}
 
 		m := strings.Split(c.Message, "\n")
-		if filter(m[0], rules.Condition) {
-			result = append(result, m[0])
+		if filter(m[0], changelog.Condition) {
+			transformed := changelog.ApplyTransformation(m[0])
+			result = append(result, transformed)
 		}
 		return nil
 	})
@@ -291,7 +294,7 @@ func listOfCommits(
 //   - Uses `repository.ResolveRevision` to translate references into commit hashes.
 func hashes(
 	repository *git.Repository,
-	rules types.Changelog,
+	rules changelog.Changelog,
 ) (plumbing.Hash, plumbing.Hash, error) {
 	if repository == nil {
 		return plumbing.ZeroHash, plumbing.ZeroHash, errors2.ErrNilRepository
@@ -355,7 +358,7 @@ func hashes(
 //   - If `to == nil`, the file was deleted.
 //   - Otherwise, the file was modified.
 //   - The function does not modify the repository; it only analyzes commit differences.
-func ChangesList(repository string, rules types.Changelog) (*types.Changes, error) {
+func ChangesList(repository string, rules changelog.Changelog) (*types.Changes, error) {
 	r, err := openRepositoryFunc(repository)
 	if err != nil {
 		return nil, err
