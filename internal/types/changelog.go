@@ -8,6 +8,7 @@ type Changelog struct {
 	Sort           SortingType                                 `yaml:"sort,omitempty"`
 	FooterTemplate string                                      `yaml:"footerTemplate,omitempty"`
 	Condition      TypeValue[ChangelogConditionType, []string] `yaml:"condition,omitempty"`
+	Transform      []TypeValue[TransformType, []string]        `yaml:"transform,omitempty"`
 }
 
 func (c *Changelog) EncodedFooter() (string, error) {

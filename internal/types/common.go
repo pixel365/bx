@@ -5,6 +5,7 @@ type ChangelogType string
 type ChangelogConditionType string
 type SortingType string
 type BuildType string
+type TransformType string
 
 const (
 	Replace        FileExistsAction = "replace"
@@ -19,6 +20,8 @@ const (
 
 	Asc  SortingType = "asc"
 	Desc SortingType = "desc"
+
+	StripPrefix TransformType = "stripPrefix"
 )
 
 type TypeValue[T1 any, T2 any] struct {
