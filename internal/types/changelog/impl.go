@@ -84,6 +84,10 @@ func transformValidate(transform *[]types.TypeValue[types.TransformType, []strin
 	}
 
 	for _, rule := range *transform {
+		if len(rule.Value) == 0 {
+			return fmt.Errorf("transform rule: value is empty")
+		}
+
 		switch rule.Type {
 		default:
 			return fmt.Errorf("transform rule: type must be %s", types.StripPrefix)

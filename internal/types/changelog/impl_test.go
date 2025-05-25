@@ -120,6 +120,9 @@ func Test_transformValidate(t *testing.T) {
 		{args{transform: &[]types.TypeValue[types.TransformType, []string]{
 			{Type: types.StripPrefix, Value: []string{"feat:"}},
 		}}, "valid transform", false},
+		{args{transform: &[]types.TypeValue[types.TransformType, []string]{
+			{Type: types.StripPrefix, Value: []string{}},
+		}}, "empty values", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
