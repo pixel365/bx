@@ -136,4 +136,4 @@ signs:
       - "${artifact}"
     stdin: "{{ .Env.GPG_PASSPHRASE }}"
     env:
-      - GPG_PASSPHRASE={{ .Env.GPG_PASSPHRASE }}
+      - GPG_PASSPHRASE
