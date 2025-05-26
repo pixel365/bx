@@ -1,0 +1,15 @@
+name: SLSA Provenance
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  provenance:
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.1.0
+    with:
+      upload-assets: true
