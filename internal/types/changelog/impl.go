@@ -28,16 +28,16 @@ func (c *Changelog) EncodedFooter() (string, error) {
 // ApplyTransformation applies the transformation rules defined in the Transform field
 // to the input string s.
 //
-// Currently, only the StripPrefix rule type is supported — if the string starts with
-// any of the specified prefixes, the prefix is removed.
+// Supported rule types:
+//   - StripPrefix: removes the prefix if the string starts with any of the specified values.
+//   - StripSuffix: removes the suffix if the string ends with any of the specified values.
 //
-// After all applicable transformations are applied, the result is trimmed of
+// After applying all applicable transformations, the result is trimmed of
 // leading and trailing whitespace using strings.TrimSpace.
 //
 // If no transformations are defined, the input string is returned unchanged.
 //
-// Returns:
-//   - The transformed and trimmed string
+// Returns the transformed and trimmed string.
 func (c *Changelog) ApplyTransformation(s string) string {
 	if c.Transform == nil {
 		return s
@@ -51,6 +51,13 @@ func (c *Changelog) ApplyTransformation(s string) string {
 			for _, prefix := range rule.Value {
 				if strings.HasPrefix(s, prefix) {
 					s = strings.TrimPrefix(s, prefix)
+					break
+				}
+			}
+		case types.StripSuffix:
+			for _, suffix := range rule.Value {
+				if strings.HasSuffix(s, suffix) {
+					s = strings.TrimSuffix(s, suffix)
 					break
 				}
 			}
@@ -91,7 +98,7 @@ func transformValidate(transform *[]types.TypeValue[types.TransformType, []strin
 		switch rule.Type {
 		default:
 			return fmt.Errorf("transform rule: type must be %s", types.StripPrefix)
-		case types.StripPrefix:
+		case types.StripPrefix, types.StripSuffix:
 			for _, value := range rule.Value {
 				if value == "" {
 					return fmt.Errorf("transform rule: value is required")

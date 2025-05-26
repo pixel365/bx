@@ -22,6 +22,7 @@ const (
 	Desc SortingType = "desc"
 
 	StripPrefix TransformType = "stripPrefix"
+	StripSuffix TransformType = "stripSuffix"
 )
 
 type TypeValue[T1 any, T2 any] struct {

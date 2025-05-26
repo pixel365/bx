@@ -86,6 +86,26 @@ func TestChangelog_ApplyTransformation(t *testing.T) {
 				}},
 			},
 		},
+		{
+			"no suffix",
+			args{s: "some feature fix"},
+			"some feature fix",
+			fields{
+				Changelog: Changelog{Transform: &[]types.TypeValue[types.TransformType, []string]{
+					{Type: types.StripSuffix, Value: []string{"feat"}},
+				}},
+			},
+		},
+		{
+			"has suffix",
+			args{s: "some feature fix"},
+			"some feature",
+			fields{
+				Changelog: Changelog{Transform: &[]types.TypeValue[types.TransformType, []string]{
+					{Type: types.StripSuffix, Value: []string{"fix"}},
+				}},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -123,6 +143,9 @@ func Test_transformValidate(t *testing.T) {
 		{args{transform: &[]types.TypeValue[types.TransformType, []string]{
 			{Type: types.StripPrefix, Value: []string{}},
 		}}, "empty values", true},
+		{args{transform: &[]types.TypeValue[types.TransformType, []string]{
+			{Type: types.StripSuffix, Value: []string{"feat:"}},
+		}}, "valid transform", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
