@@ -8,7 +8,7 @@ BX is a command-line tool for developers working on 1C-Bitrix platform modules. 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pixel365/bx)](https://goreportcard.com/report/github.com/pixel365/bx)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/pixel365/bx)](https://pkg.go.dev/github.com/pixel365/bx)
 [![Coverage](https://codecov.io/gh/pixel365/bx/branch/main/graph/badge.svg)](https://codecov.io/gh/pixel365/bx)
-[![OpenSSF](https://api.securityscorecards.dev/projects/github.com/pixel365/bx/badge)](https://securityscorecards.dev/viewer/?repo=github.com/pixel365/bx)
+[![OpenSSF](https://api.securityscorecards.dev/projects/github.com/pixel365/bx/badge)](https://securityscorecards.dev/viewer/?uri=github.com/pixel365/bx)
 [![Release](https://img.shields.io/github/v/release/pixel365/bx)](https://github.com/pixel365/bx/releases)
 ![License](https://img.shields.io/github/license/pixel365/bx)
 
