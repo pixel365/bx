@@ -122,9 +122,18 @@ release:
 
 signs:
   - artifacts: all
+    cmd: gpg
+    signature: "${artifact}.sig"
     args:
+      - --output
+      - "${signature}"
       - --armor
       - --detach-sign
       - --pinentry-mode
       - loopback
-    signature: "${artifact}.sig"
+      - --passphrase-fd
+      - "0"
+      - "${artifact}"
+    stdin: "{{ .Env.GPG_PASSPHRASE }}"
+    env:
+      - GPG_PASSPHRASE={{ .Env.GPG_PASSPHRASE }}
