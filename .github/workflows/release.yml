@@ -34,8 +34,23 @@ jobs:
           curl -sSL https://github.com/anchore/syft/releases/download/v1.20.0/syft_1.20.0_linux_amd64.tar.gz | tar -xzv -C syft
           sudo mv syft/syft /usr/local/bin/
 
+      - name: Import GPG key
+        run: |
+          export GPG_TTY=$(tty)
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+          gpg --list-secret-keys
+
       - name: Run GoReleaser
         run: |
           ./goreleaser/goreleaser release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_TTY: /dev/tty

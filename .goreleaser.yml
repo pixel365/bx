@@ -103,6 +103,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+      - "^Merge "
 
 checksum:
   ids:
@@ -112,3 +113,14 @@ checksum:
     - windows_arm64
     - darwin_amd64
     - darwin_arm64
+
+release:
+  github:
+    owner: pixel365
+    name: bx
+  draft: false
+
+signs:
+  - artifacts: all
+    args: ["--armor", "--detach-sign"]
+    signature: "${artifact}.sig"
