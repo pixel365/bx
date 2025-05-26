@@ -14,6 +14,8 @@ import (
 	"github.com/pixel365/bx/internal/types"
 )
 
+var handleStageFunc = handleStage
+
 // HandleStages executes a sequence of stages defined in the provided module.
 //
 // For each stage name in the `stages` slice, the corresponding stage is resolved from the module `m`
@@ -54,15 +56,11 @@ func HandleStages(
 		}
 	}
 
-	minWorkers := runtime.NumCPU() * 2
-	workersCount := m.SourceCount()
-	if workersCount < minWorkers {
-		workersCount = minWorkers
-	}
+	numWorkers := workersQty(m.SourceCount())
 
-	filesCh := make(chan types.Path, workersCount)
+	filesCh := make(chan types.Path, numWorkers)
 	errCh := make(chan error, 1)
-	logCh := make(chan string, workersCount)
+	logCh := make(chan string, numWorkers)
 
 	var stagesWorkersWg sync.WaitGroup
 	var copyFilesWg sync.WaitGroup
@@ -72,14 +70,14 @@ func HandleStages(
 
 	go logWorker(logCh, logger)
 
-	go copyWorkers(ctx, &copyFilesWg, filesCh, errCh, workersCount)
+	go copyWorkers(ctx, &copyFilesWg, filesCh, errCh, numWorkers)
 
 	for _, name := range stages {
 		stage, _ := m.FindStage(name)
 		stagesWorkersWg.Add(1)
 		go func(stage types.Stage) {
 			defer stagesWorkersWg.Done()
-			handleStage(ctx, filesCh, logCh, errCh, m, stage, dir, m.StageCallback)
+			handleStageFunc(ctx, filesCh, logCh, errCh, m, stage, dir, m.StageCallback)
 		}(stage)
 	}
 
@@ -243,4 +241,14 @@ func handleStage(
 			errCh <- fmt.Errorf("post-run callback failed for stage %s: %w", stage.Name, err)
 		}
 	}
+}
+
+func workersQty(n int) int {
+	minWorkers := runtime.NumCPU() * 2
+	cnt := n
+	if n < minWorkers {
+		cnt = minWorkers
+	}
+
+	return cnt
 }

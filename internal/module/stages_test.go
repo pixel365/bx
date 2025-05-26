@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"testing"
+
+	"github.com/pixel365/bx/internal/interfaces"
 
 	errors2 "github.com/pixel365/bx/internal/errors"
 	"github.com/pixel365/bx/internal/helpers"
@@ -28,6 +31,29 @@ func TestHandleStages_NoCustomCommandMode(t *testing.T) {
 		)
 		if !errors.Is(err, errors2.ErrNilModule) {
 			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
+		}
+	})
+}
+
+func TestHandleStages(t *testing.T) {
+	ctx := context.Background()
+	m := &Module{
+		Stages: []types.Stage{
+			{Name: "some-fake-stage"},
+		},
+	}
+
+	handleStageFuncOrig := handleStageFunc
+	handleStageFunc = func(ctx context.Context, filesCh chan<- types.Path, logCh chan<- string, errCh chan<- error,
+		module *Module, stage types.Stage, rootDir string, cb func(string) (interfaces.Runnable, error)) {
+	}
+	defer func() {
+		handleStageFunc = handleStageFuncOrig
+	}()
+
+	t.Run("no custom command mode", func(t *testing.T) {
+		if err := HandleStages(ctx, []string{""}, m, nil, true); err != nil {
+			t.Errorf("HandleStages() error = %v, want nil", err)
 		}
 	})
 }
@@ -82,4 +108,19 @@ func TestCheckStages_WithErrors(t *testing.T) {
 			t.Errorf("CheckStages() error = %v, want %v", err, expectedMsg)
 		}
 	}
+}
+
+func Test_workersQty(t *testing.T) {
+	cnt := runtime.NumCPU() * 2
+
+	t.Run("workersQty", func(t *testing.T) {
+		if workersQty(0) != cnt {
+			t.Errorf("workersQty got %v, want %v", workersQty(0), cnt)
+		}
+
+		n := cnt * 2
+		if workersQty(n) != n {
+			t.Errorf("workersQty got %v, want %v", workersQty(n), n)
+		}
+	})
 }
