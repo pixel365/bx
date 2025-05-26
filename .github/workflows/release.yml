@@ -36,7 +36,6 @@ jobs:
 
       - name: Import GPG key
         run: |
-          export GPG_TTY=$(tty)
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
@@ -53,4 +52,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GPG_TTY: /dev/tty
+          GPG_TTY: dummy

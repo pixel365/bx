@@ -122,5 +122,9 @@ release:
 
 signs:
   - artifacts: all
-    args: ["--armor", "--detach-sign"]
+    args:
+      - --armor
+      - --detach-sign
+      - --pinentry-mode
+      - loopback
     signature: "${artifact}.sig"
