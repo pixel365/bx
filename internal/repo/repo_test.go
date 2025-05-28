@@ -61,12 +61,12 @@ func TestChangelogList(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		args    args
 		want    []string
+		args    args
 		wantErr bool
 	}{
-		{"empty changelog", args{"", changelog.Changelog{}}, []string{}, false},
-		{"empty repository", args{"", changelog.Changelog{
+		{"empty changelog", []string{}, args{"", changelog.Changelog{}}, false},
+		{"empty repository", nil, args{"", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "v1.0.0",
@@ -77,8 +77,8 @@ func TestChangelogList(t *testing.T) {
 			},
 			Sort:      "asc",
 			Condition: types.TypeValue[types.ChangelogConditionType, []string]{},
-		}}, nil, true},
-		{"empty from values", args{"", changelog.Changelog{
+		}}, true},
+		{"empty from values", []string{}, args{"", changelog.Changelog{
 			From: types.TypeValue[types.ChangelogType, string]{
 				Type:  types.Tag,
 				Value: "",
@@ -89,7 +89,7 @@ func TestChangelogList(t *testing.T) {
 			},
 			Sort:      "asc",
 			Condition: types.TypeValue[types.ChangelogConditionType, []string]{},
-		}}, []string{}, false},
+		}}, false},
 	}
 
 	for _, tt := range tests {
@@ -277,11 +277,11 @@ func Test_listOfCommits(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		args    args
 		want    []string
+		args    args
 		wantErr bool
 	}{
-		{"nil repository", args{}, nil, true},
+		{"nil repository", nil, args{}, true},
 	}
 
 	for _, tt := range tests {

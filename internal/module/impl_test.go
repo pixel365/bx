@@ -24,17 +24,17 @@ func TestModule_IsValid(t *testing.T) {
 		Variables      map[string]string
 		Log            *types.Log
 		Run            map[string][]string
-		BuildDirectory string
+		Label          types.VersionLabel
 		Account        string
 		Repository     string
-		Label          types.VersionLabel
+		BuildDirectory string
 		LogDirectory   string
 		Version        string
 		Name           string
-		Changelog      changelog.Changelog
 		Builds         types.Builds
 		Stages         []types.Stage
 		Ignore         []string
+		Changelog      changelog.Changelog
 	}
 	tests := []struct {
 		name    string
@@ -462,7 +462,6 @@ func TestModule_PasswordEnv(t *testing.T) {
 
 func TestModule_ValidateChangelog(t *testing.T) {
 	type fields struct {
-		Changelog      changelog.Changelog
 		Name           string
 		Version        string
 		Account        string
@@ -470,6 +469,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 		LogDirectory   string
 		Repository     string
 		Stages         []types.Stage
+		Changelog      changelog.Changelog
 	}
 
 	mod := fields{

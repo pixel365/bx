@@ -316,6 +316,20 @@ func TestChangelog_IsValid(t *testing.T) {
 			},
 		},
 		}, "invalid condition", true},
+		{fields{Changelog: &Changelog{
+			From:      tv{Type: types.Tag, Value: "tag1"},
+			To:        tv{Type: types.Tag, Value: "tag2"},
+			Sort:      types.Desc,
+			MaxLength: 0,
+		},
+		}, "zero max length", false},
+		{fields{Changelog: &Changelog{
+			From:      tv{Type: types.Tag, Value: "tag1"},
+			To:        tv{Type: types.Tag, Value: "tag2"},
+			Sort:      types.Desc,
+			MaxLength: -1,
+		},
+		}, "negative max length", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -345,6 +359,29 @@ func Test_conditionValidate(t *testing.T) {
 			cond := types.TypeValue[types.ChangelogConditionType, []string](tt.condition)
 			if err := conditionValidate(cond); (err != nil) != tt.wantErr {
 				t.Errorf("conditionValidate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_truncate(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  string
+		max   int
+	}{
+		{"empty", "", "", 0},
+		{"negative max", "string", "string", -1},
+		{"positive max", "string", "str", 3},
+		{"with spaces", " st", " st", 3},
+		{"big max", "string", "string", 300},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := truncate(tt.value, tt.max); got != tt.want {
+				t.Errorf("truncate() = %v, want %v", got, tt.want)
 			}
 		})
 	}

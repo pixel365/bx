@@ -56,6 +56,8 @@ func (c *Changelog) ApplyTransformation(s string) string {
 		}
 	}
 
+	s = truncate(s, c.MaxLength)
+
 	return strings.TrimSpace(s)
 }
 
@@ -72,6 +74,10 @@ func (c *Changelog) IsValid() error {
 	case "", types.Asc, types.Desc:
 	default:
 		return fmt.Errorf("changelog sort must be %s or %s", types.Asc, types.Desc)
+	}
+
+	if c.MaxLength < 0 {
+		return fmt.Errorf("changelog max length must be non-negative")
 	}
 
 	return transformValidate(c.Transform)
@@ -183,4 +189,12 @@ func removeAll(s string, values []string) string {
 	}
 
 	return s
+}
+
+func truncate(s string, max int) string {
+	if max <= 0 || len(s) <= max {
+		return s
+	}
+
+	return s[:max]
 }
