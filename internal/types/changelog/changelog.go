@@ -11,4 +11,5 @@ type Changelog struct {
 	Sort           types.SortingType                                       `yaml:"sort,omitempty"`
 	FooterTemplate string                                                  `yaml:"footerTemplate,omitempty"`
 	Condition      types.TypeValue[types.ChangelogConditionType, []string] `yaml:"condition,omitempty"`
+	MaxLength      int                                                     `yaml:"maxLength,omitempty"`
 }

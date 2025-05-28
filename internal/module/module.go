@@ -15,18 +15,18 @@ type Module struct {
 	Run            map[string][]string `yaml:"run,omitempty"`
 	changes        *types.Changes      `yaml:"-"`
 	Log            *types.Log          `yaml:"log,omitempty"`
-	Repository     string              `yaml:"repository,omitempty"`
-	Label          types.VersionLabel  `yaml:"label,omitempty"`
+	Name           string              `yaml:"name"`
 	Version        string              `yaml:"version"`
 	Description    string              `yaml:"description,omitempty"`
-	Name           string              `yaml:"name"`
+	Repository     string              `yaml:"repository,omitempty"`
 	Account        string              `yaml:"account"`
 	BuildDirectory string              `yaml:"buildDirectory,omitempty"`
-	Changelog      changelog.Changelog `yaml:"changelog,omitempty"`
+	Label          types.VersionLabel  `yaml:"label,omitempty"`
 	Builds         types.Builds        `yaml:"builds"`
-	Stages         []types.Stage       `yaml:"stages"`
 	Ignore         []string            `yaml:"ignore"`
+	Stages         []types.Stage       `yaml:"stages"`
 	Callbacks      []callback.Callback `yaml:"callbacks,omitempty"`
+	Changelog      changelog.Changelog `yaml:"changelog,omitempty"`
 	mu             sync.Mutex          `yaml:"-"`
 	LastVersion    bool                `yaml:"-"`
 }
