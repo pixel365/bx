@@ -106,6 +106,26 @@ func TestChangelog_ApplyTransformation(t *testing.T) {
 				}},
 			},
 		},
+		{
+			"remove all",
+			args{s: " fix some fix feature    fix "},
+			"some feature",
+			fields{
+				Changelog: Changelog{Transform: &[]types.TypeValue[types.TransformType, []string]{
+					{Type: types.RemoveAll, Value: []string{"fix"}},
+				}},
+			},
+		},
+		{
+			"remove all skipped",
+			args{s: "some feature"},
+			"some feature",
+			fields{
+				Changelog: Changelog{Transform: &[]types.TypeValue[types.TransformType, []string]{
+					{Type: types.RemoveAll, Value: []string{"fix"}},
+				}},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -146,6 +166,9 @@ func Test_transformValidate(t *testing.T) {
 		{args{transform: &[]types.TypeValue[types.TransformType, []string]{
 			{Type: types.StripSuffix, Value: []string{"feat:"}},
 		}}, "valid transform", false},
+		{args{transform: &[]types.TypeValue[types.TransformType, []string]{
+			{Type: types.RemoveAll, Value: []string{"substring"}},
+		}}, "valid remove all", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
