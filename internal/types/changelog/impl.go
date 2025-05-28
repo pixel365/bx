@@ -48,19 +48,11 @@ func (c *Changelog) ApplyTransformation(s string) string {
 		default:
 			continue
 		case types.StripPrefix:
-			for _, prefix := range rule.Value {
-				if strings.HasPrefix(s, prefix) {
-					s = strings.TrimPrefix(s, prefix)
-					break
-				}
-			}
+			s = stripPrefix(s, rule.Value)
 		case types.StripSuffix:
-			for _, suffix := range rule.Value {
-				if strings.HasSuffix(s, suffix) {
-					s = strings.TrimSuffix(s, suffix)
-					break
-				}
-			}
+			s = stripSuffix(s, rule.Value)
+		case types.RemoveAll:
+			s = removeAll(s, rule.Value)
 		}
 	}
 
@@ -98,7 +90,7 @@ func transformValidate(transform *[]types.TypeValue[types.TransformType, []strin
 		switch rule.Type {
 		default:
 			return fmt.Errorf("transform rule: type must be %s", types.StripPrefix)
-		case types.StripPrefix, types.StripSuffix:
+		case types.StripPrefix, types.StripSuffix, types.RemoveAll:
 			for _, value := range rule.Value {
 				if value == "" {
 					return fmt.Errorf("transform rule: value is required")
@@ -153,4 +145,42 @@ func conditionValidate(condition types.TypeValue[types.ChangelogConditionType, [
 		}
 	}
 	return nil
+}
+
+func stripPrefix(s string, values []string) string {
+	for _, value := range values {
+		if strings.HasPrefix(s, value) {
+			s = strings.TrimPrefix(s, value)
+			break
+		}
+	}
+
+	return s
+}
+
+func stripSuffix(s string, values []string) string {
+	for _, value := range values {
+		if strings.HasSuffix(s, value) {
+			s = strings.TrimSuffix(s, value)
+			break
+		}
+	}
+
+	return s
+}
+
+func removeAll(s string, values []string) string {
+	changed := false
+	for _, value := range values {
+		if strings.Contains(s, value) {
+			changed = true
+			s = strings.ReplaceAll(s, value, "")
+		}
+	}
+
+	if changed {
+		s = strings.Join(strings.Fields(s), " ")
+	}
+
+	return s
 }

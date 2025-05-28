@@ -23,6 +23,7 @@ const (
 
 	StripPrefix TransformType = "stripPrefix"
 	StripSuffix TransformType = "stripSuffix"
+	RemoveAll   TransformType = "removeAll"
 )
 
 type TypeValue[T1 any, T2 any] struct {
