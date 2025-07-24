@@ -7,41 +7,32 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/helpers"
 )
 
 func TestValidateModuleName_NotExisting(t *testing.T) {
-	t.Run("TestValidateModuleName_NotExisting", func(t *testing.T) {
-		if err := ValidateModuleName("not_exists", "./"); err != nil {
-			t.Error(err)
-		}
-	})
+	err := ValidateModuleName("not_exists", "./")
+	require.NoError(t, err)
 }
 
 func TestValidateModuleName_Existing(t *testing.T) {
-	t.Run("TestValidateModuleName_Existing", func(t *testing.T) {
-		name := fmt.Sprintf("%s_%d", "testing", time.Now().Unix())
-		filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", ".", name))
-		if err != nil {
-			t.Error()
-		}
+	name := fmt.Sprintf("%s_%d", "testing", time.Now().Unix())
+	filePath, err := filepath.Abs(fmt.Sprintf("%s/%s.yaml", ".", name))
+	require.NoError(t, err)
 
-		err = os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-		if err != nil {
-			t.Error(err)
-		}
-		defer func(name string) {
-			err := os.Remove(name)
-			if err != nil {
-				t.Error(err)
-			}
-		}(filePath)
+	err = os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(name string) {
+		err := os.Remove(name)
+		require.NoError(t, err)
+	}(filePath)
 
-		err = ValidateModuleName(name, ".")
-		if err == nil {
-			t.Errorf("error expected")
-		}
-	})
+	err = ValidateModuleName(name, ".")
+	require.Error(t, err)
 }
 
 func TestValidateVersion(t *testing.T) {
@@ -66,11 +57,12 @@ func TestValidateVersion(t *testing.T) {
 		{name: "11", args: args{version: "1..1.1"}, wantErr: true},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateVersion(tt.args.version); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateVersion() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+		err := ValidateVersion(tt.args.version)
+		if tt.wantErr {
+			require.Error(t, err)
+			continue
+		}
+		require.NoError(t, err)
 	}
 }
 
@@ -89,11 +81,12 @@ func TestValidatePassword(t *testing.T) {
 		{"short", args{password: "123"}, true},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidatePassword(tt.args.password); (err != nil) != tt.wantErr {
-				t.Errorf("ValidatePassword() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+		err := ValidatePassword(tt.args.password)
+		if tt.wantErr {
+			require.Error(t, err)
+			continue
+		}
+		require.NoError(t, err)
 	}
 }
 
@@ -110,10 +103,11 @@ func TestValidateArgument(t *testing.T) {
 		{"fail", args{"?arg"}, false},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidateArgument(tt.args.arg); got != tt.want {
-				t.Errorf("ValidateArgument() = %v, want %v", got, tt.want)
-			}
-		})
+		res := ValidateArgument(tt.args.arg)
+		if tt.want {
+			require.True(t, res)
+			continue
+		}
+		require.False(t, res)
 	}
 }
