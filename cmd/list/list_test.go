@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/types"
 
 	"github.com/pixel365/bx/internal/client"
@@ -23,35 +26,13 @@ import (
 func TestNewListCommand(t *testing.T) {
 	cmd := NewListCommand()
 
-	t.Run("new list command", func(t *testing.T) {
-		if cmd == nil {
-			t.Error("cmd is nil")
-		}
-
-		if cmd.Use != "list" {
-			t.Errorf("new list command should use 'list', got '%s'", cmd.Use)
-		}
-
-		if cmd.Short != "List all module versions" {
-			t.Errorf("cmd.Short should be 'List all module versions' but got '%s'", cmd.Short)
-		}
-
-		if cmd.RunE == nil {
-			t.Error("cmd RunE should not be nil")
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-
-		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false")
-		}
-
-		if len(cmd.Aliases) > 0 {
-			t.Errorf("len(cmd.Aliases) should be 0 but got %d", len(cmd.Aliases))
-		}
-	})
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "list", cmd.Use)
+	assert.Equal(t, "List all module versions", cmd.Short)
+	assert.NotNil(t, cmd.RunE)
+	assert.True(t, cmd.HasFlags())
+	assert.False(t, cmd.HasSubCommands())
+	assert.Empty(t, cmd.Aliases)
 }
 
 func Test_list_ReadModuleFromFlags(t *testing.T) {
@@ -102,9 +83,7 @@ func Test_list_ReadModuleFromFlags(t *testing.T) {
 
 	cmd := NewListCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_list_auth(t *testing.T) {
@@ -155,9 +134,7 @@ func Test_list_auth(t *testing.T) {
 
 	cmd := NewListCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_list_versions(t *testing.T) {
@@ -218,7 +195,5 @@ func Test_list_versions(t *testing.T) {
 
 	cmd := NewListCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }

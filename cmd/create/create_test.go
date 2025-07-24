@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/interfaces"
 
 	"github.com/pixel365/bx/internal/helpers"
@@ -18,32 +21,12 @@ import (
 
 func Test_newCreateCommand(t *testing.T) {
 	cmd := NewCreateCommand()
-
-	t.Run("", func(t *testing.T) {
-		if cmd == nil {
-			t.Error("cmd is nil")
-		}
-
-		if cmd.Use != "create" {
-			t.Errorf("cmd.Use should be 'create' but got '%s'", cmd.Use)
-		}
-
-		if len(cmd.Aliases) != 1 {
-			t.Errorf("len(cmd.Aliases) should be 1 but got %d", len(cmd.Aliases))
-		}
-
-		if cmd.Aliases[0] != "c" {
-			t.Errorf("cmd.Aliases[0] should be 'c' but got '%s'", cmd.Aliases[0])
-		}
-
-		if cmd.Short != "Create a new module" {
-			t.Errorf("cmd.Short should be 'Create a new module' but got '%s'", cmd.Short)
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-	})
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "create", cmd.Use)
+	assert.Len(t, cmd.Aliases, 1)
+	assert.Equal(t, "c", cmd.Aliases[0])
+	assert.Equal(t, "Create a new module", cmd.Short)
+	assert.True(t, cmd.HasFlags())
 }
 
 func Test_create_empty_name(t *testing.T) {
@@ -61,12 +44,8 @@ func Test_create_empty_name(t *testing.T) {
 		moduleNameInputFunc = origModuleInputNameFunc
 	}()
 
-	t.Run("empty name", func(t *testing.T) {
-		err := create(cmd, []string{})
-		if err == nil {
-			t.Errorf("err is nil")
-		}
-	})
+	err := create(cmd, []string{})
+	require.Error(t, err)
 }
 
 func Test_create_not_empty_name(t *testing.T) {
@@ -84,12 +63,8 @@ func Test_create_not_empty_name(t *testing.T) {
 		moduleNameInputFunc = origModuleInputNameFunc
 	}()
 
-	t.Run("not empty name", func(t *testing.T) {
-		err := create(cmd, []string{})
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	err := create(cmd, []string{})
+	require.NoError(t, err)
 }
 
 func Test_create_not_empty_invalid_name(t *testing.T) {
@@ -107,12 +82,8 @@ func Test_create_not_empty_invalid_name(t *testing.T) {
 		moduleNameInputFunc = origModuleInputNameFunc
 	}()
 
-	t.Run("not empty name", func(t *testing.T) {
-		err := create(cmd, []string{})
-		if err == nil {
-			t.Error("err is nil")
-		}
-	})
+	err := create(cmd, []string{})
+	require.Error(t, err)
 }
 
 func Test_create_success(t *testing.T) {
@@ -128,12 +99,8 @@ func Test_create_success(t *testing.T) {
 	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", moduleName})
 
-	t.Run("success", func(t *testing.T) {
-		err := cmd.Execute()
-		if err != nil {
-			t.Errorf("err is nil but got %v", err)
-		}
-	})
+	err := cmd.Execute()
+	require.NoError(t, err)
 }
 
 func Test_create_module_exists(t *testing.T) {
@@ -158,10 +125,6 @@ func Test_create_module_exists(t *testing.T) {
 	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, "."))
 	cmd.SetArgs([]string{"--name", moduleName})
 
-	t.Run("module exists", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Errorf("err is nil but got %v", err)
-		}
-	})
+	err = cmd.Execute()
+	require.Error(t, err)
 }

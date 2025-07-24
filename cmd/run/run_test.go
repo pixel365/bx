@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/interfaces"
 
 	"github.com/pixel365/bx/internal/helpers"
@@ -20,35 +23,13 @@ import (
 func Test_newRunCommand(t *testing.T) {
 	cmd := NewRunCommand()
 
-	t.Run("subcommands", func(t *testing.T) {
-		if cmd == nil {
-			t.Errorf("cmd is nil")
-		}
-
-		if cmd.Use != "run" {
-			t.Errorf("cmd use = %v, want %v", cmd.Use, "run")
-		}
-
-		if cmd.RunE == nil {
-			t.Errorf("cmd.RunE is nil")
-		}
-
-		if len(cmd.Aliases) > 0 {
-			t.Errorf("len(cmd.Aliases) should be 0 but got %d", len(cmd.Aliases))
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-
-		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false but got true")
-		}
-
-		if !cmd.HasExample() {
-			t.Errorf("example is required")
-		}
-	})
+	assert.NotNil(t, cmd)
+	assert.NotNil(t, cmd.RunE)
+	assert.Equal(t, "run", cmd.Use)
+	assert.Empty(t, cmd.Aliases)
+	assert.True(t, cmd.HasFlags())
+	assert.False(t, cmd.HasSubCommands())
+	assert.True(t, cmd.HasExample())
 }
 
 func Test_run_NoCommandSpecifiedError(t *testing.T) {
@@ -57,9 +38,8 @@ func Test_run_NoCommandSpecifiedError(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -81,9 +61,7 @@ func Test_run_NoCommandSpecifiedError(t *testing.T) {
 
 	cmd := NewRunCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_run_IsValid(t *testing.T) {
@@ -92,14 +70,11 @@ func Test_run_IsValid(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
-		if err != nil {
-			t.Error(err)
-		}
+		require.NoError(t, err)
 	}(filePath)
 
 	originalReadModule := readModuleFromFlagsFunc
@@ -117,9 +92,7 @@ func Test_run_IsValid(t *testing.T) {
 	cmd := NewRunCommand()
 	cmd.SetArgs([]string{"--cmd", "testCommand"})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_run_HandleStages(t *testing.T) {
@@ -128,14 +101,11 @@ func Test_run_HandleStages(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
-		if err != nil {
-			t.Error(err)
-		}
+		require.NoError(t, err)
 	}(filePath)
 
 	originalReadModule := readModuleFromFlagsFunc
@@ -171,9 +141,7 @@ func Test_run_HandleStages(t *testing.T) {
 	cmd := NewRunCommand()
 	cmd.SetArgs([]string{"--cmd", "testCommand"})
 	err = cmd.Execute()
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 }
 
 func Test_run_readModuleFromFlags_failed(t *testing.T) {
@@ -187,7 +155,6 @@ func Test_run_readModuleFromFlags_failed(t *testing.T) {
 
 	cmd := NewRunCommand()
 	cmd.SetArgs([]string{"--cmd", "testCommand"})
-	if err := cmd.Execute(); err == nil {
-		t.Errorf("err is nil")
-	}
+	err := cmd.Execute()
+	require.Error(t, err)
 }

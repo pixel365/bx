@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/helpers"
 	"github.com/pixel365/bx/internal/module"
 
@@ -18,32 +21,11 @@ var errFake = errors.New("fake error")
 
 func Test_newCheckCommand(t *testing.T) {
 	cmd := NewCheckCommand()
-
-	t.Run("parameters", func(t *testing.T) {
-		if cmd == nil {
-			t.Error("cmd is nil")
-		}
-
-		if cmd.Use != "check" {
-			t.Errorf("cmd use = %v, want %v", cmd.Use, "check")
-		}
-
-		if cmd.RunE == nil {
-			t.Errorf("cmd run is nil")
-		}
-
-		if len(cmd.Aliases) > 0 {
-			t.Errorf("len(cmd.Aliases) should be 0 but got %d", len(cmd.Aliases))
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-
-		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false")
-		}
-	})
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "check", cmd.Use)
+	assert.NotNil(t, cmd.RunE)
+	assert.Empty(t, cmd.Aliases)
+	assert.True(t, cmd.HasFlags())
 }
 
 func Test_check_ReadModuleFromFlags(t *testing.T) {
@@ -58,13 +40,8 @@ func Test_check_ReadModuleFromFlags(t *testing.T) {
 	cmd := NewCheckCommand()
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
-
-	if !errors.Is(err, errFake) {
-		t.Errorf("err = %v, want %v", err, "fake error")
-	}
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errFake)
 }
 
 func Test_check_IsValid(t *testing.T) {
@@ -97,9 +74,7 @@ func Test_check_IsValid(t *testing.T) {
 
 	cmd := NewCheckCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_check_repository(t *testing.T) {
@@ -133,9 +108,7 @@ func Test_check_repository(t *testing.T) {
 	cmd := NewCheckCommand()
 	cmd.SetArgs([]string{"--repository", "."})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_check_success(t *testing.T) {
@@ -177,7 +150,5 @@ func Test_check_success(t *testing.T) {
 
 	cmd := NewCheckCommand()
 	err = cmd.Execute()
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 }

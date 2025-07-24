@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/types"
 
 	"github.com/pixel365/bx/internal/client"
@@ -20,67 +23,31 @@ import (
 func TestNewLabelCommand(t *testing.T) {
 	cmd := NewLabelCommand()
 
-	t.Run("new label", func(t *testing.T) {
-		if cmd == nil {
-			t.Error("cmd is nil")
-		}
-
-		if cmd.Use != "label" {
-			t.Errorf("cmd use = %v, want %v", cmd.Use, "label")
-		}
-
-		if cmd.Short != "Change module label" {
-			t.Errorf("cmd short = %v, want %v", cmd.Short, "Change module label")
-		}
-
-		if cmd.RunE == nil {
-			t.Error("cmd RunE should not be nil")
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-
-		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false")
-		}
-
-		if len(cmd.Aliases) > 0 {
-			t.Errorf("len(cmd.Aliases) should be 0 but got %d", len(cmd.Aliases))
-		}
-	})
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "label", cmd.Use)
+	assert.Equal(t, "Change module label", cmd.Short)
+	assert.NotNil(t, cmd.RunE)
+	assert.True(t, cmd.HasFlags())
+	assert.False(t, cmd.HasSubCommands())
+	assert.Empty(t, cmd.Aliases)
 }
 
 func TestLabelCommand_no_args(t *testing.T) {
 	cmd := NewLabelCommand()
 	cmd.SetArgs([]string{})
+	err := cmd.Execute()
 
-	t.Run("no args", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Error("Execute() should return an error")
-		}
-
-		if err.Error() != "label is required" {
-			t.Errorf("error = %v, want %v", err, "label is required")
-		}
-	})
+	require.Error(t, err)
+	assert.Equal(t, "label is required", err.Error())
 }
 
 func TestLabelCommand_invalid_label(t *testing.T) {
 	cmd := NewLabelCommand()
 	cmd.SetArgs([]string{"some label"})
+	err := cmd.Execute()
 
-	t.Run("invalid label", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Error("Execute() should return an error")
-		}
-
-		if !errors.Is(err, errors2.ErrInvalidLabel) {
-			t.Errorf("error = %v, want %v", err, errors2.ErrInvalidLabel)
-		}
-	})
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errors2.ErrInvalidLabel)
 }
 
 func TestLabelCommand_valid_label(t *testing.T) {
@@ -113,12 +80,8 @@ func TestLabelCommand_valid_label(t *testing.T) {
 		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
-	t.Run("valid label", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Error("Execute() should return an error")
-		}
-	})
+	err := cmd.Execute()
+	require.Error(t, err)
 }
 
 func TestLabelCommand_valid_label2(t *testing.T) {
@@ -134,12 +97,8 @@ func TestLabelCommand_valid_label2(t *testing.T) {
 		readModuleFromFlagsFunc = originalReadModule
 	}()
 
-	t.Run("valid label", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Error("Execute() should return an error")
-		}
-	})
+	err := cmd.Execute()
+	require.Error(t, err)
 }
 
 func TestLabelCommand_valid_label3(t *testing.T) {
@@ -163,12 +122,8 @@ func TestLabelCommand_valid_label3(t *testing.T) {
 		inputPasswordFunc = originalInputPasswordFunc
 	}()
 
-	t.Run("valid label", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Error("Execute() should return an error")
-		}
-	})
+	err := cmd.Execute()
+	require.Error(t, err)
 }
 
 func TestLabelCommand_change_labels(t *testing.T) {
@@ -219,10 +174,7 @@ func TestLabelCommand_change_labels(t *testing.T) {
 	defer func() {
 		authFunc = originalAuthFunc
 	}()
-	t.Run("change labels", func(t *testing.T) {
-		err := cmd.Execute()
-		if err == nil {
-			t.Error("Execute() should return an error")
-		}
-	})
+
+	err := cmd.Execute()
+	require.Error(t, err)
 }

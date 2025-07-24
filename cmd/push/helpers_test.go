@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/client"
 
 	"github.com/spf13/cobra"
@@ -24,9 +26,8 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -66,9 +67,7 @@ func Test_push_ReadModuleFromFlags(t *testing.T) {
 
 	cmd := NewPushCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_invalid_Version(t *testing.T) {
@@ -77,9 +76,8 @@ func Test_push_invalid_Version(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -120,9 +118,7 @@ func Test_push_invalid_Version(t *testing.T) {
 	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--version", "testingVersion"})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_auth(t *testing.T) {
@@ -131,9 +127,8 @@ func Test_push_auth(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -173,9 +168,7 @@ func Test_push_auth(t *testing.T) {
 
 	cmd := NewPushCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_upload(t *testing.T) {
@@ -184,9 +177,8 @@ func Test_push_upload(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -235,9 +227,7 @@ func Test_push_upload(t *testing.T) {
 
 	cmd := NewPushCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_upload(t *testing.T) {
@@ -285,9 +275,8 @@ func Test_push_valid_Version(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -328,9 +317,7 @@ func Test_push_valid_Version(t *testing.T) {
 	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--version", "1.0.0"})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_valid_label(t *testing.T) {
@@ -339,9 +326,8 @@ func Test_push_valid_label(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -373,9 +359,7 @@ func Test_push_valid_label(t *testing.T) {
 	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--label", "stable"})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_invalid_label(t *testing.T) {
@@ -384,9 +368,8 @@ func Test_push_invalid_label(t *testing.T) {
 	filePath = filepath.Clean(filePath)
 
 	err := os.WriteFile(filePath, []byte(helpers.DefaultYAML()), 0600)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	defer func(name string) {
 		err := os.Remove(name)
 		if err != nil {
@@ -418,9 +401,7 @@ func Test_push_invalid_label(t *testing.T) {
 	cmd := NewPushCommand()
 	cmd.SetArgs([]string{"--label", "some label"})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_invalid_module(t *testing.T) {
@@ -435,9 +416,7 @@ func Test_push_invalid_module(t *testing.T) {
 
 	cmd := NewPushCommand()
 	err := cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_push_invalid_input(t *testing.T) {
@@ -460,7 +439,5 @@ func Test_push_invalid_input(t *testing.T) {
 
 	cmd := NewPushCommand()
 	err := cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }

@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/interfaces"
 	"github.com/pixel365/bx/internal/types"
 
@@ -35,40 +38,14 @@ func (m *FakeFailBuilder) Cleanup()                          {}
 
 func Test_newBuildCommand(t *testing.T) {
 	cmd := NewBuildCommand()
-
-	t.Run("parameters", func(t *testing.T) {
-		if cmd == nil {
-			t.Error("cmd is nil")
-		}
-
-		if cmd.Use != "build" {
-			t.Errorf("cmd use = %v, want %v", cmd.Use, "build")
-		}
-
-		if cmd.Short != "Build a module" {
-			t.Errorf("cmd short = %v, want %v", cmd.Short, "Build a module")
-		}
-
-		if len(cmd.Aliases) != 1 {
-			t.Errorf("len(cmd.Aliases) = %v, want %v", len(cmd.Aliases), 1)
-		}
-
-		if cmd.Aliases[0] != "b" {
-			t.Errorf("cmd.Aliases[0] = %v, want %v", cmd.Aliases[0], "b")
-		}
-
-		if !cmd.HasFlags() {
-			t.Errorf("cmd.HasFlags() should be true")
-		}
-
-		if cmd.HasSubCommands() {
-			t.Errorf("cmd.HasSubCommands() should be false")
-		}
-
-		if cmd.RunE == nil {
-			t.Errorf("cmd.RunE is nil")
-		}
-	})
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "build", cmd.Use)
+	assert.Equal(t, "Build a module", cmd.Short)
+	assert.Len(t, cmd.Aliases, 1)
+	assert.Equal(t, "b", cmd.Aliases[0])
+	assert.True(t, cmd.HasFlags())
+	assert.False(t, cmd.HasSubCommands())
+	assert.NotNil(t, cmd.RunE)
 }
 
 func Test_build_IsValid(t *testing.T) {
@@ -98,9 +75,7 @@ func Test_build_IsValid(t *testing.T) {
 
 	cmd := NewBuildCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_build_success(t *testing.T) {
@@ -141,9 +116,7 @@ func Test_build_success(t *testing.T) {
 	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--last", "--description", "some description"})
 	err = cmd.Execute()
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 }
 
 func Test_build_fail(t *testing.T) {
@@ -183,9 +156,7 @@ func Test_build_fail(t *testing.T) {
 
 	cmd := NewBuildCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_build_invalid_version(t *testing.T) {
@@ -226,9 +197,7 @@ func Test_build_invalid_version(t *testing.T) {
 	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--version", " invalid module version "})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_build_valid_version(t *testing.T) {
@@ -269,9 +238,7 @@ func Test_build_valid_version(t *testing.T) {
 	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--version", "1.0.0"})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_build_repository(t *testing.T) {
@@ -312,9 +279,7 @@ func Test_build_repository(t *testing.T) {
 	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--repository", "."})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_build_invalid_last(t *testing.T) {
@@ -363,9 +328,7 @@ func Test_build_invalid_last(t *testing.T) {
 	cmd := NewBuildCommand()
 	cmd.SetArgs([]string{"--last", "."})
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
 
 func Test_build_read_module_error(t *testing.T) {
@@ -395,7 +358,5 @@ func Test_build_read_module_error(t *testing.T) {
 
 	cmd := NewBuildCommand()
 	err = cmd.Execute()
-	if err == nil {
-		t.Errorf("err is nil")
-	}
+	require.Error(t, err)
 }
