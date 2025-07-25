@@ -1,8 +1,14 @@
 package types
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestChanges_IsChangedFile(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		Added    []string
 		Modified []string
@@ -41,14 +47,19 @@ func TestChanges_IsChangedFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			o := &Changes{
 				Added:    tt.fields.Added,
 				Modified: tt.fields.Modified,
 				Deleted:  tt.fields.Deleted,
 				Moved:    tt.fields.Moved,
 			}
-			if got := o.IsChangedFile(tt.args.path); got != tt.want {
-				t.Errorf("IsChangedFile() = %v, want %v", got, tt.want)
+			got := o.IsChangedFile(tt.args.path)
+			if tt.want {
+				assert.True(t, got)
+			} else {
+				assert.False(t, got)
 			}
 		})
 	}

@@ -1,8 +1,16 @@
 package types
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestPrompt_Input(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		Value string
 	}
@@ -27,20 +35,21 @@ func TestPrompt_Input(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			p := NewPrompt()
 			p.Value = tt.fields.Value
-			if err := p.Input(tt.args.title, tt.args.validator); (err != nil) != tt.wantErr {
-				t.Errorf("Input() error = %v, wantErr %v", err, tt.wantErr)
+			err := p.Input(tt.args.title, tt.args.validator)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestNewPrompt(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		p := NewPrompt()
-		if p.GetValue() != "" {
-			t.Errorf("NewPrompt.Value = %v, want %v", p.GetValue(), "")
-		}
-	})
+	p := NewPrompt()
+	assert.Empty(t, p.GetValue())
 }

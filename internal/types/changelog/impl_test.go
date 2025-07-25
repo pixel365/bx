@@ -4,12 +4,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/errors"
 
 	"github.com/pixel365/bx/internal/types"
 )
 
 func TestChangelog_EncodedFooter(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		FooterTemplate string
 	}
@@ -27,22 +32,27 @@ func TestChangelog_EncodedFooter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			c := &Changelog{
 				FooterTemplate: tt.fields.FooterTemplate,
 			}
+
 			got, err := c.EncodedFooter()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EncodedFooter() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if got != tt.want {
-				t.Errorf("EncodedFooter() got = %v, want %v", got, tt.want)
-			}
+
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestChangelog_ApplyTransformation(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		Changelog Changelog
 	}
@@ -129,14 +139,17 @@ func TestChangelog_ApplyTransformation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.fields.Changelog.ApplyTransformation(tt.args.s); got != tt.want {
-				t.Errorf("ApplyTransformation() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			got := tt.fields.Changelog.ApplyTransformation(tt.args.s)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func Test_transformValidate(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		transform *[]types.TypeValue[types.TransformType, []string]
 	}
@@ -172,14 +185,21 @@ func Test_transformValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := transformValidate(tt.args.transform); (err != nil) != tt.wantErr {
-				t.Errorf("transformValidate() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+
+			err := transformValidate(tt.args.transform)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_changeLogFromToValidate(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		c *Changelog
 	}
@@ -268,17 +288,21 @@ func Test_changeLogFromToValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := changeLogFromToValidate(tt.args.c)
-			if (err == nil && tt.wantErr != nil) || (err != nil && tt.wantErr == nil) {
-				t.Errorf("expected error: %v, got: %v", tt.wantErr, err)
-			} else if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				t.Errorf("unexpected error.\n want: %q\n  got: %q", tt.wantErr.Error(), err.Error())
+			if tt.wantErr != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestChangelog_IsValid(t *testing.T) {
+	t.Parallel()
+
 	type tv = types.TypeValue[types.ChangelogType, string]
 	type fields struct {
 		Changelog *Changelog
@@ -333,14 +357,21 @@ func TestChangelog_IsValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.fields.Changelog.IsValid(); (err != nil) != tt.wantErr {
-				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+
+			err := tt.fields.Changelog.IsValid()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_conditionValidate(t *testing.T) {
+	t.Parallel()
+
 	type tv types.TypeValue[types.ChangelogConditionType, []string]
 	tests := []struct {
 		name      string
@@ -356,15 +387,23 @@ func Test_conditionValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			cond := types.TypeValue[types.ChangelogConditionType, []string](tt.condition)
-			if err := conditionValidate(cond); (err != nil) != tt.wantErr {
-				t.Errorf("conditionValidate() error = %v, wantErr %v", err, tt.wantErr)
+			err := conditionValidate(cond)
+
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_truncate(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		value string
@@ -380,9 +419,10 @@ func Test_truncate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := truncate(tt.value, tt.max); got != tt.want {
-				t.Errorf("truncate() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			got := truncate(tt.value, tt.max)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
