@@ -36,6 +36,8 @@ func TestValidateModuleName_Existing(t *testing.T) {
 }
 
 func TestValidateVersion(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		version string
 	}
@@ -57,16 +59,22 @@ func TestValidateVersion(t *testing.T) {
 		{name: "11", args: args{version: "1..1.1"}, wantErr: true},
 	}
 	for _, tt := range tests {
-		err := ValidateVersion(tt.args.version)
-		if tt.wantErr {
-			require.Error(t, err)
-			continue
-		}
-		require.NoError(t, err)
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := ValidateVersion(tt.args.version)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
 }
 
 func TestValidatePassword(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		password string
 	}
@@ -81,16 +89,22 @@ func TestValidatePassword(t *testing.T) {
 		{"short", args{password: "123"}, true},
 	}
 	for _, tt := range tests {
-		err := ValidatePassword(tt.args.password)
-		if tt.wantErr {
-			require.Error(t, err)
-			continue
-		}
-		require.NoError(t, err)
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := ValidatePassword(tt.args.password)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
 }
 
 func TestValidateArgument(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		arg string
 	}
@@ -103,11 +117,15 @@ func TestValidateArgument(t *testing.T) {
 		{"fail", args{"?arg"}, false},
 	}
 	for _, tt := range tests {
-		res := ValidateArgument(tt.args.arg)
-		if tt.want {
-			require.True(t, res)
-			continue
-		}
-		require.False(t, res)
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := ValidateArgument(tt.args.arg)
+			if tt.want {
+				require.True(t, res)
+			} else {
+				require.False(t, res)
+			}
+		})
 	}
 }
