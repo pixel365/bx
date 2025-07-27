@@ -4,9 +4,11 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pixel365/bx/internal/types"
 
@@ -16,6 +18,8 @@ import (
 )
 
 func Test_Authorization(t *testing.T) {
+	t.Parallel()
+
 	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
@@ -48,27 +52,26 @@ func Test_Authorization(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Authenticate(tt.client, tt.args.login, tt.args.password)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			t.Parallel()
 
-			if len(got) != len(tt.want) {
-				t.Errorf("Authenticate() got = %v, want %v", got, tt.want)
-				return
+			got, err := Authenticate(tt.client, tt.args.login, tt.args.password)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 
 			for i := range got {
-				if got[i].Name != tt.want[i].Name || got[i].Value != tt.want[i].Value {
-					t.Errorf("Authenticate() got = %v, want %v", got[i], tt.want[i])
-				}
+				assert.Equal(t, tt.want[i].Name, got[i].Name)
+				assert.Equal(t, tt.want[i].Value, got[i].Value)
 			}
 		})
 	}
 }
 
 func Test_UploadZIP(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
@@ -110,14 +113,21 @@ func Test_UploadZIP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := UploadZIP(ctx, tt.client, tt.args.module, tt.args.cookies); (err != nil) != tt.wantErr {
-				t.Errorf("UploadZIP() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+
+			err := UploadZIP(ctx, tt.client, tt.args.module, tt.args.cookies)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_UploadZIP_InvalidZipPath(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	origGetSession := getSessionFunc
 	defer func() { getSessionFunc = origGetSession }()
@@ -136,20 +146,18 @@ func Test_UploadZIP_InvalidZipPath(t *testing.T) {
 		return resp, nil
 	}}
 
-	t.Run("", func(t *testing.T) {
-		err := UploadZIP(
-			ctx,
-			client,
-			&module2.Module{Name: "fake-name"},
-			[]*http.Cookie{{Name: "foo", Value: "bar"}},
-		)
-		if err == nil {
-			t.Error("expected error")
-		}
-	})
+	err := UploadZIP(
+		ctx,
+		client,
+		&module2.Module{Name: "fake-name"},
+		[]*http.Cookie{{Name: "foo", Value: "bar"}},
+	)
+	require.Error(t, err)
 }
 
 func Test_SessionId(t *testing.T) {
+	t.Parallel()
+
 	client := &client2.MockHttpClient{DoFunc: func(req *http.Request) (*http.Response, error) {
 		resp := &http.Response{
 			StatusCode: http.StatusOK,
@@ -184,14 +192,17 @@ func Test_SessionId(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sessionId(tt.client, tt.args.module, tt.args.cookies); got != tt.want {
-				t.Errorf("sessionId() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			got := sessionId(tt.client, tt.args.module, tt.args.cookies)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestVersions(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		client  client2.HTTPClient
 		module  *module2.Module
@@ -215,14 +226,16 @@ func TestVersions(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := Versions(ctx, tt.args.client, tt.args.module, tt.args.cookies)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Versions() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Versions() got = %v, want %v", got, tt.want)
-			}
+
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

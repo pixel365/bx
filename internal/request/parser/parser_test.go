@@ -2,9 +2,14 @@ package parser
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_UploadResult(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		htmlContent string
 	}
@@ -18,14 +23,21 @@ func Test_UploadResult(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := UploadResult(tt.args.htmlContent); (err != nil) != tt.wantErr {
-				t.Errorf("UploadResult() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+
+			err := UploadResult(tt.args.htmlContent)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestParseSessionId(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		content string
 	}
@@ -39,14 +51,17 @@ func TestParseSessionId(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ParseSessionId(tt.args.content); got != tt.want {
-				t.Errorf("ParseSessionId() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			got := ParseSessionId(tt.args.content)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestParseVersions_success(t *testing.T) {
+	t.Parallel()
+
 	content := `<table class="data-table mt-3 mb-3">
 <tbody>
 <tr>
@@ -63,18 +78,14 @@ func TestParseVersions_success(t *testing.T) {
 </tbody>
 </table>`
 
-	t.Run("success", func(t *testing.T) {
-		versions, err := ParseVersions(content)
-		if err != nil {
-			t.Error(err)
-		}
-		if len(versions) != 1 {
-			t.Errorf("len(versions) = %d, want 1", len(versions))
-		}
-	})
+	versions, err := ParseVersions(content)
+	require.NoError(t, err)
+	assert.Len(t, versions, 1)
 }
 
 func TestParseVersions_table_not_found(t *testing.T) {
+	t.Parallel()
+
 	content := `<table>
 <tbody>
 <tr>
@@ -91,25 +102,14 @@ func TestParseVersions_table_not_found(t *testing.T) {
 </tbody>
 </table>`
 
-	t.Run("success", func(t *testing.T) {
-		_, err := ParseVersions(content)
-		if err == nil {
-			t.Errorf("ParseVersions() = nil, want error")
-		}
-
-		if err.Error() != "table not found" {
-			t.Errorf("ParseVersions() = %v, want %v", err.Error(), "table not found")
-		}
-	})
+	_, err := ParseVersions(content)
+	require.Error(t, err)
+	assert.Equal(t, err.Error(), "table not found")
 }
 
 func TestParseVersions_invalid_content(t *testing.T) {
-	content := `<table>`
+	t.Parallel()
 
-	t.Run("success", func(t *testing.T) {
-		_, err := ParseVersions(content)
-		if err == nil {
-			t.Errorf("ParseVersions() = nil, want error")
-		}
-	})
+	_, err := ParseVersions(`<table>`)
+	require.Error(t, err)
 }

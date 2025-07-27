@@ -3,32 +3,26 @@ package parser
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"golang.org/x/net/html"
 )
 
 func Test_versionRow(t *testing.T) {
-	t.Run("versionRow", func(t *testing.T) {
-		v, s := versionRow(&html.Node{})
-		if v != "" || s != "" {
-			t.Errorf("got %v, %v; want empty string", v, s)
-		}
-	})
+	t.Parallel()
+	v, s := versionRow(&html.Node{})
+	assert.Empty(t, s)
+	assert.Empty(t, v)
 }
 
 func Test_extractVersion(t *testing.T) {
-	t.Run("extractVersion", func(t *testing.T) {
-		s := extractVersion(&html.Node{})
-		if s != "" {
-			t.Errorf("got %v; want empty string", s)
-		}
-	})
+	t.Parallel()
+	s := extractVersion(&html.Node{})
+	assert.Empty(t, s)
 }
 
 func Test_extractLabel(t *testing.T) {
-	t.Run("extractLabel", func(t *testing.T) {
-		l := extractLabel(&html.Node{})
-		if l != "" {
-			t.Errorf("got %v; want empty string", l)
-		}
-	})
+	t.Parallel()
+	l := extractLabel(&html.Node{})
+	assert.Empty(t, l)
 }
