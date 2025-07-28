@@ -7,9 +7,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/pixel365/bx/internal/types/changelog"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	errors2 "github.com/pixel365/bx/internal/errors"
+
+	"github.com/pixel365/bx/internal/types/changelog"
 
 	"github.com/pixel365/bx/internal/types"
 
@@ -19,6 +22,8 @@ import (
 )
 
 func TestOpenRepository(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		repository string
 	}
@@ -32,29 +37,30 @@ func TestOpenRepository(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := OpenRepository(tt.args.repository)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("OpenRepository() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OpenRepository() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestOpenRepository_Ok(t *testing.T) {
-	t.Run("repository exists", func(t *testing.T) {
-		pwd, _ := filepath.Abs("../../")
-		_, err := OpenRepository(pwd)
-		if err != nil {
-			t.Errorf("OpenRepository() error = %v", err)
-		}
-	})
+	t.Parallel()
+
+	pwd, _ := filepath.Abs("../../")
+	_, err := OpenRepository(pwd)
+	require.NoError(t, err)
 }
 
 func TestChangelogList(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		repository string
 		rules      changelog.Changelog
@@ -94,14 +100,15 @@ func TestChangelogList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := ChangelogList(tt.args.repository, tt.args.rules)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ChangelogList() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ChangelogList() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -142,6 +149,8 @@ func TestChangelogList_listOfCommits_Fail(t *testing.T) {
 }
 
 func TestChangelogList_listOfCommits_Ok_Asc(t *testing.T) {
+	t.Parallel()
+
 	origListOfCommits := listOfCommitsFunc
 	origOpenRepository := openRepositoryFunc
 	defer func() {
@@ -159,29 +168,24 @@ func TestChangelogList_listOfCommits_Ok_Asc(t *testing.T) {
 		return &git.Repository{}, nil
 	}
 
-	t.Run("commits fail", func(t *testing.T) {
-		commits, err := ChangelogList("", changelog.Changelog{
-			From: types.TypeValue[types.ChangelogType, string]{
-				Type:  types.Tag,
-				Value: "v1.0.0",
-			},
-			To: types.TypeValue[types.ChangelogType, string]{
-				Type:  types.Tag,
-				Value: "v2.0.0",
-			},
-			Sort: types.Asc,
-		})
-		if err != nil {
-			t.Errorf("ChangelogList() error = %v", err)
-		}
-
-		if commits[0] != "commit 1" {
-			t.Errorf("ChangelogList() got = %v, want %v", commits[0], "commit 1")
-		}
+	commits, err := ChangelogList("", changelog.Changelog{
+		From: types.TypeValue[types.ChangelogType, string]{
+			Type:  types.Tag,
+			Value: "v1.0.0",
+		},
+		To: types.TypeValue[types.ChangelogType, string]{
+			Type:  types.Tag,
+			Value: "v2.0.0",
+		},
+		Sort: types.Asc,
 	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"commit 1", "commit 2"}, commits)
 }
 
 func TestChangelogList_listOfCommits_Ok_Desc(t *testing.T) {
+	t.Parallel()
+
 	origListOfCommits := listOfCommitsFunc
 	origOpenRepository := openRepositoryFunc
 	defer func() {
@@ -199,29 +203,24 @@ func TestChangelogList_listOfCommits_Ok_Desc(t *testing.T) {
 		return &git.Repository{}, nil
 	}
 
-	t.Run("commits fail", func(t *testing.T) {
-		commits, err := ChangelogList("", changelog.Changelog{
-			From: types.TypeValue[types.ChangelogType, string]{
-				Type:  types.Tag,
-				Value: "v1.0.0",
-			},
-			To: types.TypeValue[types.ChangelogType, string]{
-				Type:  types.Tag,
-				Value: "v2.0.0",
-			},
-			Sort: types.Desc,
-		})
-		if err != nil {
-			t.Errorf("ChangelogList() error = %v", err)
-		}
-
-		if commits[0] != "commit 2" {
-			t.Errorf("ChangelogList() got = %v, want %v", commits[0], "commit 2")
-		}
+	commits, err := ChangelogList("", changelog.Changelog{
+		From: types.TypeValue[types.ChangelogType, string]{
+			Type:  types.Tag,
+			Value: "v1.0.0",
+		},
+		To: types.TypeValue[types.ChangelogType, string]{
+			Type:  types.Tag,
+			Value: "v2.0.0",
+		},
+		Sort: types.Desc,
 	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"commit 2", "commit 1"}, commits)
 }
 
 func TestCommitFilter(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		message    string
 		conditions types.TypeValue[types.ChangelogConditionType, []string]
@@ -262,9 +261,10 @@ func TestCommitFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CommitFilter(tt.args.message, tt.args.conditions); got != tt.want {
-				t.Errorf("CommitFilter() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			got := CommitFilter(tt.args.message, tt.args.conditions)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -299,6 +299,8 @@ func Test_listOfCommits(t *testing.T) {
 }
 
 func Test_hashes(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		repository *git.Repository
 		rules      changelog.Changelog
@@ -315,22 +317,24 @@ func Test_hashes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, got1, err := hashes(tt.args.repository, tt.args.rules)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("hashes() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("hashes() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("hashes() got1 = %v, want %v", got1, tt.want1)
-			}
+
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want1, got1)
 		})
 	}
 }
 
 func TestChangesList(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		repository string
 		rules      changelog.Changelog
@@ -345,58 +349,58 @@ func TestChangesList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := ChangesList(tt.args.repository, tt.args.rules)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ChangesList() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ChangesList() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestChangesList_nil_repository(t *testing.T) {
-	t.Run("nil repository", func(t *testing.T) {
-		origOpenRepositoryFunc := openRepositoryFunc
-		defer func() { openRepositoryFunc = origOpenRepositoryFunc }()
+	t.Parallel()
 
-		openRepositoryFunc = func(_ string) (*git.Repository, error) {
-			return nil, nil
-		}
+	origOpenRepositoryFunc := openRepositoryFunc
+	defer func() { openRepositoryFunc = origOpenRepositoryFunc }()
 
-		_, err := ChangesList("", changelog.Changelog{})
-		if !errors.Is(err, errors2.ErrNilRepository) {
-			t.Errorf("ChangesList() error = %v, wantErr %v", err, errors2.ErrNilRepository)
-		}
-	})
+	openRepositoryFunc = func(_ string) (*git.Repository, error) {
+		return nil, nil
+	}
+
+	_, err := ChangesList("", changelog.Changelog{})
+	assert.ErrorIs(t, errors2.ErrNilRepository, err)
 }
 
 func TestChangesList_hashes_fail(t *testing.T) {
-	t.Run("hashes fail", func(t *testing.T) {
-		origOpenRepositoryFunc := openRepositoryFunc
-		origHashesFunc := hashesFunc
-		defer func() { openRepositoryFunc = origOpenRepositoryFunc }()
-		defer func() { hashesFunc = origHashesFunc }()
+	t.Parallel()
 
-		openRepositoryFunc = func(_ string) (*git.Repository, error) {
-			return &git.Repository{}, nil
-		}
+	origOpenRepositoryFunc := openRepositoryFunc
+	origHashesFunc := hashesFunc
+	defer func() { openRepositoryFunc = origOpenRepositoryFunc }()
+	defer func() { hashesFunc = origHashesFunc }()
 
-		hashesFunc = func(_ *git.Repository, _ changelog.Changelog) (plumbing.Hash, plumbing.Hash, error) {
-			return plumbing.ZeroHash, plumbing.ZeroHash, errors.New("some error")
-		}
+	openRepositoryFunc = func(_ string) (*git.Repository, error) {
+		return &git.Repository{}, nil
+	}
 
-		_, err := ChangesList("repo", changelog.Changelog{})
-		e := fmt.Errorf("repository [%s]: %w", "repo", errors.New("some error")).Error()
-		if err.Error() != e {
-			t.Errorf("ChangesList() error = %v, want %v", e, err)
-		}
-	})
+	hashesFunc = func(_ *git.Repository, _ changelog.Changelog) (plumbing.Hash, plumbing.Hash, error) {
+		return plumbing.ZeroHash, plumbing.ZeroHash, errors.New("some error")
+	}
+
+	_, err := ChangesList("repo", changelog.Changelog{})
+	e := fmt.Errorf("repository [%s]: %w", "repo", errors.New("some error")).Error()
+	require.Error(t, err)
+	assert.Equal(t, e, err.Error())
 }
 
 func TestChanges_IsChangedFile(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		Added    []string
 		Modified []string
@@ -419,15 +423,16 @@ func TestChanges_IsChangedFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			o := &types.Changes{
 				Added:    tt.fields.Added,
 				Modified: tt.fields.Modified,
 				Deleted:  tt.fields.Deleted,
 				Moved:    tt.fields.Moved,
 			}
-			if got := o.IsChangedFile(tt.args.path); got != tt.want {
-				t.Errorf("IsChangedFile() = %v, want %v", got, tt.want)
-			}
+			got := o.IsChangedFile(tt.args.path)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
