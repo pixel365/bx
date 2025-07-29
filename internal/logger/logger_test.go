@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pixel365/bx/internal/types"
 )
@@ -34,222 +36,160 @@ const (
 )
 
 func TestNewFileZeroLogger(t *testing.T) {
-	t.Run("NewFileLogger", func(t *testing.T) {
-		log := types.Log{
-			Dir:        "./",
-			MaxSize:    1,
-			MaxBackups: 1,
-			MaxAge:     1,
-			LocalTime:  false,
-			Compress:   false,
+	log := types.Log{
+		Dir:        "./",
+		MaxSize:    1,
+		MaxBackups: 1,
+		MaxAge:     1,
+		LocalTime:  false,
+		Compress:   false,
+	}
+	name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("%s/%s", log.Dir, name)
+	logger := NewFileLogger(&log, name)
+	defer func() {
+		err := os.Remove(filePath)
+		if err != nil {
+			return
 		}
-		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
-		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
-		logger := NewFileLogger(&log, name)
-		defer func() {
-			err := os.Remove(filePath)
-			if err != nil {
-				return
-			}
-		}()
+	}()
 
-		if logger == nil {
-			t.Errorf("NewFileLogger() = nil, want not nil")
-		}
-	})
+	assert.NotNil(t, logger)
 }
 
 func TestNilZeroLogger(t *testing.T) {
-	t.Run("NilZeroLogger", func(t *testing.T) {
-		logger := NewFileLogger(nil, "")
-		if !reflect.DeepEqual(logger, &ZeroLogger{}) {
-			t.Errorf("NewFileLogger() = nil, want not nil")
-		}
-	})
+	logger := NewFileLogger(nil, "")
+	assert.Equal(t, &ZeroLogger{}, logger)
 }
 
 func TestZeroLogger_Info(t *testing.T) {
-	t.Run("info", func(t *testing.T) {
-		log := types.Log{
-			Dir:        "./",
-			MaxSize:    1,
-			MaxBackups: 1,
-			MaxAge:     1,
-			LocalTime:  false,
-			Compress:   false,
-		}
-		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
-		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
-		filePath = filepath.Clean(filePath)
-		logger := NewFileLogger(&log, name)
-		defer func() {
-			err := os.Remove(filepath.Clean(filePath + ".log"))
-			if err != nil {
-				return
-			}
-		}()
-
-		logger.Info("test")
-		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	log := types.Log{
+		Dir:        "./",
+		MaxSize:    1,
+		MaxBackups: 1,
+		MaxAge:     1,
+		LocalTime:  false,
+		Compress:   false,
+	}
+	name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("%s/%s", log.Dir, name)
+	filePath = filepath.Clean(filePath)
+	logger := NewFileLogger(&log, name)
+	defer func() {
+		err := os.Remove(filepath.Clean(filePath + ".log"))
 		if err != nil {
-			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
 		}
+	}()
 
-		var record InfoRecord
-		err = json.Unmarshal(data, &record)
-		if err != nil {
-			t.Errorf("json.Unmarshal() = %v", err)
-		}
+	logger.Info("test")
+	data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	require.NoError(t, err)
 
-		if record.Level != lInfo {
-			t.Errorf("record.Level = %s, want info", record.Level)
-		}
+	var record InfoRecord
+	err = json.Unmarshal(data, &record)
+	require.NoError(t, err)
 
-		if record.Message != test {
-			t.Errorf("record.Message = %s, want %s", record.Message, test)
-		}
-	})
+	assert.Equal(t, lInfo, record.Level)
+	assert.Equal(t, test, record.Message)
 }
 
 func TestZeroLogger_Info_With_Args(t *testing.T) {
-	t.Run("info", func(t *testing.T) {
-		log := types.Log{
-			Dir:        "./",
-			MaxSize:    1,
-			MaxBackups: 1,
-			MaxAge:     1,
-			LocalTime:  false,
-			Compress:   false,
-		}
-		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
-		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
-		filePath = filepath.Clean(filePath)
-		logger := NewFileLogger(&log, name)
-		defer func() {
-			err := os.Remove(filepath.Clean(filePath + ".log"))
-			if err != nil {
-				return
-			}
-		}()
-
-		logger.Info("test: %s", "info")
-		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	log := types.Log{
+		Dir:        "./",
+		MaxSize:    1,
+		MaxBackups: 1,
+		MaxAge:     1,
+		LocalTime:  false,
+		Compress:   false,
+	}
+	name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("%s/%s", log.Dir, name)
+	filePath = filepath.Clean(filePath)
+	logger := NewFileLogger(&log, name)
+	defer func() {
+		err := os.Remove(filepath.Clean(filePath + ".log"))
 		if err != nil {
-			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
 		}
+	}()
 
-		var record InfoRecord
-		err = json.Unmarshal(data, &record)
-		if err != nil {
-			t.Errorf("json.Unmarshal() = %v", err)
-		}
+	logger.Info("test: %s", "info")
+	data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	require.NoError(t, err)
 
-		if record.Level != lInfo {
-			t.Errorf("record.Level = %s, want info", record.Level)
-		}
+	var record InfoRecord
+	err = json.Unmarshal(data, &record)
+	require.NoError(t, err)
 
-		if record.Message != "test: info" {
-			t.Errorf("record.Message = %s, want %s", record.Message, "test: info")
-		}
-	})
+	assert.Equal(t, lInfo, record.Level)
+	assert.Equal(t, "test: info", record.Message)
 }
 
 func TestZeroLogger_Error(t *testing.T) {
-	t.Run("error", func(t *testing.T) {
-		log := types.Log{
-			Dir:        "./",
-			MaxSize:    1,
-			MaxBackups: 1,
-			MaxAge:     1,
-			LocalTime:  false,
-			Compress:   false,
-		}
-		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
-		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
-		filePath = filepath.Clean(filePath)
-		logger := NewFileLogger(&log, name)
-		defer func() {
-			err := os.Remove(filepath.Clean(filePath + ".log"))
-			if err != nil {
-				return
-			}
-		}()
-
-		logger.Error(test, errors.New(test))
-		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	log := types.Log{
+		Dir:        "./",
+		MaxSize:    1,
+		MaxBackups: 1,
+		MaxAge:     1,
+		LocalTime:  false,
+		Compress:   false,
+	}
+	name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("%s/%s", log.Dir, name)
+	filePath = filepath.Clean(filePath)
+	logger := NewFileLogger(&log, name)
+	defer func() {
+		err := os.Remove(filepath.Clean(filePath + ".log"))
 		if err != nil {
-			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
 		}
+	}()
 
-		var record ErrorRecord
-		err = json.Unmarshal(data, &record)
-		if err != nil {
-			t.Errorf("json.Unmarshal() = %v", err)
-		}
+	logger.Error(test, errors.New(test))
+	data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	require.NoError(t, err)
 
-		if record.Level != lError {
-			t.Errorf("record.Level = %s, want info", record.Level)
-		}
+	var record ErrorRecord
+	err = json.Unmarshal(data, &record)
+	require.NoError(t, err)
 
-		if record.Message != test {
-			t.Errorf("record.Message = %s, want %s", record.Message, test)
-		}
-
-		if record.Error != test {
-			t.Errorf("record.Error = %s, want %s", record.Error, test)
-		}
-	})
+	assert.Equal(t, test, record.Error)
+	assert.Equal(t, test, record.Message)
+	assert.Equal(t, test, record.Error)
 }
 
 func TestZeroLogger_Error_With_Args(t *testing.T) {
-	t.Run("error", func(t *testing.T) {
-		log := types.Log{
-			Dir:        "./",
-			MaxSize:    1,
-			MaxBackups: 1,
-			MaxAge:     1,
-			LocalTime:  false,
-			Compress:   false,
-		}
-		name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
-		filePath := fmt.Sprintf("%s/%s", log.Dir, name)
-		filePath = filepath.Clean(filePath)
-		logger := NewFileLogger(&log, name)
-		defer func() {
-			err := os.Remove(filepath.Clean(filePath + ".log"))
-			if err != nil {
-				return
-			}
-		}()
-
-		logger.Error("test: %s", errors.New(test), "error")
-		data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	log := types.Log{
+		Dir:        "./",
+		MaxSize:    1,
+		MaxBackups: 1,
+		MaxAge:     1,
+		LocalTime:  false,
+		Compress:   false,
+	}
+	name := fmt.Sprintf("_%d.mod", time.Now().UTC().Unix())
+	filePath := fmt.Sprintf("%s/%s", log.Dir, name)
+	filePath = filepath.Clean(filePath)
+	logger := NewFileLogger(&log, name)
+	defer func() {
+		err := os.Remove(filepath.Clean(filePath + ".log"))
 		if err != nil {
-			t.Errorf("os.ReadFile(%s) = %v", filePath, err)
 			return
 		}
+	}()
 
-		var record ErrorRecord
-		err = json.Unmarshal(data, &record)
-		if err != nil {
-			t.Errorf("json.Unmarshal() = %v", err)
-		}
+	logger.Error("test: %s", errors.New(test), "error")
+	data, err := os.ReadFile(filepath.Clean(filePath + ".log"))
+	require.NoError(t, err)
 
-		if record.Level != lError {
-			t.Errorf("record.Level = %s, want info", record.Level)
-		}
+	var record ErrorRecord
+	err = json.Unmarshal(data, &record)
+	require.NoError(t, err)
 
-		if record.Message != "test: error" {
-			t.Errorf("record.Message = %s, want %s", record.Message, "test: error")
-		}
-
-		if record.Error != test {
-			t.Errorf("record.Error = %s, want %s", record.Error, test)
-		}
-	})
+	assert.Equal(t, lError, record.Level)
+	assert.Equal(t, "test: error", record.Message)
+	assert.Equal(t, test, record.Error)
 }
 
 func TestNewFileLogger_PanicOnInvalidDir(t *testing.T) {
@@ -258,11 +198,8 @@ func TestNewFileLogger_PanicOnInvalidDir(t *testing.T) {
 	}
 
 	defer func() {
-		if err := recover(); err == nil {
-			t.Errorf("NewFileLogger() did not panic on invalid dir")
-		} else {
-			t.Log(err)
-		}
+		err := recover()
+		require.NotNil(t, err)
 	}()
 
 	NewFileLogger(log, "test-module")
