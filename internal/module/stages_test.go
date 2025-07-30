@@ -2,10 +2,12 @@ package module
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pixel365/bx/internal/interfaces"
 
@@ -15,27 +17,26 @@ import (
 )
 
 func TestHandleStages_NoCustomCommandMode(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	m := &Module{
 		Stages: []types.Stage{
 			{Name: "some-fake-stage"},
 		},
 	}
-	t.Run("nil context", func(t *testing.T) {
-		err := HandleStages(
-			ctx,
-			[]string{"some-fake-stage"},
-			m,
-			&FakeBuildLogger{},
-			false,
-		)
-		if !errors.Is(err, errors2.ErrNilModule) {
-			t.Errorf("HandleStages() error = %v, want %v", err, errors2.ErrNilModule)
-		}
-	})
+
+	err := HandleStages(
+		ctx,
+		[]string{"some-fake-stage"},
+		m,
+		&FakeBuildLogger{},
+		false,
+	)
+	assert.ErrorIs(t, errors2.ErrNilModule, err)
 }
 
 func TestHandleStages(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	m := &Module{
 		Stages: []types.Stage{
@@ -51,21 +52,18 @@ func TestHandleStages(t *testing.T) {
 		handleStageFunc = handleStageFuncOrig
 	}()
 
-	t.Run("no custom command mode", func(t *testing.T) {
-		if err := HandleStages(ctx, []string{""}, m, nil, true); err != nil {
-			t.Errorf("HandleStages() error = %v, want nil", err)
-		}
-	})
+	err := HandleStages(ctx, []string{""}, m, nil, true)
+	require.NoError(t, err)
 }
 
 func TestCheckStages(t *testing.T) {
+	t.Parallel()
 	err := CheckStages(nil)
-	if !errors.Is(err, errors2.ErrNilModule) {
-		t.Errorf("CheckStages() error = %v, want %v", err, errors2.ErrNilModule)
-	}
+	assert.ErrorIs(t, errors2.ErrNilModule, err)
 }
 
 func TestCheckStages_NoErrors(t *testing.T) {
+	t.Parallel()
 	originalCheckPaths := helpers.CheckPaths
 	checkPathsFunc = func(stage types.Stage, errCh chan<- error) {}
 	defer func() { checkPathsFunc = originalCheckPaths }()
@@ -78,12 +76,11 @@ func TestCheckStages_NoErrors(t *testing.T) {
 	}
 
 	err := CheckStages(m)
-	if err != nil {
-		t.Errorf("CheckStages() error = %v, want nil", err)
-	}
+	require.NoError(t, err)
 }
 
 func TestCheckStages_WithErrors(t *testing.T) {
+	t.Parallel()
 	originalCheckPaths := helpers.CheckPaths
 	checkPathsFunc = func(stage types.Stage, errCh chan<- error) {
 		if stage.Name == "fail" {
@@ -100,27 +97,18 @@ func TestCheckStages_WithErrors(t *testing.T) {
 	}
 
 	err := CheckStages(m)
-	if err == nil {
-		t.Errorf("CheckStages() error = %v, want error", err)
-	} else {
-		expectedMsg := "errors: [failed stage: fail]"
-		if err.Error() != expectedMsg {
-			t.Errorf("CheckStages() error = %v, want %v", err, expectedMsg)
-		}
-	}
+	require.Error(t, err)
+
+	expectedMsg := "errors: [failed stage: fail]"
+	assert.Equal(t, expectedMsg, err.Error())
 }
 
 func Test_workersQty(t *testing.T) {
+	t.Parallel()
 	cnt := runtime.NumCPU() * 2
 
-	t.Run("workersQty", func(t *testing.T) {
-		if workersQty(0) != cnt {
-			t.Errorf("workersQty got %v, want %v", workersQty(0), cnt)
-		}
+	assert.Equal(t, cnt, workersQty(cnt))
 
-		n := cnt * 2
-		if workersQty(n) != n {
-			t.Errorf("workersQty got %v, want %v", workersQty(n), n)
-		}
-	})
+	n := cnt * 2
+	assert.Equal(t, n, workersQty(n))
 }

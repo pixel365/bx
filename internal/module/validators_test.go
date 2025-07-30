@@ -3,12 +3,17 @@ package module
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/validators"
 
 	"github.com/pixel365/bx/internal/types"
 )
 
 func TestValidateArgument(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		arg string
 	}
@@ -23,14 +28,15 @@ func TestValidateArgument(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validators.ValidateArgument(tt.args.arg); got != tt.want {
-				t.Errorf("ValidateArgument() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+			got := validators.ValidateArgument(tt.args.arg)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestValidateStages(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m *Module
 	}
@@ -160,14 +166,19 @@ func TestValidateStages(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateStages(tt.args.m.Stages); (err != nil) != tt.wantErr {
-				t.Errorf("validateStages() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := validateStages(tt.args.m.Stages)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestValidateIgnore(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m []string
 	}
@@ -182,14 +193,19 @@ func TestValidateIgnore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateRules(tt.args.m, "ignore"); (err != nil) != tt.wantErr {
-				t.Errorf("validateRules() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := validateRules(tt.args.m, "ignore")
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestValidateVariables(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m *Module
 	}
@@ -213,14 +229,19 @@ func TestValidateVariables(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateVariables(tt.args.m); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateVariables() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := ValidateVariables(tt.args.m)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestValidateRelease(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m *Module
 	}
@@ -288,14 +309,19 @@ func TestValidateRelease(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateRelease(tt.args.m.Builds.Release, tt.args.m.FindStage); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateLastVersion() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := ValidateRelease(tt.args.m.Builds.Release, tt.args.m.FindStage)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestValidateLastVersion(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m *Module
 	}
@@ -366,14 +392,19 @@ func TestValidateLastVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateLastVersion(tt.args.m.Builds.LastVersion, tt.args.m.FindStage); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateLastVersion() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := ValidateLastVersion(tt.args.m.Builds.LastVersion, tt.args.m.FindStage)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_validateStagesInBuilds(t *testing.T) {
+	t.Parallel()
 	m := &Module{Stages: []types.Stage{{Name: "testing"}}}
 	type args struct {
 		find   func(string) (types.Stage, error)
@@ -412,14 +443,19 @@ func Test_validateStagesInBuilds(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateStagesList(tt.args.stages, tt.args.name, tt.args.find); (err != nil) != tt.wantErr {
-				t.Errorf("validateStagesList() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := validateStagesList(tt.args.stages, tt.args.name, tt.args.find)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestValidateRun(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m *Module
 	}
@@ -460,14 +496,19 @@ func TestValidateRun(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateRun(tt.args.m); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateRun() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := ValidateRun(tt.args.m)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestValidateLog(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		m *Module
 	}
@@ -504,14 +545,19 @@ func TestValidateLog(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateLog(tt.args.m); (err != nil) != tt.wantErr {
-				t.Errorf("validateLog() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := validateLog(tt.args.m)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_validateMainFields(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		m       *Module
 		name    string
@@ -545,8 +591,12 @@ func Test_validateMainFields(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateMainFields(tt.m); (err != nil) != tt.wantErr {
-				t.Errorf("validateMainFields() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := validateMainFields(tt.m)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}

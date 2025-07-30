@@ -3,135 +3,105 @@ package module
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/pixel365/bx/internal/types/changelog"
 
 	"github.com/pixel365/bx/internal/types"
 )
 
 func TestModule_GetVariables(t *testing.T) {
-	t.Run("TestModule_GetVariables", func(t *testing.T) {
-		mod := Module{
-			Variables: map[string]string{
-				"foo": "bar",
-			},
-		}
-		val := mod.GetVariables()
-
-		if len(val) != 1 {
-			t.Error("GetVariables should return a single variable")
-		}
-	})
+	t.Parallel()
+	mod := Module{
+		Variables: map[string]string{
+			"foo": "bar",
+		},
+	}
+	val := mod.GetVariables()
+	assert.Len(t, val, 1)
 }
 
 func TestModule_GetRun(t *testing.T) {
-	t.Run("TestModule_GetRun", func(t *testing.T) {
-		mod := Module{
-			Run: map[string][]string{
-				"run1": {"stage"},
-			},
-		}
-		val := mod.GetRun()
-		if len(val) != 1 {
-			t.Error("GetRun should return a single variable")
-		}
-	})
+	t.Parallel()
+	mod := Module{
+		Run: map[string][]string{
+			"run1": {"stage"},
+		},
+	}
+	val := mod.GetRun()
+	assert.Len(t, val, 1)
 }
 
 func TestModule_GetStages(t *testing.T) {
-	t.Run("TestModule_GetStages", func(t *testing.T) {
-		var s []types.Stage
-		s = append(s, types.Stage{})
+	t.Parallel()
+	var s []types.Stage
+	s = append(s, types.Stage{})
 
-		mod := Module{
-			Stages: s,
-		}
-		val := mod.GetStages()
-		if len(val) != 1 {
-			t.Error("GetStages should return a single variable")
-		}
-	})
+	mod := Module{Stages: s}
+	val := mod.GetStages()
+	assert.Len(t, val, 1)
 }
 
 func TestModule_GetIgnore(t *testing.T) {
-	t.Run("TestModule_GetIgnore", func(t *testing.T) {
-		mod := Module{
-			Ignore: []string{"ignore"},
-		}
-		val := mod.GetIgnore()
-		if len(val) != 1 {
-			t.Error("GetIgnore should return a single variable")
-		}
-	})
+	t.Parallel()
+	mod := Module{
+		Ignore: []string{"ignore"},
+	}
+	val := mod.GetIgnore()
+	assert.Len(t, val, 1)
 }
 
 func TestModule_GetChanges(t *testing.T) {
-	t.Run("TestModule_GetChanges", func(t *testing.T) {
-		mod := Module{
-			Repository: "../../",
-		}
-		changes := mod.GetChanges()
-		if changes != nil {
-			t.Errorf("GetChanges() error = %v, wantErr %v", changes, nil)
-		}
-	})
+	t.Parallel()
+	mod := Module{
+		Repository: "../../",
+	}
+	changes := mod.GetChanges()
+	assert.Nil(t, changes)
 }
 
 func TestModule_GetChanges2(t *testing.T) {
-	t.Run("TestModule_GetChanges", func(t *testing.T) {
-		mod := Module{
-			Repository: "../../",
-		}
+	t.Parallel()
+	mod := Module{
+		Repository: "../../",
+	}
 
-		origChangesListFunc := changesListFunc
-		defer func() {
-			changesListFunc = origChangesListFunc
-		}()
+	origChangesListFunc := changesListFunc
+	defer func() {
+		changesListFunc = origChangesListFunc
+	}()
 
-		changesListFunc = func(_ string, _ changelog.Changelog) (*types.Changes, error) {
-			return &types.Changes{}, nil
-		}
+	changesListFunc = func(_ string, _ changelog.Changelog) (*types.Changes, error) {
+		return &types.Changes{}, nil
+	}
 
-		changes := mod.GetChanges()
-		if changes == nil {
-			t.Errorf("GetChanges() error = %v, wantErr %v", changes, nil)
-		}
-	})
+	changes := mod.GetChanges()
+	assert.NotNil(t, changes)
 }
 
 func TestGetChanges_empty_repository(t *testing.T) {
-	t.Run("GetChanges", func(t *testing.T) {
-		mod := Module{}
-		changes := mod.GetChanges()
-		if changes != nil {
-			t.Errorf("GetChanges() error = %v, wantErr %v", changes, nil)
-		}
-	})
+	t.Parallel()
+	mod := Module{}
+	changes := mod.GetChanges()
+	assert.Nil(t, changes)
 }
 
 func TestModule_IsLastVersion(t *testing.T) {
-	t.Run("IsLastVersion", func(t *testing.T) {
-		mod := Module{
-			LastVersion: true,
-		}
-		if !mod.IsLastVersion() {
-			t.Error("IsLastVersion should return true when last version is true")
-		}
-	})
+	t.Parallel()
+	mod := Module{LastVersion: true}
+	assert.True(t, mod.IsLastVersion())
 }
 
 func TestModule_SourceCount(t *testing.T) {
-	t.Run("SourceCount", func(t *testing.T) {
-		mod := Module{
-			Stages: []types.Stage{
-				{
-					From: []string{"stage"},
-				},
+	t.Parallel()
+	mod := Module{
+		Stages: []types.Stage{
+			{
+				From: []string{"stage"},
 			},
-		}
+		},
+	}
 
-		count := mod.SourceCount()
-		if count != 1 {
-			t.Errorf("SourceCount() error = %v, wantErr %v", count, nil)
-		}
-	})
+	count := mod.SourceCount()
+	assert.Equal(t, 1, count)
 }

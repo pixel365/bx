@@ -3,10 +3,13 @@ package module
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/pixel365/bx/internal/types"
 )
 
 func TestModule_GetVersion(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Version     string
 		LastVersion bool
@@ -21,18 +24,19 @@ func TestModule_GetVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				Version:     tt.fields.Version,
 				LastVersion: tt.fields.LastVersion,
 			}
-			if got := m.GetVersion(); got != tt.want {
-				t.Errorf("GetVersion() = %v, want %v", got, tt.want)
-			}
+			got := m.GetVersion()
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestModule_GetLabel(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Label types.VersionLabel
 	}
@@ -49,12 +53,12 @@ func TestModule_GetLabel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				Label: tt.fields.Label,
 			}
-			if got := m.GetLabel(); got != tt.want {
-				t.Errorf("GetLabel() = %v, want %v", got, tt.want)
-			}
+			got := m.GetLabel()
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

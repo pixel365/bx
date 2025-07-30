@@ -5,21 +5,22 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pixel365/bx/internal/interfaces"
 
 	errors2 "github.com/pixel365/bx/internal/errors"
 )
 
 func TestNewModuleBuilder(t *testing.T) {
-	t.Run("new builder", func(t *testing.T) {
-		builder := NewModuleBuilder(nil, nil)
-		if builder == nil {
-			t.Error("NewModuleBuilder() should not be nil")
-		}
-	})
+	t.Parallel()
+	builder := NewModuleBuilder(nil, nil)
+	assert.NotNil(t, builder)
 }
 
 func TestModuleBuilder_Build(t *testing.T) {
+	t.Parallel()
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
 		builder interfaces.Builder
@@ -40,17 +41,24 @@ func TestModuleBuilder_Build(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	for _, tt := range tests {
-		cancel()
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.fields.builder.Build(ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Build() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
+
+	t.Cleanup(func() {
+		cancel()
+	})
 }
 
 func TestModuleBuilder_Prepare(t *testing.T) {
+	t.Parallel()
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
 		builder interfaces.Builder
@@ -64,19 +72,20 @@ func TestModuleBuilder_Prepare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.fields.builder.Prepare()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Prepare() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-
-			if !errors.Is(err, errors2.ErrNilModule) {
-				t.Errorf("Prepare() error = %v, wantErr %v", err, errors2.ErrNilModule)
-			}
+			assert.ErrorIs(t, err, errors2.ErrNilModule)
 		})
 	}
 }
 
 func TestModuleBuilder_Cleanup(t *testing.T) {
+	t.Parallel()
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
 		builder interfaces.Builder
@@ -90,7 +99,10 @@ func TestModuleBuilder_Cleanup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.fields.builder.Cleanup()
+			t.Parallel()
+			assert.NotPanics(t, func() {
+				tt.fields.builder.Cleanup()
+			})
 		})
 	}
 }
@@ -122,6 +134,7 @@ func TestModuleBuilder_Rollback(t *testing.T) {
 }
 
 func TestModuleBuilder_Collect(t *testing.T) {
+	t.Parallel()
 	builder := NewModuleBuilder(nil, nil)
 	type fields struct {
 		builder interfaces.Builder
@@ -136,14 +149,14 @@ func TestModuleBuilder_Collect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.fields.builder.Collect(context.Background())
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Collect() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-
-			if !errors.Is(err, errors2.ErrNilModule) {
-				t.Errorf("Collect() error = %v, wantErr %v", err, errors2.ErrNilModule)
-			}
+			assert.ErrorIs(t, err, errors2.ErrNilModule)
 		})
 	}
 }

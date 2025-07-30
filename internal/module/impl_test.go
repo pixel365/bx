@@ -1,9 +1,10 @@
 package module
 
 import (
-	"errors"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pixel365/bx/internal/types/changelog"
 
@@ -16,6 +17,7 @@ import (
 var fakeCondType types.ChangelogConditionType = "fake"
 
 func TestModule_IsValid(t *testing.T) {
+	t.Parallel()
 	emptyRun := make(map[string][]string)
 	run := make(map[string][]string)
 	run["test"] = []string{"test"}
@@ -311,6 +313,7 @@ func TestModule_IsValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				Variables:      nil,
 				Name:           tt.fields.Name,
@@ -325,44 +328,39 @@ func TestModule_IsValid(t *testing.T) {
 				Run:            tt.fields.Run,
 				Log:            tt.fields.Log,
 			}
-			if err := m.IsValid(); (err != nil) != tt.wantErr {
-				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
+			err := m.IsValid()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestModule_IsValid_EmptyName(t *testing.T) {
+	t.Parallel()
 	module := &Module{Name: ""}
-	t.Run("empty name", func(t *testing.T) {
-		err := module.IsValid()
-		if !errors.Is(err, errors2.ErrEmptyModuleName) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.ErrEmptyModuleName)
-		}
-	})
+	err := module.IsValid()
+	assert.ErrorIs(t, err, errors2.ErrEmptyModuleName)
 }
 
 func TestModule_IsValid_SpacesInName(t *testing.T) {
+	t.Parallel()
 	module := &Module{Name: "some name"}
-	t.Run("spaces in name", func(t *testing.T) {
-		err := module.IsValid()
-		if !errors.Is(err, errors2.ErrNameContainsSpace) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.ErrNameContainsSpace)
-		}
-	})
+	err := module.IsValid()
+	assert.ErrorIs(t, err, errors2.ErrNameContainsSpace)
 }
 
 func TestModule_IsValid_EmptyAccount(t *testing.T) {
+	t.Parallel()
 	module := &Module{Name: "name", Version: "1.0.0", Account: ""}
-	t.Run("empty account", func(t *testing.T) {
-		err := module.IsValid()
-		if !errors.Is(err, errors2.ErrEmptyAccountName) {
-			t.Errorf("IsValid() error = %v, wantErr %v", err, errors2.ErrEmptyAccountName)
-		}
-	})
+	err := module.IsValid()
+	assert.ErrorIs(t, err, errors2.ErrEmptyAccountName)
 }
 
 func TestModule_NormalizeStages(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Variables      map[string]string
 		Name           string
@@ -420,6 +418,7 @@ func TestModule_NormalizeStages(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				Variables:      tt.fields.Variables,
 				Name:           tt.fields.Name,
@@ -429,14 +428,18 @@ func TestModule_NormalizeStages(t *testing.T) {
 				Stages:         tt.fields.Stages,
 				Ignore:         tt.fields.Ignore,
 			}
-			if err := m.NormalizeStages(); (err != nil) != tt.wantErr {
-				t.Errorf("NormalizeStages() error = %v, wantErr %v", err, tt.wantErr)
+			err := m.NormalizeStages()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestModule_PasswordEnv(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Name string
 	}
@@ -450,17 +453,18 @@ func TestModule_PasswordEnv(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				Name: tt.fields.Name,
 			}
-			if got := m.PasswordEnv(); got != tt.want {
-				t.Errorf("PasswordEnv() = %v, want %v", got, tt.want)
-			}
+			got := m.PasswordEnv()
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestModule_ValidateChangelog(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Name           string
 		Version        string
@@ -650,6 +654,7 @@ func TestModule_ValidateChangelog(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				Changelog:      tt.fields,
 				Name:           mod.Name,
@@ -659,40 +664,41 @@ func TestModule_ValidateChangelog(t *testing.T) {
 				Repository:     mod.Repository,
 				Stages:         mod.Stages,
 			}
-			if err := m.ValidateChangelog(); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateChangelog() error = %v, wantErr %v", err, tt.wantErr)
+			err := m.ValidateChangelog()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestModule_ValidateChangelog_empty_repository(t *testing.T) {
-	t.Run("empty repository", func(t *testing.T) {
-		m := &Module{
-			Repository: "",
-			Changelog: changelog.Changelog{
-				From: types.TypeValue[types.ChangelogType, string]{
-					Type:  types.Tag,
-					Value: "v1.0.0",
-				},
-				To: types.TypeValue[types.ChangelogType, string]{
-					Type:  types.Tag,
-					Value: "v2.0.0",
-				},
-				Condition: types.TypeValue[types.ChangelogConditionType, []string]{
-					Type:  types.Include,
-					Value: []string{},
-				},
+	t.Parallel()
+	m := &Module{
+		Repository: "",
+		Changelog: changelog.Changelog{
+			From: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v1.0.0",
 			},
-		}
-		err := m.ValidateChangelog()
-		if err != nil {
-			t.Errorf("ValidateChangelog() error = %v", err)
-		}
-	})
+			To: types.TypeValue[types.ChangelogType, string]{
+				Type:  types.Tag,
+				Value: "v2.0.0",
+			},
+			Condition: types.TypeValue[types.ChangelogConditionType, []string]{
+				Type:  types.Include,
+				Value: []string{},
+			},
+		},
+	}
+	err := m.ValidateChangelog()
+	require.NoError(t, err)
 }
 
 func TestModule_FindStage(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Name           string
 		Version        string
@@ -755,6 +761,7 @@ func TestModule_FindStage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			m := &Module{
 				BuildDirectory: tt.fields.BuildDirectory,
 				Version:        tt.fields.Version,
@@ -763,34 +770,32 @@ func TestModule_FindStage(t *testing.T) {
 				Stages:         tt.fields.Stages,
 			}
 			got, err := m.FindStage(tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FindStage() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FindStage() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestModule_ZipPath(t *testing.T) {
+	t.Parallel()
 	mod := Module{}
 	_, err := mod.ZipPath()
-	if err == nil {
-		t.Errorf("ZipPath() error = %v, wantErr %v", err, nil)
-	}
+	require.Error(t, err)
 }
 
 func TestModule_StageCallback(t *testing.T) {
+	t.Parallel()
 	mod := Module{}
 	_, err := mod.StageCallback("stage_1")
-	if !errors.Is(err, errors2.ErrStageCallbackNotFound) {
-		t.Errorf("StageCallback() error = %v, wantErr %v", err, errors2.ErrStageCallbackNotFound)
-	}
+	assert.ErrorIs(t, err, errors2.ErrStageCallbackNotFound)
 }
 
 func TestModule_StageCallback_found(t *testing.T) {
+	t.Parallel()
 	mod := Module{
 		Stages: []types.Stage{
 			{
@@ -807,7 +812,5 @@ func TestModule_StageCallback_found(t *testing.T) {
 		},
 	}
 	_, err := mod.StageCallback("stage_1")
-	if err != nil {
-		t.Errorf("StageCallback() error = %v, wantErr %v", err, nil)
-	}
+	require.NoError(t, err)
 }

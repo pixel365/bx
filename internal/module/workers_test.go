@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/pixel365/bx/internal/types"
 )
 
@@ -34,9 +36,7 @@ func TestCopyWorkers(t *testing.T) {
 
 	wg.Wait()
 
-	if len(called) != 2 {
-		t.Errorf("expected 2 calls, got %d", len(called))
-	}
+	assert.Len(t, called, 2)
 }
 
 func TestErrorWorker(t *testing.T) {
@@ -52,9 +52,7 @@ func TestErrorWorker(t *testing.T) {
 	errCh <- expectedErr
 	time.Sleep(50 * time.Millisecond)
 
-	if !errors.Is(capturedErr, expectedErr) {
-		t.Errorf("expected %v, got %v", expectedErr, capturedErr)
-	}
+	assert.ErrorIs(t, capturedErr, expectedErr)
 }
 
 func TestLogWorker(t *testing.T) {
@@ -68,12 +66,9 @@ func TestLogWorker(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	if len(mock.Logs) != 2 {
-		t.Errorf("expected 2 logs, got %d", len(mock.Logs))
-	}
-	if mock.Logs[0] != "hello" || mock.Logs[1] != "world" {
-		t.Errorf("unexpected logs: %v", mock.Logs)
-	}
+	assert.Len(t, mock.Logs, 2)
+	assert.Equal(t, "hello", mock.Logs[0])
+	assert.Equal(t, "world", mock.Logs[1])
 }
 
 func TestCleanupWorker(t *testing.T) {
@@ -105,7 +100,5 @@ func TestCleanupWorker(t *testing.T) {
 		t.Error("filesCh not closed")
 	}
 
-	if !canceled {
-		t.Error("cancel not called")
-	}
+	assert.True(t, canceled)
 }

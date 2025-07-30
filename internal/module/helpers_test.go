@@ -2,15 +2,16 @@ package module
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/spf13/cobra"
 
@@ -34,39 +35,26 @@ func (l *FakeBuildLogger) Error(_ string, _ error, _ ...interface{}) {}
 func (l *FakeBuildLogger) Cleanup() {}
 
 func TestReadModuleFromFlags(t *testing.T) {
-	t.Run("TestReadModuleFromFlags", func(t *testing.T) {
-		_, err := ReadModuleFromFlags(nil)
-		if err == nil {
-			t.Errorf("ReadModuleFromFlags() did not return an error")
-		}
-
-		if !errors.Is(err, errors2.ErrNilCmd) {
-			t.Errorf("err = %v, want %v", err, errors2.ErrNilCmd)
-		}
-	})
+	t.Parallel()
+	_, err := ReadModuleFromFlags(nil)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errors2.ErrNilCmd)
 }
 
 func TestReadModuleFromFlags_Name(t *testing.T) {
-	t.Run("TestReadModuleFromFlags_Name", func(t *testing.T) {
-		cmd := &cobra.Command{}
-		cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, helpers.RootDir))
-		_, err := ReadModuleFromFlags(cmd)
-		if err == nil {
-			t.Errorf("ReadModuleFromFlags() did not return an error")
-		}
-	})
+	t.Parallel()
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, helpers.RootDir))
+	_, err := ReadModuleFromFlags(cmd)
+	require.Error(t, err)
 }
 
 func TestReadModuleFromFlags_File(t *testing.T) {
-	t.Run("TestReadModuleFromFlags_File", func(t *testing.T) {
-		cmd := &cobra.Command{}
-		cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, helpers.RootDir))
-		cmd.SetArgs([]string{"--file", "./test_files/foo"})
-		_, err := ReadModuleFromFlags(cmd)
-		if err == nil {
-			t.Errorf("ReadModuleFromFlags() did not return an error")
-		}
-	})
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.WithValue(context.Background(), helpers.RootDir, helpers.RootDir))
+	cmd.SetArgs([]string{"--file", "./test_files/foo"})
+	_, err := ReadModuleFromFlags(cmd)
+	require.Error(t, err)
 }
 
 func TestAllModules(t *testing.T) {
@@ -101,9 +89,8 @@ func TestAllModules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := AllModules(tt.args.directory); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("AllModules() = %v, want %v", got, tt.want)
-			}
+			got := AllModules(tt.args.directory)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -144,13 +131,12 @@ func Test_makeVersionDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := makeVersionDirectory(tt.args.module)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("makeVersionDirectory() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if got != tt.want {
-				t.Errorf("makeVersionDirectory() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -184,13 +170,12 @@ func Test_makeZipFilePath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := makeZipFilePath(tt.args.module)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("makeZipFilePath() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if got != tt.want {
-				t.Errorf("makeZipFilePath() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -224,8 +209,11 @@ func Test_makeVersionFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := makeVersionFile(tt.args.builder); (err != nil) != tt.wantErr {
-				t.Errorf("makeVersionFile() error = %v, wantErr %v", err, tt.wantErr)
+			err := makeVersionFile(tt.args.builder)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -278,30 +266,28 @@ func Test_makeVersionDescription(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := makeVersionDescription(tt.args.builder); (err != nil) != tt.wantErr {
-				t.Errorf("makeVersionDescription() error = %v, wantErr %v", err, tt.wantErr)
+			err := makeVersionDescription(tt.args.builder)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func Test_versionPhpContent(t *testing.T) {
+	t.Parallel()
 	date, err := time.Parse(time.RFC3339, "2025-05-20T23:00:00Z")
-	if err != nil {
-		t.Error(err)
-	}
-	t.Run("php version", func(t *testing.T) {
-		buf := versionPhpContent("1.0.0", date)
+	require.NoError(t, err)
 
-		buf2 := strings.Builder{}
-		buf2.WriteString("<?php\n")
-		buf2.WriteString("$arModuleVersion = array(\n")
-		buf2.WriteString("\t\t\"VERSION\" => \"1.0.0\",\n")
-		buf2.WriteString("\t\t\"VERSION_DATE\" => \"" + date.Format(time.DateTime) + "\",\n")
-		buf2.WriteString(");\n")
+	buf := versionPhpContent("1.0.0", date)
+	buf2 := strings.Builder{}
+	buf2.WriteString("<?php\n")
+	buf2.WriteString("$arModuleVersion = array(\n")
+	buf2.WriteString("\t\t\"VERSION\" => \"1.0.0\",\n")
+	buf2.WriteString("\t\t\"VERSION_DATE\" => \"" + date.Format(time.DateTime) + "\",\n")
+	buf2.WriteString(");\n")
 
-		if buf.String() != buf2.String() {
-			t.Errorf("versionPhpContent() got = %v, want %v", buf.String(), buf2.String())
-		}
-	})
+	assert.Equal(t, buf.String(), buf2.String())
 }
