@@ -9,9 +9,11 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	errors2 "github.com/pixel365/bx/internal/errors"
 
@@ -29,6 +31,8 @@ func (p *FakePromptFailer) Input(_ string, _ func(string) error) error {
 func (p *FakePromptFailer) GetValue() string { return "" }
 
 func TestDefaultYAML(t *testing.T) {
+	t.Parallel()
+
 	const def = `name: "test"
 version: "1.0.0"
 account: ""
@@ -65,20 +69,12 @@ builds:
 ignore:
   - "**/*.log"
 `
-	t.Run("TestDefaultYAML", func(t *testing.T) {
-		if DefaultYAML() != def {
-			t.Error("Default YAML does not match")
-		}
-	})
+	assert.Equal(t, def, DefaultYAML())
 }
 
 func TestGetModulesDir(t *testing.T) {
-	t.Run("TestGetModulesDir", func(t *testing.T) {
-		_, err := GetModulesDir()
-		if err != nil {
-			t.Errorf("GetModulesDir() returned an error: %s", err)
-		}
-	})
+	_, err := GetModulesDir()
+	require.NoError(t, err)
 }
 
 func TestCheckPath(t *testing.T) {
@@ -97,8 +93,11 @@ func TestCheckPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := CheckPath(tt.args.path); (err != nil) != tt.wantErr {
-				t.Errorf("CheckPath() error = %v, wantErr %v", err, tt.wantErr)
+			err := CheckPath(tt.args.path)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -120,70 +119,55 @@ func TestIsDir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := IsDir(tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("IsDir() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if got != tt.want {
-				t.Errorf("IsDir() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestCheckContextOk(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	t.Run("TestCheckContextOk", func(t *testing.T) {
-		if err := CheckContext(ctx); err != nil {
-			t.Errorf("CheckContext() returned an error: %s", err)
-		}
-	})
+	err := CheckContext(ctx)
+	require.NoError(t, err)
 }
 
 func TestCheckContextDone(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
-	t.Run("TestCheckContextDone", func(t *testing.T) {
-		cancel()
-		if err := CheckContext(ctx); err == nil {
-			t.Error("CheckContext() did not return an error")
-		}
-	})
+	cancel()
+	err := CheckContext(ctx)
+	require.Error(t, err)
 }
 
 func TestCheckContextNil(t *testing.T) {
-	t.Run("TestCheckContextNil", func(t *testing.T) {
-		err := CheckContext(nil) //nolint:staticcheck // SA1012: passing nil context is intentional
-		if err == nil {
-			t.Error("CheckContext() did not return an error")
-		}
-
-		if !errors.Is(err, errors2.ErrNilContext) {
-			t.Error("CheckContext() did not return an error")
-		}
-	})
+	t.Parallel()
+	err := CheckContext(nil) //nolint:staticcheck // SA1012: passing nil context is intentional
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errors2.ErrNilContext)
 }
 
 func TestCaptureOutput(t *testing.T) {
-	t.Run("TestCaptureOutput", func(t *testing.T) {
-		output := CaptureOutput(func() {
-			fmt.Println("ok")
-		})
-
-		if output != "ok\n" {
-			t.Errorf("CaptureOutput() = %v, want %v", output, "ok\n")
-		}
-
-		output = CaptureOutput(func() {
-			fmt.Println("ok string")
-		})
-
-		if output != "ok string\n" {
-			t.Errorf("CaptureOutput() = %v, want %v", output, "ok\n")
-		}
+	t.Parallel()
+	output := CaptureOutput(func() {
+		fmt.Println("ok")
 	})
+
+	assert.Equal(t, "ok\n", output)
+
+	output = CaptureOutput(func() {
+		fmt.Println("ok string")
+	})
+
+	assert.Equal(t, "ok string\n", output)
 }
 
 func TestReplaceVariables(t *testing.T) {
+	t.Parallel()
 	vars := map[string]string{
 		"foo":        "bar",
 		"var1":       "value1",
@@ -223,19 +207,21 @@ func TestReplaceVariables(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := ReplaceVariables(tt.args.input, tt.args.variables, tt.args.depth)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReplaceVariables() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if got != tt.want {
-				t.Errorf("ReplaceVariables() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func Test_Cleanup(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		resource io.Closer
 	}
@@ -247,36 +233,33 @@ func Test_Cleanup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Cleanup(tt.args.resource, nil)
+			t.Parallel()
+			assert.NotPanics(t, func() {
+				Cleanup(tt.args.resource, nil)
+			})
 		})
 	}
 }
 
 func Test_Cleanup_chan(t *testing.T) {
-	ch := make(chan error)
+	ch := make(chan error, 1)
 
-	t.Run("TestCleanup_chan", func(t *testing.T) {
-		fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
-		filePath, _ := filepath.Abs("./" + fileName)
-		filePath = filepath.Clean(filePath)
+	fileName := fmt.Sprintf("mod-%d.yaml", time.Now().UTC().Unix())
+	filePath, _ := filepath.Abs("./" + fileName)
+	filePath = filepath.Clean(filePath)
 
-		file, err := os.Create(filePath)
-		if err != nil {
-			t.Fatal(err)
-		}
+	file, err := os.Create(filePath)
+	assert.NoError(t, err)
 
-		defer func() {
-			err := os.Remove(file.Name())
-			if err != nil {
-				return
-			}
-		}()
+	defer func() {
+		err := os.Remove(file.Name())
+		assert.NoError(t, err)
+	}()
 
-		go func() {
-			Cleanup(file, ch)
-			close(ch)
-		}()
-	})
+	go func() {
+		Cleanup(file, ch)
+		close(ch)
+	}()
 
 	for e := range ch {
 		t.Errorf("TestCleanup_chan failed: %v", e)
@@ -284,6 +267,7 @@ func Test_Cleanup_chan(t *testing.T) {
 }
 
 func TestChoose(t *testing.T) {
+	t.Parallel()
 	empty := ""
 	type args struct {
 		items *[]string
@@ -301,8 +285,12 @@ func TestChoose(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Choose(tt.args.items, tt.args.value, tt.args.title); (err != nil) != tt.wantErr {
-				t.Errorf("Choose() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+			err := Choose(tt.args.items, tt.args.value, tt.args.title)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -322,9 +310,8 @@ func Test_isValidPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsValidPath(tt.args.filePath, tt.args.basePath); got != tt.want {
-				t.Errorf("IsValidPath() = %v, want %v", got, tt.want)
-			}
+			got := IsValidPath(tt.args.filePath, tt.args.basePath)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -343,39 +330,30 @@ func Test_checkPaths(t *testing.T) {
 		errs = append(errs, err)
 	}
 
-	if len(errs) != 0 {
-		t.Errorf("CheckPaths() = %v, want %v", errs, []error{})
-	}
+	assert.Len(t, errs, 0)
 }
 
 func TestUserInput_success(t *testing.T) {
-	t.Run("TestUserInput_success", func(t *testing.T) {
-		prompter := FakePromptSuccessor{}
-		value := ""
-		err := UserInput(&prompter, &value, "title", func(string) error { return nil })
-		if err != nil {
-			t.Errorf("UserInput() err = %v", err)
-		}
-	})
+	prompter := FakePromptSuccessor{}
+	value := ""
+	err := UserInput(&prompter, &value, "title", func(string) error { return nil })
+	require.NoError(t, err)
 }
 
 func TestUserInput_fail(t *testing.T) {
-	t.Run("TestUserInput_fail", func(t *testing.T) {
-		prompter := FakePromptFailer{}
-		value := ""
-		err := UserInput(
-			&prompter,
-			&value,
-			"title",
-			func(string) error { return errors.New("fake error") },
-		)
-		if err == nil {
-			t.Errorf("UserInput() err = %v", err)
-		}
-	})
+	prompter := FakePromptFailer{}
+	value := ""
+	err := UserInput(
+		&prompter,
+		&value,
+		"title",
+		func(string) error { return errors.New("fake error") },
+	)
+	require.Error(t, err)
 }
 
 func TestSortSemanticVersions(t *testing.T) {
+	t.Parallel()
 	m := make(map[string]struct{})
 
 	m["8.9.2"] = struct{}{}
@@ -422,14 +400,15 @@ func TestSortSemanticVersions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := SortSemanticVersions(tt.args.versions); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SortSemanticVersions() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+			got := SortSemanticVersions(tt.args.versions)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func Test_normalizeVersion(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		version string
 	}
@@ -443,9 +422,9 @@ func Test_normalizeVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := normalizeVersion(tt.args.version); got != tt.want {
-				t.Errorf("normalizeVersion() = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+			got := normalizeVersion(tt.args.version)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
