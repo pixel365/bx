@@ -2,8 +2,10 @@ package auth
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pixel365/bx/internal/client"
 
@@ -45,13 +47,12 @@ func Test_Authenticate(t *testing.T) {
 				tt.args.password,
 				tt.args.silent,
 			)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Authenticate() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -89,12 +90,12 @@ func Test_InputPassword(t *testing.T) {
 			}
 
 			res, err := InputPassword(cmd, mod)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("handlePassword() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-			if res != tt.want {
-				t.Errorf("handlePassword() = %v, want %v", res, tt.want)
-			}
+			assert.Equal(t, tt.want, res)
 		})
 	}
 }

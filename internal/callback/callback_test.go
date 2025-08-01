@@ -5,9 +5,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCallback_IsValid(t *testing.T) {
@@ -186,8 +188,11 @@ func TestCallback_IsValid(t *testing.T) {
 				Pre:   tt.fields.Pre,
 				Post:  tt.fields.Post,
 			}
-			if err := c.IsValid(); (err != nil) != tt.wantErr {
-				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
+			err := c.IsValid()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -258,8 +263,11 @@ func TestCallbackParameters_IsValid(t *testing.T) {
 				Method:     tt.fields.Method,
 				Parameters: tt.fields.Parameters,
 			}
-			if err := c.IsValid(); (err != nil) != tt.wantErr {
-				t.Errorf("IsValid() error = %v, wantErr %v", err, tt.wantErr)
+			err := c.IsValid()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -349,12 +357,8 @@ func TestCallbackParameters_buildUrlAndBody(t *testing.T) {
 				Parameters: tt.fields.Parameters,
 			}
 			got, got1 := c.buildUrlAndBody()
-			if got != tt.want {
-				t.Errorf("buildUrlAndBody() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("buildUrlAndBody() got1 = %v, want %v", got1, tt.want1)
-			}
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want1, got1)
 		})
 	}
 }
@@ -388,33 +392,22 @@ func TestValidateCallbacks(t *testing.T) {
 }
 
 func TestInvalidCallbackParametersRun(t *testing.T) {
-	t.Run("invalid run", func(t *testing.T) {
-		ctx := context.TODO()
-		cbp := CallbackParameters{}
-		if err := cbp.Run(ctx); err == nil {
-			t.Error("expected error")
-		}
-	})
+	ctx := context.TODO()
+	cbp := CallbackParameters{}
+	err := cbp.Run(ctx)
+	require.Error(t, err)
 }
 
 func TestCallback_PreRun(t *testing.T) {
 	ctx := context.TODO()
 	cb := Callback{}
-
-	t.Run("pre run", func(t *testing.T) {
-		if err := cb.PreRun(ctx); err == nil {
-			t.Error("expected error")
-		}
-	})
+	err := cb.PreRun(ctx)
+	require.Error(t, err)
 }
 
 func TestCallback_PostRun(t *testing.T) {
 	ctx := context.TODO()
 	cb := Callback{}
-
-	t.Run("post run", func(t *testing.T) {
-		if err := cb.PostRun(ctx); err == nil {
-			t.Error("expected error")
-		}
-	})
+	err := cb.PostRun(ctx)
+	require.Error(t, err)
 }

@@ -3,13 +3,12 @@ package client
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClient(t *testing.T) {
-	t.Run("new client", func(t *testing.T) {
-		client := NewClient(10 * time.Second)
-		if client == nil {
-			t.Error("nil client")
-		}
-	})
+	t.Parallel()
+	client := NewClient(10 * time.Second)
+	assert.NotNil(t, client)
 }
