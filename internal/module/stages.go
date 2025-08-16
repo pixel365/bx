@@ -74,11 +74,9 @@ func HandleStages(
 
 	for _, name := range stages {
 		stage, _ := m.FindStage(name)
-		stagesWorkersWg.Add(1)
-		go func(stage types.Stage) {
-			defer stagesWorkersWg.Done()
+		stagesWorkersWg.Go(func() {
 			handleStageFunc(ctx, filesCh, logCh, errCh, m, stage, dir, m.StageCallback)
-		}(stage)
+		})
 	}
 
 	go cleanupWorker(&stagesWorkersWg, &copyFilesWg, &once, cancel, filesCh, logCh, errCh)
@@ -109,11 +107,9 @@ func CheckStages(module *Module) error {
 	errCh := make(chan error, len(module.Stages)*5)
 
 	for _, item := range module.Stages {
-		wg.Add(1)
-		go func(item types.Stage) {
-			defer wg.Done()
+		wg.Go(func() {
 			checkPathsFunc(item, errCh)
-		}(item)
+		})
 	}
 
 	wg.Wait()
@@ -207,10 +203,8 @@ func handleStage(
 		}
 
 		fromCopy := from
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
 
+		wg.Go(func() {
 			if err = helpers.CheckContext(ctx); err != nil {
 				return
 			}
@@ -231,7 +225,7 @@ func handleStage(
 			); err != nil {
 				errCh <- fmt.Errorf("failed to copy from %s to %s: %w", path.From, path.To, err)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
