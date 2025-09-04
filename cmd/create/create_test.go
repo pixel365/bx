@@ -23,8 +23,8 @@ func Test_newCreateCommand(t *testing.T) {
 	cmd := NewCreateCommand()
 	assert.NotNil(t, cmd)
 	assert.Equal(t, "create", cmd.Use)
-	assert.Len(t, cmd.Aliases, 1)
-	assert.Equal(t, "c", cmd.Aliases[0])
+	assert.Len(t, cmd.Aliases, 2)
+	assert.Equal(t, []string{"c", "init"}, cmd.Aliases)
 	assert.Equal(t, "Create a new module", cmd.Short)
 	assert.True(t, cmd.HasFlags())
 }

@@ -27,7 +27,7 @@ var (
 func NewCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create",
-		Aliases: []string{"c"},
+		Aliases: []string{"c", "init"},
 		Short:   "Create a new module",
 		Example: `
 # Create a new module
