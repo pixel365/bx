@@ -24,13 +24,13 @@ type FakeBuildLogger struct {
 	mu   sync.Mutex
 }
 
-func (l *FakeBuildLogger) Info(msg string, _ ...interface{}) {
+func (l *FakeBuildLogger) Info(msg string, _ ...any) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.Logs = append(l.Logs, msg)
 }
 
-func (l *FakeBuildLogger) Error(_ string, _ error, _ ...interface{}) {}
+func (l *FakeBuildLogger) Error(_ string, _ error, _ ...any) {}
 
 func (l *FakeBuildLogger) Cleanup() {}
 

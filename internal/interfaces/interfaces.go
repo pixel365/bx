@@ -53,8 +53,8 @@ type ModuleConfig interface {
 //   - Info: Logs informational messages with optional formatting arguments.
 //   - Error: Logs error messages with the associated error and optional context.
 type Logger interface {
-	Info(message string, args ...interface{})
-	Error(message string, err error, args ...interface{})
+	Info(message string, args ...any)
+	Error(message string, err error, args ...any)
 }
 
 // Runnable defines hooks for executing logic before and after a build stage.

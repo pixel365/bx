@@ -41,7 +41,7 @@ func (f FakeFileInfo) Name() string       { return "" }
 func (f FakeFileInfo) Size() int64        { return 0 }
 func (f FakeFileInfo) Mode() fs.FileMode  { return fs.ModeDir }
 func (f FakeFileInfo) ModTime() time.Time { return time.Time{} }
-func (f FakeFileInfo) Sys() interface{}   { return nil }
+func (f FakeFileInfo) Sys() any           { return nil }
 func (f FakeFileInfo) IsDir() bool        { return f.Dir }
 
 func Test_mkdir(t *testing.T) {

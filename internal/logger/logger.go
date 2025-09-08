@@ -32,7 +32,7 @@ type ZeroLogger struct {
 // Parameters:
 //   - message: The log message or format string.
 //   - args: Optional format arguments for the message.
-func (l *ZeroLogger) Info(message string, args ...interface{}) {
+func (l *ZeroLogger) Info(message string, args ...any) {
 	if len(args) > 0 {
 		l.logger.Info().Msgf(message, args...)
 		return
@@ -49,7 +49,7 @@ func (l *ZeroLogger) Info(message string, args ...interface{}) {
 //   - message: The log message or format string.
 //   - err: The error object to include in the log.
 //   - args: Optional format arguments for the message.
-func (l *ZeroLogger) Error(message string, err error, args ...interface{}) {
+func (l *ZeroLogger) Error(message string, err error, args ...any) {
 	if len(args) > 0 {
 		l.logger.Error().Err(err).Msgf(message, args...)
 		return
