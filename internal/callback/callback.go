@@ -80,7 +80,7 @@ func (c Callback) PostRun(ctx context.Context) error {
 //
 // Returns:
 //   - error: An error if validation fails, otherwise nil.
-func (c *Callback) IsValid() error {
+func (c Callback) IsValid() error {
 	if c.Stage == "" {
 		return errors.ErrCallbackStage
 	}

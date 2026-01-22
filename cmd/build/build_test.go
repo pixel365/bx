@@ -24,17 +24,17 @@ import (
 type FakeSuccessBuilder struct{}
 type FakeFailBuilder struct{}
 
-func (m *FakeSuccessBuilder) Build(ctx context.Context) error   { return nil }
-func (m *FakeSuccessBuilder) Prepare() error                    { return nil }
-func (m *FakeSuccessBuilder) Rollback() error                   { return nil }
-func (m *FakeSuccessBuilder) Collect(ctx context.Context) error { return nil }
-func (m *FakeSuccessBuilder) Cleanup()                          {}
+func (m *FakeSuccessBuilder) Build(_ context.Context) error   { return nil }
+func (m *FakeSuccessBuilder) Prepare() error                  { return nil }
+func (m *FakeSuccessBuilder) Rollback() error                 { return nil }
+func (m *FakeSuccessBuilder) Collect(_ context.Context) error { return nil }
+func (m *FakeSuccessBuilder) Cleanup()                        {}
 
-func (m *FakeFailBuilder) Build(ctx context.Context) error   { return errors.New("build error") }
-func (m *FakeFailBuilder) Prepare() error                    { return errors.New("prepare error") }
-func (m *FakeFailBuilder) Rollback() error                   { return errors.New("rollback error") }
-func (m *FakeFailBuilder) Collect(ctx context.Context) error { return errors.New("collect error") }
-func (m *FakeFailBuilder) Cleanup()                          {}
+func (m *FakeFailBuilder) Build(_ context.Context) error   { return errors.New("build error") }
+func (m *FakeFailBuilder) Prepare() error                  { return errors.New("prepare error") }
+func (m *FakeFailBuilder) Rollback() error                 { return errors.New("rollback error") }
+func (m *FakeFailBuilder) Collect(_ context.Context) error { return errors.New("collect error") }
+func (m *FakeFailBuilder) Cleanup()                        {}
 
 func Test_newBuildCommand(t *testing.T) {
 	cmd := NewBuildCommand()
