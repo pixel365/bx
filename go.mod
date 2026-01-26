@@ -3,7 +3,7 @@ module github.com/pixel365/bx
 go 1.25
 
 require (
-	github.com/bmatcuk/doublestar/v4 v4.9.2
+	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250826160502-fa7f8a27cd5c
 	github.com/go-cmd/cmd v1.4.3
