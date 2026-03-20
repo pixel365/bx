@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0
-	github.com/charmbracelet/huh v0.8.0
+	github.com/charmbracelet/huh v1.0.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250826160502-fa7f8a27cd5c
 	github.com/go-cmd/cmd v1.4.3
 	github.com/go-git/go-git/v5 v5.17.0
