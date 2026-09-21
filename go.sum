@@ -29,7 +29,7 @@ github.com/charmbracelet/colorprofile v0.4.3 h1:QPa1IWkYI+AOB+fE+mg/5/4HRMZcaXex
 github.com/charmbracelet/colorprofile v0.4.3/go.mod h1:/zT4BhpD5aGFpqQQqw7a+VtHCzu+zrQtt1zhMt9mR4Q=
 github.com/charmbracelet/huh v1.0.0 h1:wOnedH8G4qzJbmhftTqrpppyqHakl/zbbNdXIWJyIxw=
 github.com/charmbracelet/huh v1.0.0/go.mod h1:5YVc+SlZ1IhQALxRPpkGwwEKftN/+OlJlnJYlDRFqN4=
-github.com/charmbracelet/huh/spinner v0.0.0-20250826160502-fa7f8a27cd5c h1:BYXSgMNkJgtS8/xXUPzIfOWSSGUc0e0bWkjxwoRNP1U=
+github.com/charmbracelet/huh/spinner v0.0.0-20250826160502-fa7f8a27cd5c h1:t9uRpOFPTDuvR8m2erJfeG6V4o1pCW6ikoYzQV71MEs=
 github.com/charmbracelet/huh/spinner v0.0.0-20250826160502-fa7f8a27cd5c/go.mod h1:imftm8y+Db+rZ4Jcb6A7qJ0eOX78s9m84n8cdipC+R0=
 github.com/charmbracelet/lipgloss v1.1.0 h1:vYXsiLHVkK7fp74RkV7b2kq9+zDLoEU4MZoFqR/noCY=
 github.com/charmbracelet/lipgloss v1.1.0/go.mod h1:/6Q8FR2o+kj8rz4Dq0zQc3vYf7X+B0binUUBwA0aL30=
