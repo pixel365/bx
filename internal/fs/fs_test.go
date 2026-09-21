@@ -69,6 +69,19 @@ func Test_zipIt(t *testing.T) {
 	})
 }
 
+func Test_zipItRejectsSymlinkOutsideSourceDirectory(t *testing.T) {
+	sourceDir := t.TempDir()
+	externalFile := filepath.Join(t.TempDir(), "external.txt")
+	require.NoError(t, os.WriteFile(externalFile, []byte("external"), 0600))
+
+	if err := os.Symlink(externalFile, filepath.Join(sourceDir, "external.txt")); err != nil {
+		t.Skipf("symlinks are unavailable: %v", err)
+	}
+
+	err := ZipIt(sourceDir, filepath.Join(t.TempDir(), "archive.zip"))
+	require.Error(t, err)
+}
+
 func Test_shouldSkip(t *testing.T) {
 	t.Parallel()
 	patterns := []string{

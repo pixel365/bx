@@ -239,10 +239,7 @@ func handleStage(
 
 func workersQty(n int) int {
 	minWorkers := runtime.NumCPU() * 2
-	cnt := n
-	if n < minWorkers {
-		cnt = minWorkers
-	}
+	cnt := max(n, minWorkers)
 
 	return cnt
 }

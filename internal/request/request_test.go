@@ -32,7 +32,13 @@ func Test_Authorization(t *testing.T) {
 	}}
 
 	want := []*http.Cookie{
-		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
+		{
+			Name:     "BITRIX_SM_LOGIN",
+			Value:    "testuser",
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		},
 	}
 
 	type args struct {
@@ -85,7 +91,13 @@ func Test_UploadZIP(t *testing.T) {
 	}}
 
 	cookies := []*http.Cookie{
-		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
+		{
+			Name:     "BITRIX_SM_LOGIN",
+			Value:    "testuser",
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		},
 	}
 
 	type args struct {
@@ -105,8 +117,16 @@ func Test_UploadZIP(t *testing.T) {
 			"empty module name",
 			client,
 			args{
-				module:  &module2.Module{},
-				cookies: []*http.Cookie{{Name: "foo", Value: "bar"}},
+				module: &module2.Module{},
+				cookies: []*http.Cookie{
+					{
+						Name:     "foo",
+						Value:    "bar",
+						Secure:   true,
+						HttpOnly: true,
+						SameSite: http.SameSiteStrictMode,
+					},
+				},
 			},
 			true,
 		},
@@ -150,7 +170,15 @@ func Test_UploadZIP_InvalidZipPath(t *testing.T) {
 		ctx,
 		client,
 		&module2.Module{Name: "fake-name"},
-		[]*http.Cookie{{Name: "foo", Value: "bar"}},
+		[]*http.Cookie{
+			{
+				Name:     "foo",
+				Value:    "bar",
+				Secure:   true,
+				HttpOnly: true,
+				SameSite: http.SameSiteStrictMode,
+			},
+		},
 	)
 	require.Error(t, err)
 }
@@ -172,7 +200,13 @@ func Test_SessionId(t *testing.T) {
 	}}
 
 	cookies := []*http.Cookie{
-		{Name: "BITRIX_SM_LOGIN", Value: "testuser"},
+		{
+			Name:     "BITRIX_SM_LOGIN",
+			Value:    "testuser",
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		},
 	}
 
 	module := &module2.Module{}

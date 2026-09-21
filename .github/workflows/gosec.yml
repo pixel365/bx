@@ -5,9 +5,9 @@ permissions:
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "**" ]
+    branches: ["**"]
 
 jobs:
   gosec:
@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
+        uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
 
       - name: Set up Go
-        uses: actions/setup-go@19bb51245e9c80abacb2e91cc42b33fa478b8639
+        uses: actions/setup-go@34829cb9acb0c3aab260216f67d0867cc080dca5
         with:
-          go-version: '1.25'
+          go-version-file: go.mod
 
       - name: Run gosec
         uses: securego/gosec@cee0aeae8a8b6c2d59571e500bc69010f2630db6

@@ -101,7 +101,11 @@ func ValidateRun(m *Module) error {
 			return fmt.Errorf("run [%s]: key must not contain spaces", key)
 		}
 
-		if err := validateStagesList(stages, fmt.Sprintf("run: %s stages", key), m.FindStage); err != nil {
+		if err := validateStagesList(
+			stages,
+			fmt.Sprintf("run: %s stages", key),
+			m.FindStage,
+		); err != nil {
 			return err
 		}
 	}

@@ -308,7 +308,11 @@ func hashes(
 	} else {
 		hash, err := repository.ResolveRevision(plumbing.Revision(rules.From.Value))
 		if err != nil {
-			return startHash, endHash, fmt.Errorf("failed to resolve commit hash [%s]: %w", rules.From.Value, err)
+			return startHash, endHash, fmt.Errorf(
+				"failed to resolve commit hash [%s]: %w",
+				rules.From.Value,
+				err,
+			)
 		}
 		startHash = *hash
 	}
@@ -318,7 +322,11 @@ func hashes(
 	} else {
 		hash, err := repository.ResolveRevision(plumbing.Revision(rules.To.Value))
 		if err != nil {
-			return startHash, endHash, fmt.Errorf("failed to resolve commit hash [%s]: %w", rules.To.Value, err)
+			return startHash, endHash, fmt.Errorf(
+				"failed to resolve commit hash [%s]: %w",
+				rules.To.Value,
+				err,
+			)
 		}
 		endHash = *hash
 	}

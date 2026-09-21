@@ -50,6 +50,9 @@ linters:
     rules:
       - path: (.+)\.go$
         text: error return value not checked
+      - path: _test\.go$
+        linters:
+          - goconst
     paths:
       - third_party$
       - builtin$

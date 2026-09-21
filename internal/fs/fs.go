@@ -310,8 +310,8 @@ func shouldInclude(path string, patterns []string) bool {
 
 	var include, exclude []string
 	for _, pattern := range patterns {
-		if strings.HasPrefix(pattern, "!") {
-			exclude = append(exclude, strings.TrimPrefix(pattern, "!"))
+		if after, ok := strings.CutPrefix(pattern, "!"); ok {
+			exclude = append(exclude, after)
 			continue
 		}
 		include = append(include, pattern)
@@ -407,6 +407,12 @@ func ZipIt(dirPath, archivePath string) error {
 	zipWriter := zip.NewWriter(zipFile)
 	defer helpers.Cleanup(zipWriter, nil)
 
+	root, err := os.OpenRoot(dirPath)
+	if err != nil {
+		return err
+	}
+	defer helpers.Cleanup(root, nil)
+
 	err = filepath.Walk(dirPath, func(filePath string, info os.FileInfo, err error) error {
 		filePath = filepath.Clean(filePath)
 		if err != nil {
@@ -422,19 +428,19 @@ func ZipIt(dirPath, archivePath string) error {
 			return err
 		}
 
-		relPath = filepath.ToSlash(subdir + "/" + relPath)
+		archivePath := filepath.ToSlash(subdir + "/" + relPath)
 
 		if info.IsDir() {
-			_, err := zipWriter.Create(relPath + "/")
+			_, err := zipWriter.Create(archivePath + "/")
 			return err
 		}
 
-		fileInArchive, err := zipWriter.Create(relPath)
+		fileInArchive, err := zipWriter.Create(archivePath)
 		if err != nil {
 			return err
 		}
 
-		srcFile, err := os.Open(filePath)
+		srcFile, err := root.Open(relPath)
 		if err != nil {
 			return err
 		}

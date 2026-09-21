@@ -53,7 +53,7 @@ func cleanupWorker(
 //   - workersCount: number of worker goroutines to spawn.
 func copyWorkers(ctx context.Context, wg *sync.WaitGroup, filesCh chan types.Path,
 	errCh chan<- error, workersCount int) {
-	for i := 0; i < workersCount; i++ {
+	for range workersCount {
 		wg.Go(func() {
 			for file := range filesCh {
 				copyFileFunc(ctx, errCh, file)

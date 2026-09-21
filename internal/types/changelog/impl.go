@@ -3,6 +3,7 @@ package changelog
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"golang.org/x/text/encoding/charmap"
@@ -97,10 +98,8 @@ func transformValidate(transform *[]types.TypeValue[types.TransformType, []strin
 		default:
 			return fmt.Errorf("transform rule: type must be %s", types.StripPrefix)
 		case types.StripPrefix, types.StripSuffix, types.RemoveAll:
-			for _, value := range rule.Value {
-				if value == "" {
-					return fmt.Errorf("transform rule: value is required")
-				}
+			if slices.Contains(rule.Value, "") {
+				return fmt.Errorf("transform rule: value is required")
 			}
 		}
 	}
@@ -155,8 +154,8 @@ func conditionValidate(condition types.TypeValue[types.ChangelogConditionType, [
 
 func stripPrefix(s string, values []string) string {
 	for _, value := range values {
-		if strings.HasPrefix(s, value) {
-			s = strings.TrimPrefix(s, value)
+		if after, ok := strings.CutPrefix(s, value); ok {
+			s = after
 			break
 		}
 	}
@@ -166,8 +165,8 @@ func stripPrefix(s string, values []string) string {
 
 func stripSuffix(s string, values []string) string {
 	for _, value := range values {
-		if strings.HasSuffix(s, value) {
-			s = strings.TrimSuffix(s, value)
+		if before, ok := strings.CutSuffix(s, value); ok {
+			s = before
 			break
 		}
 	}

@@ -24,8 +24,7 @@ func TestCopyWorkers(t *testing.T) {
 
 	filesCh := make(chan types.Path, 3)
 	errCh := make(chan error, 1)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	var wg sync.WaitGroup
 	copyWorkers(ctx, &wg, filesCh, errCh, 2)

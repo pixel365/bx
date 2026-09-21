@@ -12,7 +12,7 @@ RPM      := $(RPMSDIR)/$(RPM_ARCH)/$(NAME)-$(VERSION)-$(RELEASE).$(RPM_ARCH).rpm
 
 .PHONY: all fa fmt lint test build cover rpm srpm copr clean version
 
-all: fa fmt lint test
+all: fa fmt lint test vet
 
 fa:
 	@fieldalignment -fix ./...
@@ -28,6 +28,9 @@ lint:
 test:
 	@go $@ ./...
 
+vet:
+	@go $@ ./...
+
 build:
 	@go $@ -o ./bin/bx -ldflags="-s -w"
 
@@ -40,7 +43,6 @@ coverfn:
 
 doc:
 	docsify serve docs
-
 
 srpm:
 	cp $(SPEC) $(SPECDIR)/ && \
@@ -57,4 +59,3 @@ clean:
 
 version:
 	@echo Version: $(VERSION)-$(RELEASE)$(DIST)
-

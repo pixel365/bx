@@ -17,6 +17,7 @@ type httpClient struct {
 }
 
 func (c *httpClient) Do(req *http.Request) (*http.Response, error) {
+	// #nosec G704 -- all application requests are constructed for the Bitrix Partner Portal.
 	return c.c.Do(req)
 }
 

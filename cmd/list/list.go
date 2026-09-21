@@ -3,6 +3,7 @@ package list
 import (
 	"fmt"
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/pixel365/bx/internal/helpers"
@@ -101,8 +102,8 @@ func list(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	for i := len(items) - 1; i >= 0; i-- {
-		fmt.Printf("%s (%s)\n", items[i], versions[items[i]])
+	for _, item := range slices.Backward(items) {
+		fmt.Printf("%s (%s)\n", item, versions[item])
 		if head {
 			break
 		}
